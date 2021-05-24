@@ -12,6 +12,7 @@ import math
 import numpy as np
 import csv
 import matplotlib.pyplot as plt
+from numpy.core.defchararray import index
 import controller2d
 import configparser 
 import local_planner
@@ -33,12 +34,11 @@ from carla.image_converter import labels_to_array, depth_to_array, to_bgra_array
 from carla.planner.city_track import CityTrack
 
 
-
 ###############################################################################
 # CONFIGURABLE PARAMENTERS DURING EXAM
 ###############################################################################
-PLAYER_START_INDEX = 8          # spawn index for player
-DESTINATION_INDEX = 100         # Setting a Destination HERE
+PLAYER_START_INDEX = 4          # spawn index for player
+DESTINATION_INDEX = 20         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 30      # total number of pedestrians to spawn
 NUM_VEHICLES           = 30      # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
@@ -255,9 +255,13 @@ def get_current_pose(measurement):
     """
     x   = measurement.player_measurements.transform.location.x
     y   = measurement.player_measurements.transform.location.y
+    z   =  measurement.player_measurements.transform.location.z
+
+    pitch = math.radians(measurement.player_measurements.transform.rotation.pitch)
+    roll = math.radians(measurement.player_measurements.transform.rotation.roll)
     yaw = math.radians(measurement.player_measurements.transform.rotation.yaw)
 
-    return (x, y, yaw)
+    return (x, y, z, pitch, roll, yaw)
 
 def get_start_pos(scene):
     """Obtains player start x,y, yaw pose from the scene
@@ -363,6 +367,30 @@ def write_collisioncount_file(collided_list):
     with open(file_name, 'w') as collision_file: 
         collision_file.write(str(sum(collided_list)))
 
+def make_correction(waypoint,previuos_waypoint,desired_speed):
+    dx = waypoint[0] - previuos_waypoint[0]
+    dy = waypoint[1] - previuos_waypoint[1]
+
+    if dx < 0:
+        moveY = -1.5
+    elif dx > 0:
+        moveY = 1.5
+    else:
+        moveY = 0
+
+    if dy < 0:
+        moveX = 1.5
+    elif dy > 0:
+        moveX = -1.5
+    else:
+        moveX = 0
+    
+    waypoint_on_lane = waypoint
+    waypoint_on_lane[0] += moveX
+    waypoint_on_lane[1] += moveY
+    waypoint_on_lane[2] = desired_speed
+
+    return waypoint_on_lane
 def exec_waypoint_nav_demo(args):
     """ Executes waypoint navigation demo.
     """
@@ -439,8 +467,8 @@ def exec_waypoint_nav_demo(args):
             # Last stamp
             if i == num_iterations - 1:
                 sim_duration = measurement_data.game_timestamp / 1000.0 -\
-                               sim_start_stamp  
-        
+                               sim_start_stamp
+
         # Outputs average simulation timestep and computes how many frames
         # will elapse before the simulation should end based on various
         # parameters that we set in the beginning.
@@ -456,7 +484,7 @@ def exec_waypoint_nav_demo(args):
         # Store pose history starting from the start position
         measurement_data, sensor_data = client.read_data()
         start_timestamp = measurement_data.game_timestamp / 1000.0
-        start_x, start_y, start_yaw = get_current_pose(measurement_data)
+        start_x, start_y, start_z, start_pitch, start_roll, start_yaw = get_current_pose(measurement_data)
         send_control_command(client, throttle=0.0, steer=0, brake=1.0)
         x_history     = [start_x]
         y_history     = [start_y]
@@ -468,72 +496,50 @@ def exec_waypoint_nav_demo(args):
         #############################################
         # Settings Waypoints
         #############################################
+        """for point in scene.player_start_spots:
+            print(point)"""
+
+        starting    = scene.player_start_spots[PLAYER_START_INDEX]
         destination = scene.player_start_spots[DESTINATION_INDEX]
 
         # Starting position is the current position
-        source_pos = [start_x, start_y, destination.location.z]
-        source_ori = [0,0,start_yaw]
+        # (x, y, z, pitch, roll, yaw)
+        source_pos = [starting.location.x, starting.location.y, starting.location.z]
+        source_ori = [starting.orientation.x, starting.orientation.y]
         source = mission_planner.project_node(source_pos)
 
         # Destination position
         destination_pos = [destination.location.x, destination.location.y, destination.location.z]
-        destination_ori = [0,0,destination.rotation.yaw]
+        destination_ori = [destination.orientation.x, destination.orientation.y]
         destination = mission_planner.project_node(destination_pos)
 
         waypoints = []
         waypoints_route = mission_planner.compute_route(source, source_ori, destination, destination_ori)
         desired_speed = 5.0
 
+        # Intersection Point
+        intersection_nodes = mission_planner.get_intersection_nodes()
+        intersection_waypoints = []
+        for intersection in intersection_nodes:
+            intersection_waypoints.append(mission_planner._map.convert_to_world(intersection))
+        
+
         # Put waypoints in the lane
         previuos_waypoint = mission_planner._map.convert_to_world(waypoints_route[0])
         for i in range(1,len(waypoints_route)):
             point = waypoints_route[i]
+
             waypoint = mission_planner._map.convert_to_world(point)
 
-            dx = waypoint[0] - previuos_waypoint[0]
-            dy = waypoint[1] - previuos_waypoint[1]
-
-            if dx < 0:
-                moveY = - 1.5
-            elif dx > 0:
-                moveY = 1.5
+            if waypoint in intersection_waypoints:
+                print("Intersection")
             else:
-                moveY = 0
+                waypoint_on_lane = make_correction(waypoint,previuos_waypoint,desired_speed)
 
-            if dy < 0:
-                moveX = 1.5
-            elif dy > 0:
-                moveX = -1.5
-            else:
-                moveX = 0
-            
-            waypoint_on_lane = waypoint
-            waypoint_on_lane[0] += moveX
-            waypoint_on_lane[1] += moveY
-            waypoint_on_lane[2] = desired_speed
+                waypoints.append(waypoint_on_lane)
 
-            waypoints.append(waypoint_on_lane)
-
-            previuos_waypoint = waypoint
+                previuos_waypoint = waypoint
         
-        previuos_waypoint = waypoints[0]
-        remove_i = -1
-        for i in range(1,len(waypoints)):
-            waypoint = waypoints[i]
-            
-            dx = waypoint[0] - previuos_waypoint[0]
-            dy = waypoint[1] - previuos_waypoint[1]
-
-            previuos_waypoint = waypoint
-
-            if abs(dx) > 0 and abs(dy) > 0:
-                remove_i = i
-        
-        if remove_i != -1:
-            del waypoints[remove_i]
-            del waypoints[remove_i+1]
-            del waypoints[remove_i-1]
-
         waypoints = np.array(waypoints)
         #############################################
         # Controller 2D Class Declaration
@@ -693,7 +699,7 @@ def exec_waypoint_nav_demo(args):
 
             # Update pose and timestamp
             prev_timestamp = current_timestamp
-            current_x, current_y, current_yaw = \
+            current_x, current_y, current_z, current_pitch, current_roll, current_yaw = \
                 get_current_pose(measurement_data)
             current_speed = measurement_data.player_measurements.forward_speed
             current_timestamp = float(measurement_data.game_timestamp) / 1000.0
