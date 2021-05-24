@@ -37,8 +37,8 @@ from carla.planner.city_track import CityTrack
 ###############################################################################
 # CONFIGURABLE PARAMENTERS DURING EXAM
 ###############################################################################
-PLAYER_START_INDEX = 4          # spawn index for player
-DESTINATION_INDEX = 20         # Setting a Destination HERE
+PLAYER_START_INDEX = 7          #  spawn index for player
+DESTINATION_INDEX = 15        # Setting a Destination HERE
 NUM_PEDESTRIANS        = 30      # total number of pedestrians to spawn
 NUM_VEHICLES           = 30      # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
@@ -47,7 +47,7 @@ SEED_VEHICLES          = 0     # seed for vehicle spawn randomizer
 
 ITER_FOR_SIM_TIMESTEP  = 10     # no. iterations to compute approx sim timestep
 WAIT_TIME_BEFORE_START = 1.00   # game seconds (time before controller start)
-TOTAL_RUN_TIME         = 100.00 # game seconds (total runtime before sim end)
+TOTAL_RUN_TIME         = 5000.00 # game seconds (total runtime before sim end)
 TOTAL_FRAME_BUFFER     = 300    # number of frames to buffer after total runtime
 CLIENT_WAIT_TIME       = 3      # wait time for client before starting episode
                                 # used to make sure the server loads
@@ -496,9 +496,6 @@ def exec_waypoint_nav_demo(args):
         #############################################
         # Settings Waypoints
         #############################################
-        """for point in scene.player_start_spots:
-            print(point)"""
-
         starting    = scene.player_start_spots[PLAYER_START_INDEX]
         destination = scene.player_start_spots[DESTINATION_INDEX]
 
@@ -516,14 +513,13 @@ def exec_waypoint_nav_demo(args):
         waypoints = []
         waypoints_route = mission_planner.compute_route(source, source_ori, destination, destination_ori)
         desired_speed = 5.0
+        turn_speed    = 2.5
 
-        # Intersection Point
         intersection_nodes = mission_planner.get_intersection_nodes()
-        intersection_waypoints = []
-        for intersection in intersection_nodes:
-            intersection_waypoints.append(mission_planner._map.convert_to_world(intersection))
-        
-
+        intersection_pair = []
+        turn_cooldown = 0
+        prev_x = False
+        prev_y = False
         # Put waypoints in the lane
         previuos_waypoint = mission_planner._map.convert_to_world(waypoints_route[0])
         for i in range(1,len(waypoints_route)):
@@ -531,15 +527,90 @@ def exec_waypoint_nav_demo(args):
 
             waypoint = mission_planner._map.convert_to_world(point)
 
-            if waypoint in intersection_waypoints:
-                print("Intersection")
+            current_waypoint = make_correction(waypoint,previuos_waypoint,desired_speed)
+            
+            dx = current_waypoint[0] - previuos_waypoint[0]
+            dy = current_waypoint[1] - previuos_waypoint[1]
+
+            is_turn = ((prev_x and abs(dy) > 0.1) or (prev_y and abs(dx) > 0.1)) and not(abs(dx) > 0.1 and abs(dy) > 0.1)
+
+            prev_x = abs(dx) > 0.1
+            prev_y = abs(dy) > 0.1
+
+            if point in intersection_nodes:                
+                prev_start_intersection = mission_planner._map.convert_to_world(waypoints_route[i-2])
+                center_intersection = mission_planner._map.convert_to_world(waypoints_route[i])
+
+                start_intersection = mission_planner._map.convert_to_world(waypoints_route[i-1])
+                end_intersection = mission_planner._map.convert_to_world(waypoints_route[i+1])
+
+                start_intersection = make_correction(start_intersection,prev_start_intersection,turn_speed)
+                end_intersection = make_correction(end_intersection,center_intersection,turn_speed)
+                
+                dx = start_intersection[0] - end_intersection[0]
+                dy = start_intersection[1] - end_intersection[1]
+
+                if abs(dx) > 0 and abs(dy) > 0:
+                    intersection_pair.append((center_intersection,len(waypoints)))
+                    waypoints[-1][2] = turn_speed
+                    
+                    middle_point = [(start_intersection[0] + end_intersection[0]) /2,  (start_intersection[1] + end_intersection[1]) /2]
+
+                    centering = 0.75
+
+                    middle_intersection = [(centering*middle_point[0] + (1-centering)*center_intersection[0]),  (centering*middle_point[1] + (1-centering)*center_intersection[1])]
+
+                    # Point at intersection:
+                    A = [[start_intersection[0], start_intersection[1], 1],
+                         [end_intersection[0], end_intersection[1], 1],
+                         [middle_intersection[0], middle_intersection[1], 1]]
+                        
+                    b = [-start_intersection[0]**2 - start_intersection[1]**2, 
+                         -end_intersection[0]**2 - end_intersection[1]**2,
+                         -middle_intersection[0]**2 - middle_intersection[1]**2]
+
+                    coeffs = np.matmul(np.linalg.inv(A), b)
+
+                    x = start_intersection[0]
+                    
+                    center_x = -coeffs[0]/2
+                    center_y = -coeffs[1]/2
+
+                    r = sqrt(center_x**2 + center_y**2 - coeffs[2])
+
+                    theta_start = math.atan2((start_intersection[1] - center_y),(start_intersection[0] - center_x))
+                    theta_end = math.atan2((end_intersection[1] - center_y),(end_intersection[0] - center_x))
+
+                    theta = theta_start
+
+                    start_to_end = 1 if theta_start < theta_end else -1
+
+                    while (start_to_end==1 and theta < theta_end) or (start_to_end==-1 and theta > theta_end):
+                        waypoint_on_lane = [0,0,0]
+
+                        waypoint_on_lane[0] = center_x + r * cos(theta)
+                        waypoint_on_lane[1] = center_y + r * sin(theta)
+                        waypoint_on_lane[2] = turn_speed
+
+                        waypoints.append(waypoint_on_lane)
+                        theta += (abs(theta_end - theta_start) * start_to_end) / 10
+                    
+                    turn_cooldown = 4
             else:
-                waypoint_on_lane = make_correction(waypoint,previuos_waypoint,desired_speed)
+                waypoint = mission_planner._map.convert_to_world(point)
+
+                if turn_cooldown > 0:
+                    target_speed = turn_speed
+                    turn_cooldown -= 1
+                else:
+                    target_speed = desired_speed
+                
+                waypoint_on_lane = make_correction(waypoint,previuos_waypoint,target_speed)
 
                 waypoints.append(waypoint_on_lane)
 
                 previuos_waypoint = waypoint
-        
+
         waypoints = np.array(waypoints)
         #############################################
         # Controller 2D Class Declaration
