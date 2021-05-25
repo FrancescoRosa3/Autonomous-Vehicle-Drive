@@ -838,6 +838,9 @@ def exec_waypoint_nav_demo(args):
                     state, depth = traffic_lights_manager.get_tl_state(image_BGR)
                     print(F"STATE: {state}")
 
+                    bp.set_red_traffic_light((state == "stop"))
+
+
                 # Compute open loop speed estimate.
                 open_loop_speed = lp._velocity_planner.get_open_loop_speed(current_timestamp - prev_timestamp)
 

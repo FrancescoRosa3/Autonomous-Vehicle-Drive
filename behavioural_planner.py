@@ -7,7 +7,7 @@ FOLLOW_LANE = 0
 DECELERATE_TO_STOP = 1
 STAY_STOPPED = 2
 # Stop speed threshold
-STOP_THRESHOLD = 0.02
+STOP_THRESHOLD = 0.05
 # Number of cycles before moving from stop sign.
 STOP_COUNTS = 10
 
@@ -18,11 +18,15 @@ class BehaviouralPlanner:
         self._state                         = FOLLOW_LANE
         self._follow_lead_vehicle           = False
         self._obstacle_on_lane              = False
+        self._red_traffic_light             = False
         self._goal_state                    = [0.0, 0.0, 0.0]
         self._goal_index                    = 0
         self._stop_count                    = 0
         self._lookahead_collision_index     = 0
     
+    def set_red_traffic_light(self, state):
+        self._red_traffic_light = state
+
     def set_lookahead(self, lookahead):
         self._lookahead = lookahead
 
@@ -79,7 +83,7 @@ class BehaviouralPlanner:
         # complete, and examine the check_for_stop_signs() function to
         # understand it.
         if self._state == FOLLOW_LANE:
-            #print("FOLLOW_LANE")
+            print("FOLLOW_LANE")
             # First, find the closest index to the ego vehicle.
             closest_len, closest_index = get_closest_index(waypoints, ego_state)
 
@@ -88,8 +92,14 @@ class BehaviouralPlanner:
             goal_index = self.get_goal_index(waypoints, ego_state, closest_len, closest_index)
             while waypoints[goal_index][2] <= 0.1: goal_index += 1
 
-            self._goal_index = goal_index
-            self._goal_state = waypoints[goal_index]
+            if self._red_traffic_light:
+                self._goal_index = goal_index
+                self._goal_state = waypoints[goal_index]
+                self._goal_state[2] = 0
+                self._state = DECELERATE_TO_STOP
+            else:
+                self._goal_index = goal_index
+                self._goal_state = waypoints[goal_index]
             
 
         # In this state, check if we have reached a complete stop. Use the
@@ -97,7 +107,8 @@ class BehaviouralPlanner:
         # stop, and compare to STOP_THRESHOLD.  If so, transition to the next
         # state.
         elif self._state == DECELERATE_TO_STOP:
-            #print("DECELERATE_TO_STOP")
+            print("DECELERATE_TO_STOP")
+            print(abs(closed_loop_speed), STOP_THRESHOLD)
             if abs(closed_loop_speed) <= STOP_THRESHOLD:
                 self._state = STAY_STOPPED
                 self._stop_count = 0
@@ -106,7 +117,7 @@ class BehaviouralPlanner:
         # least STOP_COUNTS number of cycles. If so, we can now leave
         # the stop sign and transition to the next state.
         elif self._state == STAY_STOPPED:
-            #print("STAY_STOPPED")
+            print("STAY_STOPPED")
             # We have stayed stopped for the required number of cycles.
             # Allow the ego vehicle to leave the stop sign. Once it has
             # passed the stop sign, return to lane following.
