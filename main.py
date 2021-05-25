@@ -21,7 +21,7 @@ import cv2
 import json 
 from math import sin, cos, pi, tan, sqrt
 
-from traffic_light_detection_module.traffic_light_detector import traffic_light_detector
+#from traffic_lights_manager import traffic_lights_manager
 
 # Script level imports
 sys.path.append(os.path.abspath(sys.path[0] + '/..'))
@@ -31,7 +31,7 @@ from carla.client     import make_carla_client, VehicleControl
 from carla.settings   import CarlaSettings
 from carla.tcp        import TCPConnectionError
 from carla.controller import utils
-from carla.sensor import Camera
+from carla.sensor import Camera, Lidar
 from carla.image_converter import labels_to_array, depth_to_array, to_bgra_array, to_rgb_array
 from carla.planner.city_track import CityTrack
 
@@ -122,6 +122,7 @@ camera_parameters['width'] = 416
 camera_parameters['height'] = 416
 camera_parameters['fov'] = 90
 
+
 def rotate_x(angle):
     R = np.mat([[ 1,         0,           0],
                  [ 0, cos(angle), -sin(angle) ],
@@ -206,6 +207,8 @@ def make_carla_settings(args):
     camera_height = camera_parameters['height']
     camera_fov = camera_parameters['fov']
 
+
+
     # Declare here your sensors
 
     # Camera
@@ -220,9 +223,14 @@ def make_carla_settings(args):
     # Adding camera to configuration 
     settings.add_sensor(camera)
 
+    # Camera Depth
+    camera_depth = Camera('CameraDepth', PostProcessing='Depth')
+    camera_depth.set_image_size(args.window_width, args.window_height)
+    camera_depth.set_position(cam_x_pos, cam_y_pos, cam_height)
+    camera_depth.set(FOV=camera_fov)
 
+    settings.add_sensor(camera_depth)
 
-    # Lidar
 
     return settings
 
@@ -761,7 +769,7 @@ def exec_waypoint_nav_demo(args):
         bp = behavioural_planner.BehaviouralPlanner(BP_LOOKAHEAD_BASE,
                                                     LEAD_VEHICLE_LOOKAHEAD)
 
-        traffic_light_det = traffic_light_detector()
+        #traffic_light_manager = traffic_lights_manager()
 
         #############################################
         # Scenario Execution Loop
@@ -785,27 +793,6 @@ def exec_waypoint_nav_demo(args):
             # Gather current data from the CARLA server
             measurement_data, sensor_data = client.read_data()
 
-            # Detection
-            if frame % 2 == 0 and sensor_data.get("CameraRGB", None) is not None:
-                
-                image_BGR = to_bgra_array(sensor_data["CameraRGB"])
-                traffic_light_det.detect_on_image(image_BGR)
-
-                
-                '''
-                showing_dims=(200,200)
-                # Camera RGB data
-                image_RGB = to_rgb_array(sensor_data["CameraRGB"])
-                image_RGB = cv2.resize(image_RGB,showing_dims)
-                cv2.imshow("RGB_IMAGE",image_RGB)
-                cv2.waitKey(1)
-
-                image_BGR = to_bgra_array(sensor_data["CameraRGB"])
-                image_BGR = cv2.resize(image_BGR,showing_dims)
-                cv2.imshow("BGRA_IMAGE",image_BGR)
-                cv2.waitKey(1)
-                '''
-            
             # UPDATE HERE the obstacles list
             obstacles = []
 
@@ -849,6 +836,22 @@ def exec_waypoint_nav_demo(args):
             # to be operating at a frequency that is a division to the 
             # simulation frequency.
             if frame % LP_FREQUENCY_DIVISOR == 0:
+
+                # Camera image acquiring
+                if sensor_data.get("CameraRGB", None) is not None:
+                    image_BGR = to_bgra_array(sensor_data["CameraRGB"])
+
+                # Camera Depth acquiring
+                if sensor_data.get("CameraDepth",None) is not None:
+                    depth_image = image_converter.depth_to_array(sensor_data["CameraDepth"])
+
+
+                    # Traffic-light detector
+                    #traffic_light_manager.set_current_frame(image_BGR)
+
+                    #tl = traffic_light_manager.check_traffic_light()
+
+
                 # Compute open loop speed estimate.
                 open_loop_speed = lp._velocity_planner.get_open_loop_speed(current_timestamp - prev_timestamp)
 

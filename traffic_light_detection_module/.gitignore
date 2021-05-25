@@ -30,7 +30,6 @@ dataset/images/*
 !dataset/images/.gitkeep
 *.h5
 trainval.json
-checkpoints/
 out/
 test_images/*
 
