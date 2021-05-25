@@ -21,7 +21,7 @@ import cv2
 import json 
 from math import sin, cos, pi, tan, sqrt
 
-from traffic_light_detection_module.traffic_light_detector import traffic_light_detector
+from traffic_lights_manager import traffic_lights_manager
 
 # Script level imports
 sys.path.append(os.path.abspath(sys.path[0] + '/..'))
@@ -761,7 +761,7 @@ def exec_waypoint_nav_demo(args):
         bp = behavioural_planner.BehaviouralPlanner(BP_LOOKAHEAD_BASE,
                                                     LEAD_VEHICLE_LOOKAHEAD)
 
-        traffic_light_det = traffic_light_detector()
+        traffic_light_manager = traffic_lights_manager()
 
         #############################################
         # Scenario Execution Loop
@@ -785,27 +785,6 @@ def exec_waypoint_nav_demo(args):
             # Gather current data from the CARLA server
             measurement_data, sensor_data = client.read_data()
 
-            # Detection
-            if frame % 2 == 0 and sensor_data.get("CameraRGB", None) is not None:
-                
-                image_BGR = to_bgra_array(sensor_data["CameraRGB"])
-                traffic_light_det.detect_on_image(image_BGR)
-
-                
-                '''
-                showing_dims=(200,200)
-                # Camera RGB data
-                image_RGB = to_rgb_array(sensor_data["CameraRGB"])
-                image_RGB = cv2.resize(image_RGB,showing_dims)
-                cv2.imshow("RGB_IMAGE",image_RGB)
-                cv2.waitKey(1)
-
-                image_BGR = to_bgra_array(sensor_data["CameraRGB"])
-                image_BGR = cv2.resize(image_BGR,showing_dims)
-                cv2.imshow("BGRA_IMAGE",image_BGR)
-                cv2.waitKey(1)
-                '''
-            
             # UPDATE HERE the obstacles list
             obstacles = []
 
@@ -849,6 +828,15 @@ def exec_waypoint_nav_demo(args):
             # to be operating at a frequency that is a division to the 
             # simulation frequency.
             if frame % LP_FREQUENCY_DIVISOR == 0:
+
+                # Camera image acquiring
+                if sensor_data.get("CameraRGB", None) is not None:
+                    image_BGR = to_bgra_array(sensor_data["CameraRGB"])
+
+                    # Traffic-light detector
+                    traffic_light_manager.set_current_frame(image_BGR)
+                    # tl_state = check_tl(tl_bb)
+
                 # Compute open loop speed estimate.
                 open_loop_speed = lp._velocity_planner.get_open_loop_speed(current_timestamp - prev_timestamp)
 
