@@ -827,6 +827,7 @@ def exec_waypoint_nav_demo(args):
                                                  prev_collision_other)
             collided_flag_history.append(collided_flag)
 
+
             # Execute the behaviour and local planning in the current instance
             # Note that updating the local path during every controller update
             # produces issues with the tracking performance (imagine everytime
@@ -838,7 +839,7 @@ def exec_waypoint_nav_demo(args):
             if frame % LP_FREQUENCY_DIVISOR == 0:
 
                 # Camera image acquiring
-                if sensor_data.get("CameraRGB", None) is not None:
+                if frame % 4 == 0 and sensor_data.get("CameraRGB", None) is not None:
                     image_BGR = to_bgra_array(sensor_data["CameraRGB"])
 
                 # Camera Depth acquiring
@@ -854,7 +855,6 @@ def exec_waypoint_nav_demo(args):
                     # Traffic-light detector
                     state, depth = traffic_lights_manager.get_tl_state(image_BGR)
                     print(F"STATE: {state}")
-                    # tl_state = check_tl(tl_bb)
 
                 # Compute open loop speed estimate.
                 open_loop_speed = lp._velocity_planner.get_open_loop_speed(current_timestamp - prev_timestamp)
