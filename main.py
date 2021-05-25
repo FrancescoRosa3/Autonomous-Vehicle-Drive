@@ -21,7 +21,7 @@ import cv2
 import json 
 from math import sin, cos, pi, tan, sqrt
 
-#from traffic_lights_manager import traffic_lights_manager
+from traffic_lights_manager import trafficLightsManager
 
 # Script level imports
 sys.path.append(os.path.abspath(sys.path[0] + '/..'))
@@ -769,7 +769,7 @@ def exec_waypoint_nav_demo(args):
         bp = behavioural_planner.BehaviouralPlanner(BP_LOOKAHEAD_BASE,
                                                     LEAD_VEHICLE_LOOKAHEAD)
 
-        #traffic_light_manager = traffic_lights_manager()
+        traffic_lights_manager = trafficLightsManager()
 
         #############################################
         # Scenario Execution Loop
@@ -851,6 +851,10 @@ def exec_waypoint_nav_demo(args):
 
                     #tl = traffic_light_manager.check_traffic_light()
 
+                    # Traffic-light detector
+                    state, depth = traffic_lights_manager.get_tl_state(image_BGR)
+                    print(F"STATE: {state}")
+                    # tl_state = check_tl(tl_bb)
 
                 # Compute open loop speed estimate.
                 open_loop_speed = lp._velocity_planner.get_open_loop_speed(current_timestamp - prev_timestamp)
