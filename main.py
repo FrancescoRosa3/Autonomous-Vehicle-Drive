@@ -21,6 +21,8 @@ import cv2
 import json 
 from math import sin, cos, pi, tan, sqrt
 
+from traffic_light_detection_module import traffic_light_detector
+
 # Script level imports
 sys.path.append(os.path.abspath(sys.path[0] + '/..'))
 import live_plotter as lv   # Custom live plotting library

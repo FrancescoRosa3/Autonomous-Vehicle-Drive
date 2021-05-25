@@ -18,8 +18,9 @@ class traffic_light_detector:
     def detect_on_image(self, image):
         model = get_model(self.config)
         
-        netout = predict_with_model_from_image(config, model, image)
-        plt_image = draw_boxes(cv2.imread(image_path), netout, config['model']['classes'])
+        netout = predict_with_model_from_image(self.config, model, image)
+        print(f"NETOUT: {netout}")
+        plt_image = draw_boxes(image, netout, self.config['model']['classes'])
 
         cv2.imshow('demo', plt_image)
         #cv2.waitKey(0)
