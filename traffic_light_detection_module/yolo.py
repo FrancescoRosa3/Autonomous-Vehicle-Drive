@@ -12,9 +12,9 @@ sess = tf.Session(config=config)
 import os
 import numpy as np
 
-from postprocessing import decode_netout, interval_overlap, compute_overlap, compute_ap
-from preprocessing import load_image_predict, load_carla_data, load_image_predict_from_numpy_array
-from utils import BatchGenerator
+from traffic_light_detection_module.postprocessing import decode_netout, interval_overlap, compute_overlap, compute_ap
+from traffic_light_detection_module.preprocessing import load_image_predict, load_carla_data, load_image_predict_from_numpy_array
+from traffic_light_detection_module.utils import BatchGenerator
 
 
 BASE_DIR = os.path.dirname(__file__)

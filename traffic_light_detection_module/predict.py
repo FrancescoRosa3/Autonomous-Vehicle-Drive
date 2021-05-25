@@ -2,10 +2,10 @@
 from keras.models import load_model
 import os
 import numpy as np
-import yolo
-from yolo import YOLO, dummy_loss
-from preprocessing import load_image_predict_from_numpy_array
-from postprocessing import decode_netout
+# import traffic_light_detection_module.yolo
+from traffic_light_detection_module.yolo import YOLO, dummy_loss
+from traffic_light_detection_module.preprocessing import load_image_predict_from_numpy_array
+from traffic_light_detection_module.postprocessing import decode_netout
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -17,7 +17,7 @@ def get_model(config):
     )
     #model.load_weights(os.path.join(BASE_DIR, config['model']['saved_model_name']))
     print("Loading Weights")
-    model.model.load_weights("checkpoints\\traffic-light-detection.h5")
+    model.model.load_weights(os.path.join(BASE_DIR, 'checkpoints\\traffic-light-detection.h5'))
     print("Model created")
     return model
 

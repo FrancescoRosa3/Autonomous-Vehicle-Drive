@@ -21,7 +21,7 @@ import cv2
 import json 
 from math import sin, cos, pi, tan, sqrt
 
-from traffic_light_detection_module import traffic_light_detector
+from traffic_light_detection_module.traffic_light_detector import traffic_light_detector
 
 # Script level imports
 sys.path.append(os.path.abspath(sys.path[0] + '/..'))
@@ -39,8 +39,8 @@ from carla.planner.city_track import CityTrack
 ###############################################################################
 # CONFIGURABLE PARAMENTERS DURING EXAM
 ###############################################################################
-PLAYER_START_INDEX = 7          #  spawn index for player
-DESTINATION_INDEX = 15        # Setting a Destination HERE
+PLAYER_START_INDEX = 8          #  spawn index for player
+DESTINATION_INDEX = 100        # Setting a Destination HERE
 NUM_PEDESTRIANS        = 30      # total number of pedestrians to spawn
 NUM_VEHICLES           = 30      # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
@@ -118,8 +118,8 @@ camera_parameters = {}
 camera_parameters['x'] = 1.8
 camera_parameters['y'] = 0
 camera_parameters['z'] = 1.3
-camera_parameters['width'] = 200
-camera_parameters['height'] = 200
+camera_parameters['width'] = 416
+camera_parameters['height'] = 416
 camera_parameters['fov'] = 90
 
 def rotate_x(angle):
@@ -761,6 +761,8 @@ def exec_waypoint_nav_demo(args):
         bp = behavioural_planner.BehaviouralPlanner(BP_LOOKAHEAD_BASE,
                                                     LEAD_VEHICLE_LOOKAHEAD)
 
+        traffic_light_det = traffic_light_detector()
+
         #############################################
         # Scenario Execution Loop
         #############################################
@@ -784,8 +786,13 @@ def exec_waypoint_nav_demo(args):
             measurement_data, sensor_data = client.read_data()
 
             # Detection
-            if sensor_data.get("CameraRGB", None) is not None:
+            if frame % 2 == 0 and sensor_data.get("CameraRGB", None) is not None:
+                
+                image_BGR = to_bgra_array(sensor_data["CameraRGB"])
+                traffic_light_det.detect_on_image(image_BGR)
 
+                
+                '''
                 showing_dims=(200,200)
                 # Camera RGB data
                 image_RGB = to_rgb_array(sensor_data["CameraRGB"])
@@ -797,7 +804,8 @@ def exec_waypoint_nav_demo(args):
                 image_BGR = cv2.resize(image_BGR,showing_dims)
                 cv2.imshow("BGRA_IMAGE",image_BGR)
                 cv2.waitKey(1)
-
+                '''
+            
             # UPDATE HERE the obstacles list
             obstacles = []
 

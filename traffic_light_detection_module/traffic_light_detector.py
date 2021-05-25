@@ -1,28 +1,54 @@
 import json
 import os
 import argparse
-from predict import get_model
+from traffic_light_detection_module.predict import get_model, predict_with_model_from_image
 import cv2
 
-from postprocessing import draw_boxes
-from predict import predict_with_model_from_image
+from traffic_light_detection_module.postprocessing import bbox_iou, draw_boxes
 
 
 BASE_DIR = os.path.dirname(__file__)
 
 class traffic_light_detector:
 
-    def __init__(self, config = 'config.json'):
-        self.config = config
-
-    def detect_on_image(self, image):
-        model = get_model(self.config)
+    def __init__(self, config_path = os.path.join(BASE_DIR, 'config.json')):
         
-        netout = predict_with_model_from_image(self.config, model, image)
-        print(f"NETOUT: {netout}")
+        with open(config_path) as config_buffer:
+            config = json.loads(config_buffer.read())
+
+        self.config = config
+        self.model = get_model(self.config)
+        self.i = 0
+        
+    def detect_on_image(self, image):
+        
+        netout = predict_with_model_from_image(self.config, self.model, image)
         plt_image = draw_boxes(image, netout, self.config['model']['classes'])
 
+        # Show and save image
         cv2.imshow('demo', plt_image)
-        #cv2.waitKey(0)
+        cv2.waitKey(1)
+        
+        img_path = f"traffic_light_detection_module\\out\\out{self.i}.jpg"
+        # img_path = os.path.join(BASE_DIR, img_name)
+        if cv2.imwrite(img_path, plt_image):
+            print("Image saved")
+        else:
+            print("failed")
+        self.i += 1
 
-        # cv2.imwrite(os.path.join(OUT_IMAGES_DIR, 'out' + str(img_num) + '.png'), plt_image)
+        # return the bounding box with the higher score
+        return self.get_best_bb(netout)
+
+    def get_best_bb(self, boxes):
+        if len(boxes) > 0:
+            chosen_box = boxes[0]
+            chosen_box_score = chosen_box.get_score()
+            for box in boxes:
+                box_score = box.get_score()
+                if box_score > chosen_box_score:
+                    chosen_box_score = box_score
+                    chosen_box = box
+
+            return chosen_box
+        return None
