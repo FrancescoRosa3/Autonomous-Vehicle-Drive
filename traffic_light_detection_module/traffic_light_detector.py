@@ -9,13 +9,12 @@ from traffic_light_detection_module.postprocessing import bbox_iou, draw_boxes
 
 BASE_DIR = os.path.dirname(__file__)
 
-class traffic_light_detector:
+class trafficLightDetector:
 
     def __init__(self, config_path = os.path.join(BASE_DIR, 'config.json')):
-        
         with open(config_path) as config_buffer:
             config = json.loads(config_buffer.read())
-
+        
         self.config = config
         self.model = get_model(self.config)
         self.i = 0
