@@ -31,7 +31,8 @@ dataset/images/*
 *.h5
 trainval.json
 checkpoints/
-out/*
+out/
+test_images/*
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
