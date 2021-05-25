@@ -2,7 +2,8 @@ import os
 from traffic_light_detection_module.traffic_light_detector import trafficLightDetector
 
 BASE_DIR = os.path.dirname(__file__)
-UNKNOWN = "UNKNOWN"
+CLASSES = ["go", "stop", "UNKNOWN"]
+UNKNOWN = 2
 
 class trafficLightsManager:
 
@@ -37,7 +38,7 @@ class trafficLightsManager:
         if bb_state == self.curr_state:
             self.new_state_counter += 1
             if self.new_state_counter >= 3:
-                self.true_state = self.curr_state
+                self.true_state = CLASSES[self.curr_state]
         else:
             self.new_state_counter = 0
             self.curr_state = bb_state
