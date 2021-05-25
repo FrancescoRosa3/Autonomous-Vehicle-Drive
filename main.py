@@ -30,7 +30,7 @@ from carla.settings   import CarlaSettings
 from carla.tcp        import TCPConnectionError
 from carla.controller import utils
 from carla.sensor import Camera
-from carla.image_converter import labels_to_array, depth_to_array, to_bgra_array
+from carla.image_converter import labels_to_array, depth_to_array, to_bgra_array, to_rgb_array
 from carla.planner.city_track import CityTrack
 
 
@@ -205,6 +205,22 @@ def make_carla_settings(args):
     camera_fov = camera_parameters['fov']
 
     # Declare here your sensors
+
+    # Camera
+    camera = Camera('CameraRGB')
+    # set pixel Resolution: WIDTH * HEIGHT
+    camera.set_image_size(camera_width, camera_height)
+    # set position X (front), Y (lateral), Z (height) relative to the car in meters
+    # (0,0,0) is at center of baseline of car 
+    camera.set_position(cam_x_pos, cam_y_pos, cam_height)
+    # set fov
+    camera.set(FOV=camera_fov)
+    # Adding camera to configuration 
+    settings.add_sensor(camera)
+
+
+
+    # Lidar
 
     return settings
 
@@ -764,6 +780,21 @@ def exec_waypoint_nav_demo(args):
         for frame in range(TOTAL_EPISODE_FRAMES):
             # Gather current data from the CARLA server
             measurement_data, sensor_data = client.read_data()
+
+            # Detection
+            if sensor_data.get("CameraRGB", None) is not None:
+
+                showing_dims=(200,200)
+                # Camera RGB data
+                image_RGB = to_rgb_array(sensor_data["CameraRGB"])
+                image_RGB = cv2.resize(image_RGB,showing_dims)
+                cv2.imshow("RGB_IMAGE",image_RGB)
+                cv2.waitKey(1)
+
+                image_BGR = to_bgra_array(sensor_data["CameraRGB"])
+                image_BGR = cv2.resize(image_BGR,showing_dims)
+                cv2.imshow("BGRA_IMAGE",image_BGR)
+                cv2.waitKey(1)
 
             # UPDATE HERE the obstacles list
             obstacles = []
