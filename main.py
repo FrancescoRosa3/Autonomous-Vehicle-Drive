@@ -31,7 +31,7 @@ from carla.client     import make_carla_client, VehicleControl
 from carla.settings   import CarlaSettings
 from carla.tcp        import TCPConnectionError
 from carla.controller import utils
-from carla.sensor import Camera
+from carla.sensor import Camera, Lidar
 from carla.image_converter import labels_to_array, depth_to_array, to_bgra_array, to_rgb_array
 from carla.planner.city_track import CityTrack
 
@@ -122,6 +122,7 @@ camera_parameters['width'] = 416
 camera_parameters['height'] = 416
 camera_parameters['fov'] = 90
 
+
 def rotate_x(angle):
     R = np.mat([[ 1,         0,           0],
                  [ 0, cos(angle), -sin(angle) ],
@@ -206,6 +207,8 @@ def make_carla_settings(args):
     camera_height = camera_parameters['height']
     camera_fov = camera_parameters['fov']
 
+
+
     # Declare here your sensors
 
     # Camera
@@ -220,9 +223,14 @@ def make_carla_settings(args):
     # Adding camera to configuration 
     settings.add_sensor(camera)
 
+    # Camera Depth
+    camera_depth = Camera('CameraDepth', PostProcessing='Depth')
+    camera_depth.set_image_size(camera_width, camera_height)
+    camera_depth.set_position(cam_x_pos, cam_y_pos, cam_height)
+    camera_depth.set(FOV=camera_fov)
 
+    settings.add_sensor(camera_depth)
 
-    # Lidar
 
     return settings
 
@@ -834,9 +842,20 @@ def exec_waypoint_nav_demo(args):
                 if frame % 4 == 0 and sensor_data.get("CameraRGB", None) is not None:
                     image_BGRA = to_bgra_array(sensor_data["CameraRGB"])
 
+                    depth_image = None
+                    # Camera Depth acquiring
+                    if sensor_data.get("CameraDepth",None) is not None:
+                        depth_image = depth_to_array(sensor_data["CameraDepth"])
+
+                        # Traffic-light detector
+                        #traffic_light_manager.set_current_frame(image_BGR)
+
+                        #tl = traffic_light_manager.check_traffic_light()
+
                     # Traffic-light detector
-                    state, depth = traffic_lights_manager.get_tl_state(image_BGRA)
+                    state, depth = traffic_lights_manager.get_tl_state(image_BGRA, depth_image)
                     print(F"STATE: {state}")
+                    print(F"DEPTH: {depth}")
 
                     bp.set_red_traffic_light((state == "stop"))
 
