@@ -17,15 +17,14 @@ class BehaviouralPlanner:
         self._follow_lead_vehicle_lookahead = lead_vehicle_lookahead
         self._state                         = FOLLOW_LANE
         self._follow_lead_vehicle           = False
-        self._obstacle_on_lane              = False
-        
-        ### 
-        self._red_traffic_light             = False
-        
+        self._obstacle_on_lane              = False    
         self._goal_state                    = [0.0, 0.0, 0.0]
         self._goal_index                    = 0
         self._stop_count                    = 0
         self._lookahead_collision_index     = 0
+
+        ## New parameters 
+        self._red_traffic_light             = False
     
     def set_red_traffic_light(self, state):
         self._red_traffic_light = state
