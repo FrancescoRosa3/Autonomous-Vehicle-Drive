@@ -839,7 +839,7 @@ def exec_waypoint_nav_demo(args):
             if frame % LP_FREQUENCY_DIVISOR == 0:
 
                 # Camera image acquiring
-                if frame % 4 == 0 and sensor_data.get("CameraRGB", None) is not None:
+                if sensor_data.get("CameraRGB", None) is not None:
                     image_BGRA = to_bgra_array(sensor_data["CameraRGB"])
 
                     depth_image = None
@@ -853,11 +853,11 @@ def exec_waypoint_nav_demo(args):
                         #tl = traffic_light_manager.check_traffic_light()
 
                     # Traffic-light detector
-                    state, depth = traffic_lights_manager.get_tl_state(image_BGRA, depth_image)
-                    print(F"STATE: {state}")
-                    print(F"DEPTH: {depth}")
+                state, depth = traffic_lights_manager.get_tl_state(image_BGRA, depth_image)
+                print(F"STATE: {state}")
+                print(F"DEPTH: {depth}")
 
-                    bp.set_red_traffic_light((state == "stop"))
+                bp.set_red_traffic_light((state == "stop"))
 
 
                 # Compute open loop speed estimate.
