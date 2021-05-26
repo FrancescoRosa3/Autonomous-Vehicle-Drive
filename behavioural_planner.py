@@ -18,7 +18,10 @@ class BehaviouralPlanner:
         self._state                         = FOLLOW_LANE
         self._follow_lead_vehicle           = False
         self._obstacle_on_lane              = False
+        
+        ### 
         self._red_traffic_light             = False
+        
         self._goal_state                    = [0.0, 0.0, 0.0]
         self._goal_index                    = 0
         self._stop_count                    = 0

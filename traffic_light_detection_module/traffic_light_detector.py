@@ -22,22 +22,24 @@ class trafficLightDetector:
     def detect_on_image(self, image):
         
         netout = predict_with_model_from_image(self.config, self.model, image)
-        plt_image = draw_boxes(image, netout, self.config['model']['classes'])
+        best_bb = self.get_best_bb(netout)
+        if best_bb != None:
+            image = draw_boxes(image, [best_bb], self.config['model']['classes'])
 
         # Show and save image
-        cv2.imshow('demo', plt_image)
+        cv2.imshow('demo', image)
         cv2.waitKey(1)
         
         img_path = f"traffic_light_detection_module\\out\\out{self.i}.jpg"
         # img_path = os.path.join(BASE_DIR, img_name)
-        if cv2.imwrite(img_path, plt_image):
+        if cv2.imwrite(img_path, image):
             print("Image saved")
         else:
             print("failed")
         self.i += 1
 
         # return the bounding box with the higher score
-        return self.get_best_bb(netout)
+        return best_bb
 
     def get_best_bb(self, boxes):
         if len(boxes) > 0:
