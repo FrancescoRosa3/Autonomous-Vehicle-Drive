@@ -1,13 +1,13 @@
 import os
 from traffic_light_detection_module.traffic_light_detector import trafficLightDetector
 import cv2
-import math
 import numpy as np
 
 BASE_DIR = os.path.dirname(__file__)
 CLASSES = ["go", "stop", "UNKNOWN"]
 UNKNOWN = 2
 STOP = CLASSES[1]
+OFFSET = 30
 
 class trafficLightsManager:
 
@@ -18,7 +18,7 @@ class trafficLightsManager:
         self.new_state_counter = 0
         self.true_state = UNKNOWN
         self.curr_state = UNKNOWN
-        self.distance = math.inf
+        self.distance = None
 
     def get_tl_state(self, image, depth_img = None):
         
@@ -27,7 +27,6 @@ class trafficLightsManager:
         self._update_distance()
 
         return self.true_state, self.distance
-
 
     def _set_current_frame(self, image, depth_img):
         self.curr_img = image
@@ -46,7 +45,10 @@ class trafficLightsManager:
             width = xmax - xmin
             height = ymax - ymin
 
-            bb_depth = self.curr_depth_img[ymin : ymin + height, xmin : xmin + width]
+            x_offset = OFFSET
+            y_offset = OFFSET
+
+            bb_depth = self.curr_depth_img[ymin - y_offset : ymin + height + y_offset, xmin - x_offset: xmin + width + x_offset]
 
             in_meters = 1000 * bb_depth
             
@@ -54,7 +56,7 @@ class trafficLightsManager:
             self.distance = np.min(depth_mat)
             
         else:
-            self.distance = math.inf
+            self.distance = None
 
     def _update_state(self):
         self.curr_bb = self.tl_det.detect_on_image(self.curr_img)

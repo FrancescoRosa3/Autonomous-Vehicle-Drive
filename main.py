@@ -838,28 +838,26 @@ def exec_waypoint_nav_demo(args):
             # simulation frequency.
             if frame % LP_FREQUENCY_DIVISOR == 0:
 
+                tl_state = tl_distance = None 
+
                 # Camera image acquiring
                 if sensor_data.get("CameraRGB", None) is not None:
                     image_BGRA = to_bgra_array(sensor_data["CameraRGB"])
 
                     depth_image = None
-                    # Camera Depth acquiring
+                    # Camera depth image acquiring
                     if sensor_data.get("CameraDepth",None) is not None:
                         depth_image = depth_to_array(sensor_data["CameraDepth"])
 
-                        # Traffic-light detector
-                        #traffic_light_manager.set_current_frame(image_BGR)
-
-                        #tl = traffic_light_manager.check_traffic_light()
-
                     # Traffic-light detector
-                state, depth = traffic_lights_manager.get_tl_state(image_BGRA, depth_image)
-                print(F"STATE: {state}")
-                print(F"DEPTH: {depth}")
+                    tl_state, tl_distance = traffic_lights_manager.get_tl_state(image_BGRA, depth_image)
+                    print(F"STATE: {tl_state}")
+                    print(F"DISTANCE: {tl_distance}")
 
-                bp.set_red_traffic_light((state == "stop"))
-
-
+                    bp.set_red_traffic_light((tl_state == "stop"))
+                    bp.set_traffic_light_distance(tl_distance)
+                    
+                
                 # Compute open loop speed estimate.
                 open_loop_speed = lp._velocity_planner.get_open_loop_speed(current_timestamp - prev_timestamp)
 
@@ -867,8 +865,11 @@ def exec_waypoint_nav_demo(args):
                 # Current speed should be open loop for the velocity profile generation.
                 ego_state = [current_x, current_y, current_yaw, open_loop_speed]
 
-                # Set lookahead based on current speed.
-                bp.set_lookahead(BP_LOOKAHEAD_BASE + BP_LOOKAHEAD_TIME * open_loop_speed)
+                ### Set lookahead based on current speed.
+                if tl_distance != None:
+                    bp.set_lookahead(tl_distance)
+                else:
+                    bp.set_lookahead(BP_LOOKAHEAD_BASE + BP_LOOKAHEAD_TIME * open_loop_speed)
 
                 # Perform a state transition in the behavioural planner.
                 bp.transition_state(waypoints, ego_state, current_speed)
