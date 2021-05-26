@@ -2,6 +2,7 @@ import os
 from traffic_light_detection_module.traffic_light_detector import trafficLightDetector
 import cv2
 import math
+import numpy as np
 
 BASE_DIR = os.path.dirname(__file__)
 CLASSES = ["go", "stop", "UNKNOWN"]
@@ -23,6 +24,7 @@ class trafficLightsManager:
         self._set_current_frame(image, depth_img)
         self._update_state()
 
+
         if self.true_state == STOP and self.bb != None:
             
             image_h, image_w = depth_img.shape
@@ -34,23 +36,21 @@ class trafficLightsManager:
 
             width = xmax - xmin
             height = ymax - ymin
-            print("width: "+ str(width))
-            print("height: "+ str(height))
-            print("\n")
 
-            bb_depth = depth_img[xmin : xmin + width, ymin : ymin + height]
-            cv2.imshow("bb", bb_depth)
-            cv2.waitKey(1)
+
+            bb_depth = depth_img[ymin : ymin + height, xmin : xmin + width]
+
 
             in_meters = 1000 * bb_depth
-            
-            average_depth = 0
+            min_depth = math.inf
 
             for row in in_meters:
                 for elem in row:
-                    average_depth += elem
+                    if min_depth > elem:
+                        min_depth = elem
 
-            self.depth = average_depth/(width * height)
+            self.depth = min_depth
+
 
         else:
             self.depth = math.inf

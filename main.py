@@ -39,7 +39,7 @@ from carla.planner.city_track import CityTrack
 ###############################################################################
 # CONFIGURABLE PARAMENTERS DURING EXAM
 ###############################################################################
-PLAYER_START_INDEX = 8          #  spawn index for player
+PLAYER_START_INDEX = 11          #  spawn index for player
 DESTINATION_INDEX = 100        # Setting a Destination HERE
 NUM_PEDESTRIANS        = 30      # total number of pedestrians to spawn
 NUM_VEHICLES           = 30      # total number of vehicles to spawn
@@ -842,14 +842,15 @@ def exec_waypoint_nav_demo(args):
                 if frame % 4 == 0 and sensor_data.get("CameraRGB", None) is not None:
                     image_BGR = to_bgra_array(sensor_data["CameraRGB"])
 
-                # Camera Depth acquiring
-                if sensor_data.get("CameraDepth",None) is not None:
-                    depth_image = depth_to_array(sensor_data["CameraDepth"])
+                    depth_image = None
+                    # Camera Depth acquiring
+                    if sensor_data.get("CameraDepth",None) is not None:
+                        depth_image = depth_to_array(sensor_data["CameraDepth"])
 
-                    # Traffic-light detector
-                    #traffic_light_manager.set_current_frame(image_BGR)
+                        # Traffic-light detector
+                        #traffic_light_manager.set_current_frame(image_BGR)
 
-                    #tl = traffic_light_manager.check_traffic_light()
+                        #tl = traffic_light_manager.check_traffic_light()
 
                     # Traffic-light detector
                     state, depth = traffic_lights_manager.get_tl_state(image_BGR, depth_image)
