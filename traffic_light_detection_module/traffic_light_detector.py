@@ -30,11 +30,11 @@ class trafficLightDetector:
         
         img_path = f"traffic_light_detection_module\\out\\out{self.i}.jpg"
         # img_path = os.path.join(BASE_DIR, img_name)
-        if cv2.imwrite(img_path, plt_image):
-            print("Image saved")
-        else:
-            print("failed")
-        self.i += 1
+        #if cv2.imwrite(img_path, plt_image):
+        #    print("Image saved")
+        #else:
+        #    print("failed")
+        #self.i += 1
 
         # return the bounding box with the higher score
         return self.get_best_bb(netout)

@@ -225,7 +225,7 @@ def make_carla_settings(args):
 
     # Camera Depth
     camera_depth = Camera('CameraDepth', PostProcessing='Depth')
-    camera_depth.set_image_size(args.window_width, args.window_height)
+    camera_depth.set_image_size(camera_width, camera_height)
     camera_depth.set_position(cam_x_pos, cam_y_pos, cam_height)
     camera_depth.set(FOV=camera_fov)
 
@@ -844,8 +844,7 @@ def exec_waypoint_nav_demo(args):
 
                 # Camera Depth acquiring
                 if sensor_data.get("CameraDepth",None) is not None:
-                    depth_image = image_converter.depth_to_array(sensor_data["CameraDepth"])
-
+                    depth_image = depth_to_array(sensor_data["CameraDepth"])
 
                     # Traffic-light detector
                     #traffic_light_manager.set_current_frame(image_BGR)
@@ -853,8 +852,9 @@ def exec_waypoint_nav_demo(args):
                     #tl = traffic_light_manager.check_traffic_light()
 
                     # Traffic-light detector
-                    state, depth = traffic_lights_manager.get_tl_state(image_BGR)
+                    state, depth = traffic_lights_manager.get_tl_state(image_BGR, depth_image)
                     print(F"STATE: {state}")
+                    print(F"DEPTH: {depth}")
 
                 # Compute open loop speed estimate.
                 open_loop_speed = lp._velocity_planner.get_open_loop_speed(current_timestamp - prev_timestamp)
