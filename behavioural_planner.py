@@ -6,7 +6,8 @@ import math
 FOLLOW_LANE = 0
 DECELERATE_TO_STOP = 1
 STAY_STOPPED = 2
-###
+
+### 
 FOLLOW_LANE_HALF_SPEED = 3
 
 # Stop speed threshold
@@ -21,18 +22,16 @@ class BehaviouralPlanner:
         self._state                         = FOLLOW_LANE
         self._follow_lead_vehicle           = False
         self._obstacle_on_lane              = False
-        
-        ### 
-        self._red_traffic_light             = False
-        self._traffic_light_distance        = None
-        
         self._goal_state                    = [0.0, 0.0, 0.0]
         self._goal_index                    = 0
         self._stop_count                    = 0
         self._lookahead_collision_index     = 0
 
-        ## New parameters 
+        ## New parameters
+        ### traffic light state
         self._red_traffic_light             = False
+        ### traffic light distance
+        self._traffic_light_distance        = None
     
     def set_red_traffic_light(self, state):
         self._red_traffic_light = state
@@ -119,7 +118,14 @@ class BehaviouralPlanner:
                 self._goal_index = goal_index
                 self._goal_state = waypoints[goal_index]
 
-        ###
+        ## New state
+        # In this state, continue tracking the lane by finding the
+        # goal index in the waypoint list that is within the lookahead
+        # distance. Procede at half cruise speed.
+        # If the traffic light state is red but above a certain threshold
+        # keep the same speed. If the distance drops below the threshold
+        # ensure that the goal state enforces the car to be stopped before
+        # the traffic light line.
         elif self._state == FOLLOW_LANE_HALF_SPEED:
             print("FOLLOW_LANE_HALF_SPEED")
             print(abs(closed_loop_speed))
@@ -134,56 +140,35 @@ class BehaviouralPlanner:
 
             self._goal_index = goal_index
 
+            # If the traffic light is still red, check the distance.
+            # If it is below the given threshold, enforces the car to be stopped
+            # before the traffic light line.
+            # If the traffic line is not red anymore return to lane following.
             if self._red_traffic_light:
-                if self._traffic_light_distance != None:
-                    if self._traffic_light_distance < 5:
+                if self._traffic_light_distance != None and self._traffic_light_distance < 5:
                         self._goal_state[2] = 0
                         self._state = DECELERATE_TO_STOP
             else:
                 self._goal_state = waypoints[goal_index]
                 self._state = FOLLOW_LANE
             
-
-
         # In this state, check if we have reached a complete stop. Use the
         # closed loop speed to do so, to ensure we are actually at a complete
         # stop, and compare to STOP_THRESHOLD.  If so, transition to the next
         # state.
         elif self._state == DECELERATE_TO_STOP:
             print("DECELERATE_TO_STOP")
-            print(abs(closed_loop_speed), STOP_THRESHOLD)
+            # print(abs(closed_loop_speed), STOP_THRESHOLD)
             if abs(closed_loop_speed) <= STOP_THRESHOLD:
                 self._state = STAY_STOPPED
                 self._stop_count = 0
 
-        # In this state, check to see if we have stayed stopped for at
-        # least STOP_COUNTS number of cycles. If so, we can now leave
-        # the stop sign and transition to the next state.
+        # In this state, check to see if the traffic light is not red anymore.
+        # If so, we can now leave the traffic light and transition to the next state.
         elif self._state == STAY_STOPPED:
             print("STAY_STOPPED")
-            # We have stayed stopped for the required number of cycles.
-            # Allow the ego vehicle to leave the stop sign. Once it has
-            # passed the stop sign, return to lane following.
-            # You should use the get_closest_index(), get_goal_index(), and 
-            # check_for_stop_signs() helper functions.
-            '''
-            closest_len, closest_index = get_closest_index(waypoints, ego_state)
-            goal_index = self.get_goal_index(waypoints, ego_state, closest_len, closest_index)
-            while waypoints[goal_index][2] <= 0.1: goal_index += 1
-            '''
-            # We've stopped for the required amount of time, so the new goal 
-            # index for the stop line is not relevant. Use the goal index
-            # that is the lookahead distance away. 
-                            
-            #self._goal_index = goal_index
-            # self._goal_state = waypoints[goal_index]
-            self._goal_state[2] = 0
-
-            # If the stop sign is no longer along our path, we can now
+            # If the traffic light is no longer red, we can now
             # transition back to our lane following state.
-            
-            #if not stop_sign_found: self._state = FOLLOW_LANE
-
             if not self._red_traffic_light:
                 self._state = FOLLOW_LANE
                 

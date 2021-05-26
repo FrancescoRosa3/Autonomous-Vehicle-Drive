@@ -166,7 +166,7 @@ class Controller2D(object):
             ######################################################
 
 
-            Ts = 0.05      # Sample time - 30FPS <-> 1/30
+            Ts = 0.03      # Sample time - 30FPS <-> 1/30
             kp = 1.0       # Proportional Gain
             ki = 0.5       # Integral Gain
             kd = 0.1       # Derivative Gain
