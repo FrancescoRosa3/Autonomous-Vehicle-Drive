@@ -30,6 +30,9 @@ class BehaviouralPlanner:
         self._goal_index                    = 0
         self._stop_count                    = 0
         self._lookahead_collision_index     = 0
+
+        ## New parameters 
+        self._red_traffic_light             = False
     
     def set_red_traffic_light(self, state):
         self._red_traffic_light = state
