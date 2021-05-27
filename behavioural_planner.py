@@ -111,7 +111,7 @@ class BehaviouralPlanner:
                 self._goal_index = goal_index
                 self._goal_state = waypoints[goal_index]
                 if self._traffic_light_distance != None:
-                    if self._traffic_light_distance < 5:
+                    if self._traffic_light_distance < STOP_TRAFFIC_LIGHT:
                         self._goal_state[2] = 0
                         self._state = DECELERATE_TO_STOP
                     else:

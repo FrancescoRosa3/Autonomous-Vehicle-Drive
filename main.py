@@ -32,7 +32,7 @@ from carla.settings   import CarlaSettings
 from carla.tcp        import TCPConnectionError
 from carla.controller import utils
 from carla.sensor import Camera, Lidar
-from carla.image_converter import labels_to_array, depth_to_array, to_bgra_array, to_rgb_array
+from carla.image_converter import labels_to_array, depth_to_array, to_bgra_array, to_rgb_array, labels_to_cityscapes_palette
 from carla.planner.city_track import CityTrack
 
 
@@ -228,9 +228,14 @@ def make_carla_settings(args):
     camera_depth.set_image_size(camera_width, camera_height)
     camera_depth.set_position(cam_x_pos, cam_y_pos, cam_height)
     camera_depth.set(FOV=camera_fov)
-
     settings.add_sensor(camera_depth)
 
+    # Semantic Segmentation
+    camera_depth = Camera('CameraSegmentation', PostProcessing='SemanticSegmentation')
+    camera_depth.set_image_size(camera_width, camera_height)
+    camera_depth.set_position(cam_x_pos, cam_y_pos, cam_height)
+    camera_depth.set(FOV=camera_fov)
+    settings.add_sensor(camera_depth)
 
     return settings
 
@@ -844,18 +849,25 @@ def exec_waypoint_nav_demo(args):
                 if sensor_data.get("CameraRGB", None) is not None:
                     image_BGRA = to_bgra_array(sensor_data["CameraRGB"])
 
-                    depth_image = None
-                    # Camera depth image acquiring
-                    if sensor_data.get("CameraDepth",None) is not None:
-                        depth_image = depth_to_array(sensor_data["CameraDepth"])
+                depth_image = None
+                # Camera depth image acquiring
+                if sensor_data.get("CameraDepth",None) is not None:
+                    depth_image = depth_to_array(sensor_data["CameraDepth"])
+                    
+                semantic_segmentation = None
+                # Semantic Segmentation image acquiring
+                if sensor_data.get("CameraSegmentation",None) is not None:
+                    semantic_image = labels_to_cityscapes_palette(sensor_data["CameraSegmentation"])
+                    labels = labels_to_array(sensor_data["CameraSegmentation"])
+                    cv2.imshow("Semantic Image",semantic_image)
 
-                    # Traffic-light detector
-                    tl_state, tl_distance = traffic_lights_manager.get_tl_state(image_BGRA, depth_image)
-                    print(F"STATE: {tl_state}")
-                    print(F"DISTANCE: {tl_distance}")
+                # Traffic-light detector
+                tl_state, tl_distance = traffic_lights_manager.get_tl_state(image_BGRA, depth_image)
+                print(F"STATE: {tl_state}")
+                print(F"DISTANCE: {tl_distance}")
 
-                    bp.set_red_traffic_light((tl_state == "stop"))
-                    bp.set_traffic_light_distance(tl_distance)
+                bp.set_red_traffic_light((tl_state == "stop"))
+                bp.set_traffic_light_distance(tl_distance)
                     
                 
                 # Compute open loop speed estimate.
