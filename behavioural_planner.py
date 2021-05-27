@@ -7,13 +7,16 @@ FOLLOW_LANE = 0
 DECELERATE_TO_STOP = 1
 STAY_STOPPED = 2
 
-### 
+# New implemented states 
 FOLLOW_LANE_HALF_SPEED = 3
 
 # Stop speed threshold
 STOP_THRESHOLD = 0.05
 # Number of cycles before moving from stop sign.
 STOP_COUNTS = 10
+
+# Stop traffic light threshold
+STOP_TRAFFIC_LIGHT = 5
 
 class BehaviouralPlanner:
     def __init__(self, lookahead, lead_vehicle_lookahead):
@@ -145,7 +148,7 @@ class BehaviouralPlanner:
             # before the traffic light line.
             # If the traffic line is not red anymore return to lane following.
             if self._red_traffic_light:
-                if self._traffic_light_distance != None and self._traffic_light_distance < 5:
+                if self._traffic_light_distance != None and self._traffic_light_distance < STOP_TRAFFIC_LIGHT:
                         self._goal_state[2] = 0
                         self._state = DECELERATE_TO_STOP
             else:

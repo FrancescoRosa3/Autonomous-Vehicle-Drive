@@ -865,10 +865,14 @@ def exec_waypoint_nav_demo(args):
                 # Current speed should be open loop for the velocity profile generation.
                 ego_state = [current_x, current_y, current_yaw, open_loop_speed]
 
-                ### Set lookahead based on current speed.
+                # Set lookahead .
                 if tl_distance != None:
+                    # if there is a traffic ligt
+                    # set the loockhead distance to the distance from the traffic light
+                    # in order to not take a waypoint over the traffic light
                     bp.set_lookahead(tl_distance)
                 else:
+                    ### based on current speed.
                     bp.set_lookahead(BP_LOOKAHEAD_BASE + BP_LOOKAHEAD_TIME * open_loop_speed)
 
                 # Perform a state transition in the behavioural planner.
