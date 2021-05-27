@@ -19,6 +19,7 @@ STOP_COUNTS = 10
 
 # Stop traffic light threshold
 STOP_TRAFFIC_LIGHT = 5
+SLOW_DOWN_TRAFFIC_LIGHT = 15
 
 class BehaviouralPlanner:
     def __init__(self, lookahead, lead_vehicle_lookahead):
@@ -109,19 +110,16 @@ class BehaviouralPlanner:
             goal_index = self.get_goal_index(waypoints, ego_state, closest_len, closest_index)
             while waypoints[goal_index][2] <= 0.1: goal_index += 1
 
-            if self._red_traffic_light:
-                self._goal_index = goal_index
-                self._goal_state = waypoints[goal_index]
-                if self._traffic_light_distance != None:
-                    if self._traffic_light_distance < STOP_TRAFFIC_LIGHT:
-                        self._goal_state[2] = 0
-                        self._state = DECELERATE_TO_STOP
-                    else:
-                        self._goal_state[2] = HALF_CRUISE_SPEED
-                        self._state = FOLLOW_LANE_HALF_SPEED
-            else:
-                self._goal_index = goal_index
-                self._goal_state = waypoints[goal_index]
+            self._goal_index = goal_index
+            self._goal_state = waypoints[goal_index]
+            
+            if self._red_traffic_light and self._traffic_light_distance != None:
+                if self._traffic_light_distance < STOP_TRAFFIC_LIGHT:
+                    self._goal_state[2] = 0
+                    self._state = DECELERATE_TO_STOP
+                elif self._traffic_light_distance < SLOW_DOWN_TRAFFIC_LIGHT:
+                    self._goal_state[2] = HALF_CRUISE_SPEED
+                    self._state = FOLLOW_LANE_HALF_SPEED
 
         ## New state
         # In this state, continue tracking the lane by finding the
