@@ -39,7 +39,7 @@ from carla.planner.city_track import CityTrack
 ###############################################################################
 # CONFIGURABLE PARAMENTERS DURING EXAM
 ###############################################################################
-PLAYER_START_INDEX = 11          #  spawn index for player
+PLAYER_START_INDEX = 13          #  spawn index for player
 DESTINATION_INDEX = 100        # Setting a Destination HERE
 NUM_PEDESTRIANS        = 30      # total number of pedestrians to spawn
 NUM_VEHICLES           = 30      # total number of vehicles to spawn
@@ -112,6 +112,10 @@ INTERP_DISTANCE_RES       = 0.01 # distance between interpolated points
 # controller output directory
 CONTROLLER_OUTPUT_FOLDER = os.path.dirname(os.path.realpath(__file__)) +\
                            '/controller_output/'
+
+### NEW CONSTANT
+CRUISE_SPEED = 5
+HALF_CRUISE_SPEED = 2.5
 
 # Camera parameters
 camera_parameters = {}
@@ -543,8 +547,8 @@ def exec_waypoint_nav_demo(args):
 
         waypoints = []
         waypoints_route = mission_planner.compute_route(source, source_ori, destination, destination_ori)
-        desired_speed = 5.0
-        turn_speed    = 2.5
+        desired_speed = CRUISE_SPEED
+        turn_speed    = HALF_CRUISE_SPEED
 
         intersection_nodes = mission_planner.get_intersection_nodes()
         intersection_pair = []
@@ -858,11 +862,12 @@ def exec_waypoint_nav_demo(args):
                 # Semantic Segmentation image acquiring
                 if sensor_data.get("CameraSegmentation",None) is not None:
                     semantic_image = labels_to_cityscapes_palette(sensor_data["CameraSegmentation"])
-                    labels = labels_to_array(sensor_data["CameraSegmentation"])
-                    cv2.imshow("Semantic Image",semantic_image)
-
+                    semantic_image = np.array(semantic_image,dtype=np.uint8)
+                    cv2.imshow("Semantic Image", semantic_image)
+                    semantic_image = labels_to_array(sensor_data["CameraSegmentation"])
+                    
                 # Traffic-light detector
-                tl_state, tl_distance = traffic_lights_manager.get_tl_state(image_BGRA, depth_image)
+                tl_state, tl_distance = traffic_lights_manager.get_tl_state(image_BGRA, depth_image, semantic_image)
                 print(F"STATE: {tl_state}")
                 print(F"DISTANCE: {tl_distance}")
 

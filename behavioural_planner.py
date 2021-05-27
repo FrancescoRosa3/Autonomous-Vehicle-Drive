@@ -2,6 +2,8 @@
 import numpy as np
 import math
 
+from main import CRUISE_SPEED, HALF_CRUISE_SPEED
+
 # State machine states
 FOLLOW_LANE = 0
 DECELERATE_TO_STOP = 1
@@ -115,7 +117,7 @@ class BehaviouralPlanner:
                         self._goal_state[2] = 0
                         self._state = DECELERATE_TO_STOP
                     else:
-                        self._goal_state[2] = closed_loop_speed / 2
+                        self._goal_state[2] = HALF_CRUISE_SPEED
                         self._state = FOLLOW_LANE_HALF_SPEED
             else:
                 self._goal_index = goal_index
