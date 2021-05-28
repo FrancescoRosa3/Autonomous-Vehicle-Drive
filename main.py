@@ -40,8 +40,8 @@ from carla.planner.city_track import CityTrack
 ###############################################################################
 # CONFIGURABLE PARAMENTERS DURING EXAM
 ###############################################################################
-PLAYER_START_INDEX = 11          #  spawn index for player
-DESTINATION_INDEX = 100        # Setting a Destination HERE
+PLAYER_START_INDEX = 2          #  spawn index for player
+DESTINATION_INDEX = 23        # Setting a Destination HERE
 NUM_PEDESTRIANS        = 30      # total number of pedestrians to spawn
 NUM_VEHICLES           = 30      # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
@@ -146,41 +146,6 @@ def rotate_z(angle):
                  [         0,          0, 1 ]])
     return R
 
-# # Transform the obstacle with its boundary point in the global frame
-# def obstacle_to_world(location, dimensions, orientation):
-#     box_pts = []
-
-#     x = location.x
-#     y = location.y
-#     z = location.z
-
-#     yaw = orientation.yaw * pi / 180
-
-#     xrad = dimensions.x
-#     yrad = dimensions.y
-#     zrad = dimensions.z
-
-#     # Border points in the obstacle frame
-#     cpos = np.array([
-#             [-xrad, -xrad, -xrad, 0,    xrad, xrad, xrad,  0    ],
-#             [-yrad, 0,     yrad,  yrad, yrad, 0,    -yrad, -yrad]])
-    
-#     # Rotation of the obstacle
-#     rotyaw = np.array([
-#             [np.cos(yaw), np.sin(yaw)],
-#             [-np.sin(yaw), np.cos(yaw)]])
-    
-#     # Location of the obstacle in the world frame
-#     cpos_shift = np.array([
-#             [x, x, x, x, x, x, x, x],
-#             [y, y, y, y, y, y, y, y]])
-    
-#     cpos = np.add(np.matmul(rotyaw, cpos), cpos_shift)
-
-#     for j in range(cpos.shape[1]):
-#         box_pts.append([cpos[0,j], cpos[1,j]])
-    
-#     return box_pts
 
 def make_carla_settings(args):
     """Make a CarlaSettings object with the settings we need.
@@ -879,8 +844,9 @@ def exec_waypoint_nav_demo(args):
                 
 
                 ##sim
-                box_pts_obstacles = obstacles_manager.get_om_state(image_BGRA, depth_image, semantic_image, measurement_data, sensor_data)
-
+                box_pts_obstacles = obstacles_manager.get_om_state(semantic_image, measurement_data)
+                #print("-------------------------------------------------------------")
+                #print(box_pts_obstacles)
                 
                 # Compute open loop speed estimate.
                 open_loop_speed = lp._velocity_planner.get_open_loop_speed(current_timestamp - prev_timestamp)
