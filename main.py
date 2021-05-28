@@ -885,7 +885,7 @@ def exec_waypoint_nav_demo(args):
                 print(F"STATE: {tl_state}")
                 print(F"DISTANCE: {tl_distance}")
 
-                bp.set_red_traffic_light((tl_state == "stop"))
+                bp.set_traffic_light_state(tl_state)
                 bp.set_traffic_light_distance(tl_distance)
                     
                 

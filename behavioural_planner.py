@@ -3,6 +3,7 @@ import numpy as np
 import math
 
 from main import CRUISE_SPEED, HALF_CRUISE_SPEED
+from traffic_lights_manager import GO, STOP, UNKNOWN
 
 # State machine states
 FOLLOW_LANE = 0
@@ -35,12 +36,12 @@ class BehaviouralPlanner:
 
         ## New parameters
         ### traffic light state
-        self._red_traffic_light             = False
+        self._traffic_light_unknown         = UNKNOWN
         ### traffic light distance
         self._traffic_light_distance        = None
     
-    def set_red_traffic_light(self, state):
-        self._red_traffic_light = state
+    def set_traffic_light_state(self, state):
+        self._traffic_light_state = state
 
     def set_traffic_light_distance(self, distance):
         self._traffic_light_distance = distance
@@ -113,7 +114,7 @@ class BehaviouralPlanner:
             self._goal_index = goal_index
             self._goal_state = waypoints[goal_index]
             
-            if self._red_traffic_light and self._traffic_light_distance != None:
+            if self._traffic_light_state == STOP and self._traffic_light_distance != None:
                 if self._traffic_light_distance < STOP_TRAFFIC_LIGHT:
                     self._goal_state[2] = 0
                     self._state = DECELERATE_TO_STOP
@@ -147,11 +148,11 @@ class BehaviouralPlanner:
             # If it is below the given threshold, enforces the car to be stopped
             # before the traffic light line.
             # If the traffic line is not red anymore return to lane following.
-            if self._red_traffic_light:
+            if self._traffic_light_state == STOP:
                 if self._traffic_light_distance != None and self._traffic_light_distance < STOP_TRAFFIC_LIGHT:
                         self._goal_state[2] = 0
                         self._state = DECELERATE_TO_STOP
-            else:
+            elif self._traffic_light_state == GO:
                 self._goal_state = waypoints[goal_index]
                 self._state = FOLLOW_LANE
             
@@ -172,7 +173,7 @@ class BehaviouralPlanner:
             print("STAY_STOPPED")
             # If the traffic light is no longer red, we can now
             # transition back to our lane following state.
-            if not self._red_traffic_light:
+            if self._traffic_light_state == GO:
                 self._state = FOLLOW_LANE
                 
         else:
