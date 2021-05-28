@@ -22,6 +22,7 @@ import json
 from math import sin, cos, pi, tan, sqrt
 
 from traffic_lights_manager import trafficLightsManager
+from obstacles_manager import ObstaclesManager
 
 # Script level imports
 sys.path.append(os.path.abspath(sys.path[0] + '/..'))
@@ -145,41 +146,41 @@ def rotate_z(angle):
                  [         0,          0, 1 ]])
     return R
 
-# Transform the obstacle with its boundary point in the global frame
-def obstacle_to_world(location, dimensions, orientation):
-    box_pts = []
+# # Transform the obstacle with its boundary point in the global frame
+# def obstacle_to_world(location, dimensions, orientation):
+#     box_pts = []
 
-    x = location.x
-    y = location.y
-    z = location.z
+#     x = location.x
+#     y = location.y
+#     z = location.z
 
-    yaw = orientation.yaw * pi / 180
+#     yaw = orientation.yaw * pi / 180
 
-    xrad = dimensions.x
-    yrad = dimensions.y
-    zrad = dimensions.z
+#     xrad = dimensions.x
+#     yrad = dimensions.y
+#     zrad = dimensions.z
 
-    # Border points in the obstacle frame
-    cpos = np.array([
-            [-xrad, -xrad, -xrad, 0,    xrad, xrad, xrad,  0    ],
-            [-yrad, 0,     yrad,  yrad, yrad, 0,    -yrad, -yrad]])
+#     # Border points in the obstacle frame
+#     cpos = np.array([
+#             [-xrad, -xrad, -xrad, 0,    xrad, xrad, xrad,  0    ],
+#             [-yrad, 0,     yrad,  yrad, yrad, 0,    -yrad, -yrad]])
     
-    # Rotation of the obstacle
-    rotyaw = np.array([
-            [np.cos(yaw), np.sin(yaw)],
-            [-np.sin(yaw), np.cos(yaw)]])
+#     # Rotation of the obstacle
+#     rotyaw = np.array([
+#             [np.cos(yaw), np.sin(yaw)],
+#             [-np.sin(yaw), np.cos(yaw)]])
     
-    # Location of the obstacle in the world frame
-    cpos_shift = np.array([
-            [x, x, x, x, x, x, x, x],
-            [y, y, y, y, y, y, y, y]])
+#     # Location of the obstacle in the world frame
+#     cpos_shift = np.array([
+#             [x, x, x, x, x, x, x, x],
+#             [y, y, y, y, y, y, y, y]])
     
-    cpos = np.add(np.matmul(rotyaw, cpos), cpos_shift)
+#     cpos = np.add(np.matmul(rotyaw, cpos), cpos_shift)
 
-    for j in range(cpos.shape[1]):
-        box_pts.append([cpos[0,j], cpos[1,j]])
+#     for j in range(cpos.shape[1]):
+#         box_pts.append([cpos[0,j], cpos[1,j]])
     
-    return box_pts
+#     return box_pts
 
 def make_carla_settings(args):
     """Make a CarlaSettings object with the settings we need.
@@ -780,6 +781,8 @@ def exec_waypoint_nav_demo(args):
 
         traffic_lights_manager = trafficLightsManager()
 
+        obstacles_manager = ObstaclesManager()
+
         #############################################
         # Scenario Execution Loop
         #############################################
@@ -873,7 +876,11 @@ def exec_waypoint_nav_demo(args):
 
                 bp.set_red_traffic_light((tl_state == "stop"))
                 bp.set_traffic_light_distance(tl_distance)
-                    
+                
+
+                ##sim
+                box_pts_obstacles = obstacles_manager.get_om_state(image_BGRA, depth_image, semantic_image, measurement_data, sensor_data)
+
                 
                 # Compute open loop speed estimate.
                 open_loop_speed = lp._velocity_planner.get_open_loop_speed(current_timestamp - prev_timestamp)
@@ -905,7 +912,7 @@ def exec_waypoint_nav_demo(args):
                 paths = local_planner.transform_paths(paths, ego_state)
 
                 # Perform collision checking.
-                collision_check_array = lp._collision_checker.collision_check(paths, [])
+                collision_check_array = lp._collision_checker.collision_check(paths, box_pts_obstacles)
 
                 # Compute the best local path.
                 best_index = lp._collision_checker.select_best_path_index(paths, collision_check_array, bp._goal_state)
