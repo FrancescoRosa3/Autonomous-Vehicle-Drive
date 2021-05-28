@@ -1,8 +1,10 @@
 import numpy as np
 from math import pi, sqrt
 
+import main 
+
 CAR_LONG_SIDE = 2
-DISTANCE_VEHICLE = 15
+DISTANCE_VEHICLE = 100
 DISTANCE_PEDESTRIAN = 10
 #VEHICLE_LABEL = 10
 #PEDESTRIAN_LABEL = 4
@@ -66,7 +68,7 @@ class ObstaclesManager:
                     print("Vehicle at distance:" + str(dist))
                     rotation = agent.vehicle.transform.rotation
                     dimension = agent.vehicle.bounding_box.extent
-                    box_pts = self._obstacle_to_world(location,  dimension, rotation)
+                    box_pts = main.obstacle_to_world(location,  dimension, rotation)
                     obstacles.append(box_pts)
 
         print("\n")
@@ -85,45 +87,8 @@ class ObstaclesManager:
                     print("Pedestrian at distance:" + str(dist))
                     rotation = agent.pedestrian.transform.rotation
                     dimension = agent.pedestrian.bounding_box.extent
-                    box_pts = self._obstacle_to_world(location,  dimension, rotation)
+                    box_pts = main.obstacle_to_world(location,  dimension, rotation)
                     obstacles.append(box_pts)
 
         print("\n")
         return obstacles
-
-
-    # Transform the obstacle with its boundary point in the global frame
-    def _obstacle_to_world(self, location, dimensions, orientation):
-        box_pts = []
-
-        x = location.x
-        y = location.y
-        z = location.z
-
-        yaw = orientation.yaw * pi / 180
-
-        xrad = dimensions.x
-        yrad = dimensions.y
-        zrad = dimensions.z
-
-        # Border points in the obstacle frame
-        cpos = np.array([
-                [-xrad, -xrad, -xrad, 0,    xrad, xrad, xrad,  0    ],
-                [-yrad, 0,     yrad,  yrad, yrad, 0,    -yrad, -yrad]])
-        
-        # Rotation of the obstacle
-        rotyaw = np.array([
-                [np.cos(yaw), np.sin(yaw)],
-                [-np.sin(yaw), np.cos(yaw)]])
-        
-        # Location of the obstacle in the world frame
-        cpos_shift = np.array([
-                [x, x, x, x, x, x, x, x],
-                [y, y, y, y, y, y, y, y]])
-        
-        cpos = np.add(np.matmul(rotyaw, cpos), cpos_shift)
-
-        for j in range(cpos.shape[1]):
-            box_pts.append([cpos[0,j], cpos[1,j]])
-        
-        return box_pts

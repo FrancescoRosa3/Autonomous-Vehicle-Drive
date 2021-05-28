@@ -146,6 +146,41 @@ def rotate_z(angle):
                  [         0,          0, 1 ]])
     return R
 
+# Transform the obstacle with its boundary point in the global frame
+def obstacle_to_world(location, dimensions, orientation):
+    box_pts = []
+
+    x = location.x
+    y = location.y
+    z = location.z
+
+    yaw = orientation.yaw * pi / 180
+
+    xrad = dimensions.x
+    yrad = dimensions.y
+    zrad = dimensions.z
+
+    # Border points in the obstacle frame
+    cpos = np.array([
+            [-xrad, -xrad, -xrad, 0,    xrad, xrad, xrad,  0    ],
+            [-yrad, 0,     yrad,  yrad, yrad, 0,    -yrad, -yrad]])
+    
+    # Rotation of the obstacle
+    rotyaw = np.array([
+            [np.cos(yaw), np.sin(yaw)],
+            [-np.sin(yaw), np.cos(yaw)]])
+    
+    # Location of the obstacle in the world frame
+    cpos_shift = np.array([
+            [x, x, x, x, x, x, x, x],
+            [y, y, y, y, y, y, y, y]])
+    
+    cpos = np.add(np.matmul(rotyaw, cpos), cpos_shift)
+
+    for j in range(cpos.shape[1]):
+        box_pts.append([cpos[0,j], cpos[1,j]])
+    
+    return box_pts
 
 def make_carla_settings(args):
     """Make a CarlaSettings object with the settings we need.
@@ -771,7 +806,8 @@ def exec_waypoint_nav_demo(args):
             measurement_data, sensor_data = client.read_data()
 
             # UPDATE HERE the obstacles list
-            obstacles = []
+            box_pts_obstacles = obstacles_manager.get_om_state(None, measurement_data)
+            obstacles = np.array(box_pts_obstacles)
 
             # Update pose and timestamp
             prev_timestamp = current_timestamp
@@ -856,10 +892,6 @@ def exec_waypoint_nav_demo(args):
                 bp.set_traffic_light_state(tl_state)
                 bp.set_traffic_light_distance(tl_distance)
                 
-
-                ##sim
-                box_pts_obstacles = obstacles_manager.get_om_state(semantic_image, measurement_data)
-                
                 # Compute open loop speed estimate.
                 open_loop_speed = lp._velocity_planner.get_open_loop_speed(current_timestamp - prev_timestamp)
 
@@ -876,7 +908,6 @@ def exec_waypoint_nav_demo(args):
                 else:
                     ### based on current speed.
                     bp.set_lookahead(BP_LOOKAHEAD_BASE + BP_LOOKAHEAD_TIME * open_loop_speed)
-
                 # Perform a state transition in the behavioural planner.
                 bp.transition_state(waypoints, ego_state, current_speed)
 
@@ -980,8 +1011,8 @@ def exec_waypoint_nav_demo(args):
                 
                 # Load parked car points
                 if len(obstacles) > 0:
-                    x = obstacles[:,:,0]
-                    y = obstacles[:,:,1]
+                    x = obstacles[:, :, 0]
+                    y = obstacles[:, :, 1]
                     x = np.reshape(x, x.shape[0] * x.shape[1])
                     y = np.reshape(y, y.shape[0] * y.shape[1])
 
