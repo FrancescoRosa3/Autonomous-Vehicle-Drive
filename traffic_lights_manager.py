@@ -51,34 +51,22 @@ class trafficLightsManager:
             xmax = int(self.curr_bb.xmax * image_w)
             ymax = int(self.curr_bb.ymax * image_h)
 
-            width = xmax - xmin
-            height = ymax - ymin
-            
             # take the pixel coordinates for the traffic light
-            traffic_light_pixels, traffic_light_pixels2 = self.get_traffic_light_slice_from_semantic_segmentation(xmin, xmax, ymin, ymax)
+            traffic_light_pixels = self.get_traffic_light_slice_from_semantic_segmentation(xmin, xmax, ymin, ymax)
             
+            ## UNCOMMENT (part 2) to highlight traffic light pixels
+            '''
             N = M = 416
-
             img = np.zeros([N,M,3])
-
             img[:,:,0] = np.ones([N,M])*255/255.0
             img[:,:,1] = np.ones([N,M])*255/255.0
             img[:,:,2] = np.ones([N,M])*255/255.0
-            #data = np.full((N, M, 3), [255, 255, 255], dtype=int)
-            #data = [[[255, 255, 255] for i in range(416)] for j in range(416)]
+            
             for elem in traffic_light_pixels:
                 img[elem[0], elem[1], 0] = 1
                 img[elem[0], elem[1], 1] = 1
                 img[elem[0], elem[1], 2] = 0
             '''
-            for elem in traffic_light_pixels2:
-                if elem not in traffic_light_pixels:
-                    img[elem[0], elem[1], 0] = 0
-                    img[elem[0], elem[1], 1] = 0.5
-                    img[elem[0], elem[1], 2] = 0
-            ''' 
-
-            
 
             # false positive bounding box
             if len(traffic_light_pixels) == 0:
@@ -93,19 +81,20 @@ class trafficLightsManager:
                 i += 1
                 # convert depth image value in meters
                 in_meter_val = 1000 * self.curr_depth_img[pixel[0]][pixel[1]]
-                #print(in_meter_val)
                 depth_sum = depth_sum + in_meter_val
+                
+                ## UNCOMMENT (part 2) to highlight spurious pixels
+                '''
                 temp_avg = depth_sum/i
                 print(f"val: {in_meter_val} - avg + offset: {temp_avg + ((temp_avg *30) / 100)}")     
                 if in_meter_val > temp_avg + ((temp_avg * 30) / 100):
                     img[pixel[0], pixel[1], 0] = 0
                     img[pixel[0], pixel[1], 1] = 0
                     img[pixel[0], pixel[1], 2] = 1
-                    
-
-            
+                
             cv2.imshow("test", img)
             cv2.waitKey(1)
+            '''
 
             self.distance = depth_sum/len(traffic_light_pixels)
 
@@ -131,8 +120,10 @@ class trafficLightsManager:
 
     def get_traffic_light_slice_from_semantic_segmentation(self, x_min, x_max, y_min, y_max):
         # neighborhood of the bounding box
-        x_offset = X_OFFSET
-        y_offset = Y_OFFSET
+
+        width = x_max - x_min
+        x_offset = int(width + ((width*30)/100))
+        y_offset = 0
 
         # get the pixels belonging to traffic sign
         traffic_light_pixels = []
@@ -153,31 +144,10 @@ class trafficLightsManager:
                         traffic_light_pixels[i] = []
                     traffic_light_pixels[i].append(j)
         
-        print(f"BEFORE: {traffic_light_pixels}")
-        temp2 = []
+        temp = []
         for k, v in traffic_light_pixels.items():
             for elem in v:
-                temp2.append((k, elem))
-        
-        # remove border from traffic light segment 
-        min_raw = min(traffic_light_pixels.keys())
-        print(f"min_raw: {min_raw}")
-        max_raw = max(traffic_light_pixels.keys())
-        print(f"max_raw: {max_raw}")
-        del traffic_light_pixels[min_raw]
-        del traffic_light_pixels[max_raw]
-        for k in traffic_light_pixels.keys():
-            if len(traffic_light_pixels[k])>1: 
-                traffic_light_pixels[k] = traffic_light_pixels[k][1:-1]
-            else:
-                traffic_light_pixels[k] = []
-        
-        print(f"AFTER: {traffic_light_pixels}")
-
-        temp1 = []
-        for k, v in traffic_light_pixels.items():
-            for elem in v:
-                temp1.append((k, elem))
+                temp.append((k, elem))
         #print(f"AFTER: {temp}")
         
-        return temp1, temp2
+        return temp
