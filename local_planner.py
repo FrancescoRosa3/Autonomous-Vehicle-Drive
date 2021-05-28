@@ -122,7 +122,7 @@ class LocalPlanner:
             goal_t += 2*pi
 
         # Compute and apply the offset for each path such that
-        # all of the paths have the same heading of the goal state, 
+        # all of the paths have the same heading of the goal state,
         # but are laterally offset with respect to the goal heading.
         goal_state_set = []
         for i in range(self._num_paths):
