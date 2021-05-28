@@ -36,7 +36,7 @@ class BehaviouralPlanner:
 
         ## New parameters
         ### traffic light state
-        self._traffic_light_unknown         = UNKNOWN
+        self._traffic_light_state         = UNKNOWN
         ### traffic light distance
         self._traffic_light_distance        = None
     

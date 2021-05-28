@@ -2,6 +2,7 @@ import os
 from traffic_light_detection_module.traffic_light_detector import trafficLightDetector
 
 BASE_DIR = os.path.dirname(__file__)
+
 TRAFFIC_LIGHT_CLASSES = ["go", "stop", "UNKNOWN"]
 
 GO = TRAFFIC_LIGHT_CLASSES[0]
