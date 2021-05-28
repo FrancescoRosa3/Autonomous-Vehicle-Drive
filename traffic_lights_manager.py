@@ -6,6 +6,7 @@ from numpy.lib.function_base import select
 from traffic_light_detection_module.traffic_light_detector import trafficLightDetector
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
 BASE_DIR = os.path.dirname(__file__)
 CLASSES = ["go", "stop", "UNKNOWN"]
@@ -54,18 +55,57 @@ class trafficLightsManager:
             height = ymax - ymin
             
             # take the pixel coordinates for the traffic light
-            traffic_light_pixels = self._slice_traffic_light_from_semantic_segmentation(xmin, xmax, ymin, ymax)
+            traffic_light_pixels, traffic_light_pixels2 = self.get_traffic_light_slice_from_semantic_segmentation(xmin, xmax, ymin, ymax)
             
-            # false positivo bounding box
+            N = M = 416
+
+            img = np.zeros([N,M,3])
+
+            img[:,:,0] = np.ones([N,M])*255/255.0
+            img[:,:,1] = np.ones([N,M])*255/255.0
+            img[:,:,2] = np.ones([N,M])*255/255.0
+            #data = np.full((N, M, 3), [255, 255, 255], dtype=int)
+            #data = [[[255, 255, 255] for i in range(416)] for j in range(416)]
+            for elem in traffic_light_pixels:
+                img[elem[0], elem[1], 0] = 1
+                img[elem[0], elem[1], 1] = 1
+                img[elem[0], elem[1], 2] = 0
+            '''
+            for elem in traffic_light_pixels2:
+                if elem not in traffic_light_pixels:
+                    img[elem[0], elem[1], 0] = 0
+                    img[elem[0], elem[1], 1] = 0.5
+                    img[elem[0], elem[1], 2] = 0
+            ''' 
+
+            
+
+            # false positive bounding box
             if len(traffic_light_pixels) == 0:
                 self.distance = None
                 return
-
+                
             # take the traffic light pixels from the depth image
             depth_sum = 0
+            temp_avg = 0
+            i = 0
             for pixel in traffic_light_pixels:
+                i += 1
                 # convert depth image value in meters
-                depth_sum = depth_sum + 1000 * self.curr_depth_img[pixel[0]][pixel[1]]
+                in_meter_val = 1000 * self.curr_depth_img[pixel[0]][pixel[1]]
+                #print(in_meter_val)
+                depth_sum = depth_sum + in_meter_val
+                temp_avg = depth_sum/i
+                print(f"val: {in_meter_val} - avg + offset: {temp_avg + ((temp_avg *30) / 100)}")     
+                if in_meter_val > temp_avg + ((temp_avg * 30) / 100):
+                    img[pixel[0], pixel[1], 0] = 0
+                    img[pixel[0], pixel[1], 1] = 0
+                    img[pixel[0], pixel[1], 2] = 1
+                    
+
+            
+            cv2.imshow("test", img)
+            cv2.waitKey(1)
 
             self.distance = depth_sum/len(traffic_light_pixels)
 
@@ -89,7 +129,7 @@ class trafficLightsManager:
             self.new_state_counter = 0
             self.curr_state = bb_state
 
-    def _slice_traffic_light_from_semantic_segmentation(self, x_min, x_max, y_min, y_max):
+    def get_traffic_light_slice_from_semantic_segmentation(self, x_min, x_max, y_min, y_max):
         # neighborhood of the bounding box
         x_offset = X_OFFSET
         y_offset = Y_OFFSET
@@ -97,31 +137,47 @@ class trafficLightsManager:
         # get the pixels belonging to traffic sign
         traffic_light_pixels = []
 
-        if(y_min - y_offset < 0):
-            start_y = 0
-        else:
-            start_y = y_min-y_offset
-        
-        print(self.curr_semantic_img.shape[0])
-        if((y_max + y_offset) > self.curr_semantic_img.shape[0]):
-            end_y = self.curr_semantic_img.shape[0]
-        else:
-            end_y = y_max + y_offset
+        # prevent indices from going out of image borders
+        start_y = 0 if y_min - y_offset < 0 else y_min-y_offset
+        end_y = self.curr_semantic_img.shape[0] if (y_max + y_offset) > self.curr_semantic_img.shape[0] else y_max + y_offset
+        start_x = 0 if x_min - x_offset < 0 else x_min-x_offset
+        end_x = self.curr_semantic_img.shape[1] if (x_max + x_offset) > self.curr_semantic_img.shape[1] else x_max + x_offset
 
-        if(x_min - x_offset < 0):
-            start_x = 0
-        else:
-            start_x = x_min-x_offset
-        
-        if((x_max + x_offset) > self.curr_semantic_img.shape[1]):
-            end_x = self.curr_semantic_img.shape[1]
-        else:
-            end_x = x_max + x_offset
+        traffic_light_pixels = {}
 
+        # find traffic light pixels
         for i in range(start_y, end_y):
             for j in range(start_x, end_x):
                 if self.curr_semantic_img[i][j] == TRAFFIC_SIGN_LABEL:
-                    # traffic light pixel 
-                    traffic_light_pixels.append((i,j))
+                    if i not in traffic_light_pixels:
+                        traffic_light_pixels[i] = []
+                    traffic_light_pixels[i].append(j)
         
-        return traffic_light_pixels
+        print(f"BEFORE: {traffic_light_pixels}")
+        temp2 = []
+        for k, v in traffic_light_pixels.items():
+            for elem in v:
+                temp2.append((k, elem))
+        
+        # remove border from traffic light segment 
+        min_raw = min(traffic_light_pixels.keys())
+        print(f"min_raw: {min_raw}")
+        max_raw = max(traffic_light_pixels.keys())
+        print(f"max_raw: {max_raw}")
+        del traffic_light_pixels[min_raw]
+        del traffic_light_pixels[max_raw]
+        for k in traffic_light_pixels.keys():
+            if len(traffic_light_pixels[k])>1: 
+                traffic_light_pixels[k] = traffic_light_pixels[k][1:-1]
+            else:
+                traffic_light_pixels[k] = []
+        
+        print(f"AFTER: {traffic_light_pixels}")
+
+        temp1 = []
+        for k, v in traffic_light_pixels.items():
+            for elem in v:
+                temp1.append((k, elem))
+        #print(f"AFTER: {temp}")
+        
+        return temp1, temp2
