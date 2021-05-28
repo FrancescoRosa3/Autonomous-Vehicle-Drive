@@ -845,8 +845,6 @@ def exec_waypoint_nav_demo(args):
 
                 ##sim
                 box_pts_obstacles = obstacles_manager.get_om_state(semantic_image, measurement_data)
-                #print("-------------------------------------------------------------")
-                #print(box_pts_obstacles)
                 
                 # Compute open loop speed estimate.
                 open_loop_speed = lp._velocity_planner.get_open_loop_speed(current_timestamp - prev_timestamp)

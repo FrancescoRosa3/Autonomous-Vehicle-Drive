@@ -20,7 +20,6 @@ class ObstaclesManager:
 
         obstacles = []
         #if self.semantic_img is not None:
-        print("Sono qui")
         vehicles = self._update_vehicle()
         pedestrian = self._update_pedestrian()
         obstacles = vehicles + pedestrian
@@ -91,6 +90,7 @@ class ObstaclesManager:
 
         print("\n")
         return obstacles
+
 
     # Transform the obstacle with its boundary point in the global frame
     def _obstacle_to_world(self, location, dimensions, orientation):
