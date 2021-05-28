@@ -117,6 +117,8 @@ CONTROLLER_OUTPUT_FOLDER = os.path.dirname(os.path.realpath(__file__)) +\
 ### NEW CONSTANT
 CRUISE_SPEED = 5
 HALF_CRUISE_SPEED = 2.5
+VEHICLE_OBSTACLE_LOOKAHEAD = 100
+PEDESTRIAN_OBSTACLE_LOOKAHEAD = 10
 
 # Camera parameters
 camera_parameters = {}
@@ -776,12 +778,11 @@ def exec_waypoint_nav_demo(args):
                                         A_MAX,
                                         SLOW_SPEED,
                                         STOP_LINE_BUFFER)
-        bp = behavioural_planner.BehaviouralPlanner(BP_LOOKAHEAD_BASE,
-                                                    LEAD_VEHICLE_LOOKAHEAD)
+        bp = behavioural_planner.BehaviouralPlanner(BP_LOOKAHEAD_BASE)
 
         traffic_lights_manager = trafficLightsManager()
 
-        obstacles_manager = ObstaclesManager()
+        obstacles_manager = ObstaclesManager(LEAD_VEHICLE_LOOKAHEAD, VEHICLE_OBSTACLE_LOOKAHEAD, PEDESTRIAN_OBSTACLE_LOOKAHEAD)
 
         #############################################
         # Scenario Execution Loop
@@ -805,16 +806,18 @@ def exec_waypoint_nav_demo(args):
             # Gather current data from the CARLA server
             measurement_data, sensor_data = client.read_data()
 
-            # UPDATE HERE the obstacles list
-            box_pts_obstacles = obstacles_manager.get_om_state(None, measurement_data)
-            obstacles = np.array(box_pts_obstacles)
-
             # Update pose and timestamp
             prev_timestamp = current_timestamp
             current_x, current_y, current_z, current_pitch, current_roll, current_yaw = \
                 get_current_pose(measurement_data)
             current_speed = measurement_data.player_measurements.forward_speed
             current_timestamp = float(measurement_data.game_timestamp) / 1000.0
+
+            
+            ### UPDATE HERE the obstacles list and check to see if we need to follow the lead vehicle. 
+            ego_pose = [current_x, current_y, current_yaw]
+            box_pts_obstacles, lead_vehicle = obstacles_manager.get_om_state(measurement_data, ego_pose)
+            obstacles = np.array(box_pts_obstacles)
 
             # Wait for some initial time before starting the demo
             if current_timestamp <= WAIT_TIME_BEFORE_START:
@@ -842,18 +845,14 @@ def exec_waypoint_nav_demo(args):
 
 
             ### Obtain Lead Vehicle information.
-            lead_car_pos    = []
-            lead_car_length = []
-            lead_car_speed  = []
-            for agent in measurement_data.non_player_agents:
-                agent_id = agent.id
-                if agent.HasField('vehicle'):
-                    lead_car_pos.append(
-                            [agent.vehicle.transform.location.x,
-                             agent.vehicle.transform.location.y])
-                    lead_car_length.append(agent.vehicle.bounding_box.extent.x)
-                    lead_car_speed.append(agent.vehicle.forward_speed)
-
+            lead_car_pos = None
+            lead_car_speed = None
+            if lead_vehicle != None:
+                bp.set_follow_lead_vehicle(True)
+                lead_car_pos = (lead_vehicle.transform.location.x, lead_vehicle.transform.location.y)
+                lead_car_speed = lead_vehicle.forward_speed
+            else:
+                bp.set_follow_lead_vehicle(False)
 
             # Execute the behaviour and local planning in the current instance
             # Note that updating the local path during every controller update
@@ -911,9 +910,7 @@ def exec_waypoint_nav_demo(args):
                 # Perform a state transition in the behavioural planner.
                 bp.transition_state(waypoints, ego_state, current_speed)
 
-                ### Check to see if we need to follow the lead vehicle.
-                bp.check_for_lead_vehicle(ego_state, lead_car_pos[1])
-
+                
                 # Compute the goal state set from the behavioural planner's computed goal state.
                 goal_state_set = lp.get_goal_state_set(bp._goal_index, bp._goal_state, waypoints, ego_state)
 
@@ -939,7 +936,9 @@ def exec_waypoint_nav_demo(args):
                     # Compute the velocity profile for the path, and compute the waypoints.
                     desired_speed = bp._goal_state[2]
                     decelerate_to_stop = bp._state == behavioural_planner.DECELERATE_TO_STOP
-                    lead_car_state = [lead_car_pos[1][0], lead_car_pos[1][1], lead_car_speed[1]]
+                    
+                    ###
+                    lead_car_state = [lead_car_pos[0], lead_car_pos[1], lead_car_speed] if lead_car_pos != None else None
                     local_waypoints = lp._velocity_planner.compute_velocity_profile(best_path, desired_speed, ego_state, current_speed, decelerate_to_stop, lead_car_state, bp._follow_lead_vehicle)
 
                     if local_waypoints != None:
@@ -1005,9 +1004,9 @@ def exec_waypoint_nav_demo(args):
                 # Update live plotter with new feedback
                 trajectory_fig.roll("trajectory", current_x, current_y)
                 trajectory_fig.roll("car", current_x, current_y)
-                if lead_car_pos:    # If there exists a lead car, plot it
-                    trajectory_fig.roll("leadcar", lead_car_pos[1][0],
-                                        lead_car_pos[1][1])
+                if lead_car_pos != None:    ### If there exists a lead car, plot it
+                    trajectory_fig.roll("leadcar", lead_car_pos[0],
+                                        lead_car_pos[1])
                 
                 # Load parked car points
                 if len(obstacles) > 0:
