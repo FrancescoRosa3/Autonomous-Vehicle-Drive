@@ -879,7 +879,7 @@ def exec_waypoint_nav_demo(args):
                 
 
                 ##sim
-                box_pts_obstacles = obstacles_manager.get_om_state(image_BGRA, depth_image, semantic_image, measurement_data, sensor_data)
+                box_pts_obstacles = obstacles_manager.get_om_state(semantic_image, measurement_data)
 
                 
                 # Compute open loop speed estimate.
