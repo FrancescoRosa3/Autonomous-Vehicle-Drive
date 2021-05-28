@@ -48,13 +48,13 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0     # seed for vehicle spawn randomizer
 ###############################################################################àà
 
-ITER_FOR_SIM_TIMESTEP  = 10     # no. iterations to compute approx sim timestep
-WAIT_TIME_BEFORE_START = 1.00   # game seconds (time before controller start)
-TOTAL_RUN_TIME         = 5000.00 # game seconds (total runtime before sim end)
-TOTAL_FRAME_BUFFER     = 300    # number of frames to buffer after total runtime
-CLIENT_WAIT_TIME       = 3      # wait time for client before starting episode
-                                # used to make sure the server loads
-                                # consistently
+ITER_FOR_SIM_TIMESTEP  = 10         # no. iterations to compute approx sim timestep
+WAIT_TIME_BEFORE_START = 1.00       # game seconds (time before controller start)
+TOTAL_RUN_TIME         = 5000.00    # game seconds (total runtime before sim end)
+TOTAL_FRAME_BUFFER     = 300        # number of frames to buffer after total runtime
+CLIENT_WAIT_TIME       = 3          # wait time for client before starting episode
+                                    # used to make sure the server loads
+                                    # consistently
 
 WEATHERID = {
     "DEFAULT": 0,
@@ -805,6 +805,20 @@ def exec_waypoint_nav_demo(args):
             collided_flag_history.append(collided_flag)
 
 
+            ### Obtain Lead Vehicle information.
+            lead_car_pos    = []
+            lead_car_length = []
+            lead_car_speed  = []
+            for agent in measurement_data.non_player_agents:
+                agent_id = agent.id
+                if agent.HasField('vehicle'):
+                    lead_car_pos.append(
+                            [agent.vehicle.transform.location.x,
+                             agent.vehicle.transform.location.y])
+                    lead_car_length.append(agent.vehicle.bounding_box.extent.x)
+                    lead_car_speed.append(agent.vehicle.forward_speed)
+
+
             # Execute the behaviour and local planning in the current instance
             # Note that updating the local path during every controller update
             # produces issues with the tracking performance (imagine everytime
@@ -817,8 +831,8 @@ def exec_waypoint_nav_demo(args):
 
                 tl_state = tl_distance = None 
 
-                # Camera image acquiring
-                if sensor_data.get("CameraRGB", None) is not None:
+                # Camera image and depth image acquiring
+                if sensor_data.get("CameraRGB", None) is not None and sensor_data.get("CameraDepth",None) is not None:
                     image_BGRA = to_bgra_array(sensor_data["CameraRGB"])
                 
                 depth_image = None
@@ -839,7 +853,7 @@ def exec_waypoint_nav_demo(args):
                 print(F"STATE: {tl_state}")
                 print(F"DISTANCE: {tl_distance}")
 
-                bp.set_red_traffic_light((tl_state == "stop"))
+                bp.set_traffic_light_state(tl_state)
                 bp.set_traffic_light_distance(tl_distance)
                 
 
@@ -865,6 +879,9 @@ def exec_waypoint_nav_demo(args):
 
                 # Perform a state transition in the behavioural planner.
                 bp.transition_state(waypoints, ego_state, current_speed)
+
+                ### Check to see if we need to follow the lead vehicle.
+                bp.check_for_lead_vehicle(ego_state, lead_car_pos[1])
 
                 # Compute the goal state set from the behavioural planner's computed goal state.
                 goal_state_set = lp.get_goal_state_set(bp._goal_index, bp._goal_state, waypoints, ego_state)
