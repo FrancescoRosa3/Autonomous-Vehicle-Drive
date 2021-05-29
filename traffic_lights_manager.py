@@ -81,7 +81,7 @@ class trafficLightsManager:
             bb_state = UNKNOWN
         else:
             bb_state = TRAFFIC_LIGHT_CLASSES[self.curr_bb.get_label()]
-        print(bb_state)
+        # print(bb_state)
         if bb_state == self.curr_state:
             self.new_state_counter += 1
             

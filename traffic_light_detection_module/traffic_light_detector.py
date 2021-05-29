@@ -19,7 +19,7 @@ class trafficLightDetector:
         self.model = get_model(self.config)
         self.i = 0
         
-    def detect_on_image(self, image):
+    def detect_on_image(self, image, save_image = False):
         
         netout = predict_with_model_from_image(self.config, self.model, image)
         best_bb = self.get_best_bb(netout)
@@ -32,10 +32,11 @@ class trafficLightDetector:
         
         img_path = f"traffic_light_detection_module\\out\\out{self.i}.jpg"
         # img_path = os.path.join(BASE_DIR, img_name)
-        if cv2.imwrite(img_path, image):
-            print("Image saved")
-        else:
-            print("failed")
+        if save_image:  
+            if cv2.imwrite(img_path, image):
+                print("Image saved")
+            else:
+                print("Failed to save the image")
         self.i += 1
 
         # return the bounding box with the higher score

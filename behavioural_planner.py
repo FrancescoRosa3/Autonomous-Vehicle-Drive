@@ -104,7 +104,7 @@ class BehaviouralPlanner:
         # complete, and examine the check_for_stop_signs() function to
         # understand it.
         if self._state == FOLLOW_LANE:
-            print("FOLLOW_LANE")
+            print("FSM STATE: FOLLOW_LANE")
             # First, find the closest index to the ego vehicle.
             closest_len, closest_index = get_closest_index(waypoints, ego_state)
 
@@ -133,7 +133,7 @@ class BehaviouralPlanner:
         # ensure that the goal state enforces the car to be stopped before
         # the traffic light line.
         elif self._state == FOLLOW_LANE_HALF_SPEED:
-            print("FOLLOW_LANE_HALF_SPEED")
+            print("FSM STATE: FOLLOW_LANE_HALF_SPEED")
             print(abs(closed_loop_speed))
 
             # First, find the closest index to the ego vehicle.
@@ -163,7 +163,7 @@ class BehaviouralPlanner:
         # stop, and compare to STOP_THRESHOLD.  If so, transition to the next
         # state.
         elif self._state == DECELERATE_TO_STOP:
-            print("DECELERATE_TO_STOP")
+            print("FSM STATE: DECELERATE_TO_STOP")
             # print(abs(closed_loop_speed), STOP_THRESHOLD)
             if abs(closed_loop_speed) <= STOP_THRESHOLD:
                 self._state = STAY_STOPPED
@@ -172,7 +172,7 @@ class BehaviouralPlanner:
         # In this state, check to see if the traffic light is not red anymore.
         # If so, we can now leave the traffic light and transition to the next state.
         elif self._state == STAY_STOPPED:
-            print("STAY_STOPPED")
+            print("FSM STATE: STAY_STOPPED")
             # If the traffic light is no longer red, we can now
             # transition back to our lane following state.
             if self._traffic_light_state == GO:
@@ -180,7 +180,7 @@ class BehaviouralPlanner:
                 
         else:
             raise ValueError('Invalid state value.')
-
+        
     # Gets the goal index in the list of waypoints, based on the lookahead and
     # the current ego state. In particular, find the earliest waypoint that has accumulated
     # arc length (including closest_len) that is greater than or equal to self._lookahead.

@@ -40,7 +40,7 @@ from carla.planner.city_track import CityTrack
 ###############################################################################
 # CONFIGURABLE PARAMENTERS DURING EXAM
 ###############################################################################
-PLAYER_START_INDEX = 2          #  spawn index for player
+PLAYER_START_INDEX = 6         #  spawn index for player
 DESTINATION_INDEX = 23        # Setting a Destination HERE
 NUM_PEDESTRIANS        = 30      # total number of pedestrians to spawn
 NUM_VEHICLES           = 30      # total number of vehicles to spawn
@@ -115,7 +115,7 @@ CONTROLLER_OUTPUT_FOLDER = os.path.dirname(os.path.realpath(__file__)) +\
                            '/controller_output/'
 
 ### NEW CONSTANT
-CRUISE_SPEED = 5
+CRUISE_SPEED = 50
 HALF_CRUISE_SPEED = 2.5
 VEHICLE_OBSTACLE_LOOKAHEAD = 100
 PEDESTRIAN_OBSTACLE_LOOKAHEAD = 10
@@ -851,6 +851,8 @@ def exec_waypoint_nav_demo(args):
                 bp.set_follow_lead_vehicle(True)
                 lead_car_pos = (lead_vehicle.transform.location.x, lead_vehicle.transform.location.y)
                 lead_car_speed = lead_vehicle.forward_speed
+                print(f"LEAD VEHICLE\n Position: {lead_car_pos[0]}-{lead_car_pos[1]}") 
+                print(f"LEAD VEHICLE\n VELOCITY: {lead_car_speed}") 
             else:
                 bp.set_follow_lead_vehicle(False)
 
@@ -885,8 +887,8 @@ def exec_waypoint_nav_demo(args):
                     
                 # Traffic-light detector
                 tl_state, tl_distance = traffic_lights_manager.get_tl_state(image_BGRA, depth_image, semantic_image)
-                print(F"STATE: {tl_state}")
-                print(F"DISTANCE: {tl_distance}")
+                print(F"STATE TRAFFIC LIGHT: {tl_state}")
+                print(F"DISTANCE FROM TRAFFIC LIGHT: {tl_distance}")
 
                 bp.set_traffic_light_state(tl_state)
                 bp.set_traffic_light_distance(tl_distance)
