@@ -782,7 +782,7 @@ def exec_waypoint_nav_demo(args):
 
         traffic_lights_manager = trafficLightsManager()
 
-        obstacles_manager = ObstaclesManager(LEAD_VEHICLE_LOOKAHEAD, VEHICLE_OBSTACLE_LOOKAHEAD, PEDESTRIAN_OBSTACLE_LOOKAHEAD)
+        obstacles_manager = ObstaclesManager(LEAD_VEHICLE_LOOKAHEAD, VEHICLE_OBSTACLE_LOOKAHEAD, PEDESTRIAN_OBSTACLE_LOOKAHEAD, bp)
 
         #############################################
         # Scenario Execution Loop
@@ -816,8 +816,8 @@ def exec_waypoint_nav_demo(args):
             
             ### UPDATE HERE the obstacles list and check to see if we need to follow the lead vehicle. 
             ego_pose = [current_x, current_y, current_yaw]
-            box_pts_obstacles, lead_vehicle = obstacles_manager.get_om_state(measurement_data, ego_pose)
-            obstacles = np.array(box_pts_obstacles)
+            box_pts_all_agents, box_pts_obstacles, lead_vehicle = obstacles_manager.get_om_state(measurement_data, ego_pose)
+            obstacles = np.array(box_pts_all_agents)
 
             # Wait for some initial time before starting the demo
             if current_timestamp <= WAIT_TIME_BEFORE_START:
@@ -851,8 +851,8 @@ def exec_waypoint_nav_demo(args):
                 bp.set_follow_lead_vehicle(True)
                 lead_car_pos = (lead_vehicle.transform.location.x, lead_vehicle.transform.location.y)
                 lead_car_speed = lead_vehicle.forward_speed
-                print(f"LEAD VEHICLE\n Position: {lead_car_pos[0]}-{lead_car_pos[1]}") 
-                print(f"LEAD VEHICLE\n VELOCITY: {lead_car_speed}") 
+                #print(f"LEAD VEHICLE\n Position: {lead_car_pos[0]}-{lead_car_pos[1]}") 
+                #print(f"LEAD VEHICLE\n VELOCITY: {lead_car_speed}") 
             else:
                 bp.set_follow_lead_vehicle(False)
 
