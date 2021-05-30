@@ -206,6 +206,59 @@ class Controller2D(object):
                 example, can treat self.vars.v_previous like a "global variable".
             """
 
+            """
+            k_e = 1.0
+            k_v = 1.0
+
+            #print(F"Parametri {k_e}, {k_v}")
+                        
+            ######################################################
+            # STANLEY CONTROL - ALGORITHM
+            ######################################################
+
+            # Heading error
+            yaw_path = np.arctan2(waypoints[-1][1]-waypoints[0][1], waypoints[-1][0]-waypoints[0][0])
+            yaw_diff = yaw_path - yaw 
+            # Projection of the angle in the range [-pi,pi] 
+            if yaw_diff > np.pi:
+                yaw_diff -= 2 * np.pi
+            elif yaw_diff < - np.pi:
+                yaw_diff += 2 * np.pi
+
+            # Crosstrack error
+            current_xy = np.array([x, y])
+            crosstrack_error = np.min(np.sum((current_xy - np.array(waypoints)[:, :2])**2, axis=1))
+
+            # Conditions to determine the correct sign of the cross track error
+            yaw_cross_track = np.arctan2(y-waypoints[0][1], x-waypoints[0][0])
+            yaw_path2ct = yaw_path - yaw_cross_track
+            
+            # Projection of the angle in the range [-pi,pi] 
+            if yaw_path2ct > np.pi:
+                yaw_path2ct -= 2 * np.pi
+            elif yaw_path2ct < - np.pi:
+                yaw_path2ct += 2 * np.pi
+
+            if yaw_path2ct > 0:
+                crosstrack_error = abs(crosstrack_error)
+            else:
+                crosstrack_error = - abs(crosstrack_error)
+
+            yaw_diff_crosstrack = np.arctan(k_e * crosstrack_error / (k_v + v))
+
+            # Control law
+            steer_output = yaw_diff + yaw_diff_crosstrack
+            print()
+            # Projection of the angle in the range [-pi,pi] 
+            if steer_output > np.pi:
+                steer_output -= 2 * np.pi
+            elif steer_output < - np.pi:
+                steer_output += 2 * np.pi
+
+            steer_output = min(1.22, steer_output)
+            steer_output = max(-1.22, steer_output)
+            """
+            
             # in this controller, we use pure pursuit method to design lateral controller
             # the dynamic model is not used here, just pure tuning of the gains.
 
@@ -245,7 +298,7 @@ class Controller2D(object):
             steer_output = min(steer_output,1.22)
             steer_output = max(steer_output,-1.22)
             #print("steer_output: ",steer_output/3.1415926*180)
-
+            
             ######################################################
             # SET CONTROLS OUTPUT
             ######################################################
@@ -253,7 +306,7 @@ class Controller2D(object):
             self.set_steer(steer_output)        # in rad (-1.22 to 1.22)
             self.set_brake(brake_output)        # in percent (0 to 1)
             #print(throttle_output,steer_output)
-
+            
         ######################################################
         ######################################################
         # STORE OLD VALUES HERE (ADD MORE IF NECESSARY)

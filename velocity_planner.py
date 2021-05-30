@@ -59,7 +59,8 @@ class VelocityPlanner:
     # Recall that the path is of the form [x_points, y_points, t_points].
     def compute_velocity_profile(self, path, desired_speed, ego_state, 
                                  closed_loop_speed, decelerate_to_stop, 
-                                 lead_car_state, follow_lead_vehicle):
+                                 lead_car_state, follow_lead_vehicle,
+                                 consider_lead):
         """Computes the velocity profile for the local planner path.
         
         args:
@@ -118,7 +119,7 @@ class VelocityPlanner:
 
         # If we need to follow the lead vehicle, make sure we decelerate to its
         # speed by the time we reach the time gap point.
-        elif lead_car_state is not None and follow_lead_vehicle:
+        elif lead_car_state is not None and follow_lead_vehicle and consider_lead:
             profile = self.follow_profile(path, start_speed, desired_speed, 
                                           lead_car_state)
 

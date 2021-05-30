@@ -4,18 +4,20 @@ from math import pi, sqrt, cos, sin, inf, degrees
 
 import main 
 
-CAR_LONG_SIDE = 2
 LEAD_VEHILCE_LOOKAHEAD_OFFSET_FOR_RELEASE = 5
+# CAR_LONG_SIDE = 2
 #VEHICLE_LABEL = 10
 #PEDESTRIAN_LABEL = 4
 
 class ObstaclesManager:
 
-    def __init__(self, lead_vehicle_lookahead, vehicle_obstacle_lookahead, pedestrian_obstacle_lookahead, behavioral_planner):
-        self._lead_vehicle_lookahead = lead_vehicle_lookahead
+    def __init__(self, lead_vehicle_lookahead_base, vehicle_obstacle_lookahead, pedestrian_obstacle_lookahead, behavioral_planner):
+        self._lead_vehicle_lookahead_base = lead_vehicle_lookahead_base
+        self._lead_vehicle_lookahead = self._lead_vehicle_lookahead_base
         self._vehicle_obstacle_lookahead =  vehicle_obstacle_lookahead
         self._pedestrian_obstacle_lookahead = pedestrian_obstacle_lookahead
         self._bp = behavioral_planner
+        
 
     def get_om_state(self, measurement_data, ego_pose, semantic_img=None):        
         #self._set_current_frame(semantic_img)
@@ -54,7 +56,12 @@ class ObstaclesManager:
         return any(PEDESTRIAN_LABEL in px for px in self.semantic_img)
 
     """
-
+    def compute_lookahead(self, ego_speed):
+        # safe brake space
+        speed_km_h = (ego_speed * 3600)/1000
+        self._lead_vehicle_lookahead = self._lead_vehicle_lookahead_base + (speed_km_h/10)*3
+        print(F"New speed for vehicle lead {ego_speed}")
+        print(F"New look ahead for vehicle lead {self._lead_vehicle_lookahead}")
 
     def _update_vehicle(self):
         obstacles_vehicles = []
@@ -65,24 +72,23 @@ class ObstaclesManager:
         lead_vehicle_dist = inf
         lead_vehicle = None
         
-        #print("Compute distance and orientation")
+        # print("Compute distance and orientation")
         for agent in self.measurement_data.non_player_agents:
             if agent.HasField('vehicle'):
                 location = agent.vehicle.transform.location
                 rotation = agent.vehicle.transform.rotation
                 dimension = agent.vehicle.bounding_box.extent
-                distance, orientation = self._compute_distance_orientation_from_vehicle(location, rotation)
+                distance, orientation = self._compute_distance_orientation_from_vehicle(location, rotation, dimension, self.measurement_data.player_measurements.bounding_box.extent)
                 # the vehicle is inside the obstacle range
-                if distance < self._vehicle_obstacle_lookahead - CAR_LONG_SIDE:
+                if distance < self._vehicle_obstacle_lookahead:
                     # compute the bb with respect to the world frame
                     box_pts = main.obstacle_to_world(location,  dimension, rotation)
                     all_vehicles.append(box_pts)
                     # check for vehicle on the same lane
                     if self._check_for_vehicle_on_same_lane(orientation):
-                        # check if the vehicle on the same lane is a lead vehicle
-                        lead, orientation_lead = self._check_for_lead_vehicle(location)
-                        if lead:
-                            print(F"CAR DISTANCE {distance}, CAR ORIENTATION {orientation_lead}")
+                        # check if the vehicle on the same lane is a lead vehicle 
+                        if self._check_for_lead_vehicle(location):
+                            print(F"CAR DISTANCE {distance}")
                             if distance < lead_vehicle_dist:
                                 lead_vehicle_dist = distance
                                 lead_vehicle = agent.vehicle 
@@ -111,7 +117,8 @@ class ObstaclesManager:
 
         return obstacles_pedestrian
 
-    def _compute_distance_orientation_from_vehicle(self, car_location, car_rotation):
+    def _compute_distance_orientation_from_vehicle(self, car_location, car_rotation, dimension, player_dimension):
+        # compute the distance between the player agent and the obstacle
         car_delta_vector = [car_location.x - self._ego_pose[0], car_location.y - self._ego_pose[1]]
         car_distance = np.linalg.norm(car_delta_vector)
 
@@ -119,7 +126,7 @@ class ObstaclesManager:
         car_heading_vector = [cos(math.radians(car_rotation.yaw)), sin(math.radians(car_rotation.yaw))]
 
         dot_product = np.dot(car_heading_vector, ego_heading_vector)
-        #print(F"CAR DISTANCE {car_distance} Orientation: {dot_product}")
+        
         return car_distance, dot_product
 
     def _check_for_vehicle_on_same_lane(self, orientation):
@@ -129,7 +136,6 @@ class ObstaclesManager:
     # lead vehicle.
     def _check_for_lead_vehicle(self, car_location):
         # compute the distance from the vehicle
-        # car_delta_vector = [car_location.x - self._ego_pose[0], car_location.y - self._ego_pose[1]]
         car_delta_vector = [car_location.x - self._ego_pose[0], car_location.y - self._ego_pose[1]]
         car_distance = np.linalg.norm(car_delta_vector)
         
@@ -139,8 +145,7 @@ class ObstaclesManager:
         
         # compute the angle between the car heading versor and distance versor
         dot_product = np.dot(lead_car_delta_vector, ego_heading_vector)
-        #orientation = np.arccos(dot_product)
         #print(F"CAR DISTANCE {car_distance} Orientation: {dot_product}")
         distance_from_lead = self._lead_vehicle_lookahead if not self._bp._follow_lead_vehicle else  self._lead_vehicle_lookahead + LEAD_VEHILCE_LOOKAHEAD_OFFSET_FOR_RELEASE
 
-        return (car_distance < distance_from_lead) and (dot_product > 1/sqrt(2)), dot_product
+        return (car_distance < distance_from_lead) and (dot_product > 1/sqrt(2))

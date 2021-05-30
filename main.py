@@ -40,10 +40,10 @@ from carla.planner.city_track import CityTrack
 ###############################################################################
 # CONFIGURABLE PARAMENTERS DURING EXAM
 ###############################################################################
-PLAYER_START_INDEX = 6         #  spawn index for player
-DESTINATION_INDEX = 23        # Setting a Destination HERE
-NUM_PEDESTRIANS        = 30      # total number of pedestrians to spawn
-NUM_VEHICLES           = 30      # total number of vehicles to spawn
+PLAYER_START_INDEX = 51 #6         #  spawn index for player
+DESTINATION_INDEX = 90 #20         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 0      # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0     # seed for vehicle spawn randomizer
 ###############################################################################àà
@@ -87,7 +87,7 @@ DIST_THRESHOLD_TO_LAST_WAYPOINT = 2.0  # some distance from last position before
 
 # Planning Constants
 NUM_PATHS = 7
-BP_LOOKAHEAD_BASE      = 16.0              # m
+BP_LOOKAHEAD_BASE      = 16.0             # m
 BP_LOOKAHEAD_TIME      = 1.0              # s
 PATH_OFFSET            = 1.5              # m
 CIRCLE_OFFSETS         = [-1.0, 1.0, 3.0] # m
@@ -97,7 +97,6 @@ PATH_SELECT_WEIGHT     = 10
 A_MAX                  = 2.5              # m/s^2
 SLOW_SPEED             = 2.0              # m/s
 STOP_LINE_BUFFER       = 3.5              # m
-LEAD_VEHICLE_LOOKAHEAD = 20.0             # m
 LP_FREQUENCY_DIVISOR   = 2                # Frequency divisor to make the 
                                           # local planner operate at a lower
                                           # frequency than the controller
@@ -115,15 +114,16 @@ CONTROLLER_OUTPUT_FOLDER = os.path.dirname(os.path.realpath(__file__)) +\
                            '/controller_output/'
 
 ### NEW CONSTANT
-CRUISE_SPEED = 50
-HALF_CRUISE_SPEED = 2.5
-VEHICLE_OBSTACLE_LOOKAHEAD = 100
-PEDESTRIAN_OBSTACLE_LOOKAHEAD = 10
+CRUISE_SPEED = 5 # m/s
+HALF_CRUISE_SPEED = 2.5 # m/s
+VEHICLE_OBSTACLE_LOOKAHEAD = 30 # m
+PEDESTRIAN_OBSTACLE_LOOKAHEAD = 10 # m
+LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
 # Camera parameters
 camera_parameters = {}
-camera_parameters['x'] = 1.8
-camera_parameters['y'] = 0
+camera_parameters['x'] = 1.0
+camera_parameters['y'] = 1.0
 camera_parameters['z'] = 1.3
 camera_parameters['width'] = 416
 camera_parameters['height'] = 416
@@ -594,7 +594,17 @@ def exec_waypoint_nav_demo(args):
                     
                     middle_point = [(start_intersection[0] + end_intersection[0]) /2,  (start_intersection[1] + end_intersection[1]) /2]
 
-                    centering = 0.75
+                    turn_angle = math.atan2((end_intersection[1] - start_intersection[1]),(start_intersection[0] - end_intersection[0]))
+                    print(turn_angle,  pi / 4, middle_point[0] - center_intersection[0] < 0)
+
+                    turn_adjust = 0 < turn_angle < pi / 2 and middle_point[0] - center_intersection[0] < 0
+                    turn_adjust_2 =  pi / 2 < turn_angle < pi and middle_point[0] - center_intersection[0] < 0
+
+                    quater_part = - pi / 2 < turn_angle < 0 
+                    neg_turn_adjust = quater_part and middle_point[0] - center_intersection[0] < 0
+                    neg_turn_adjust_2 = - pi < turn_angle < -pi/2 and middle_point[0] - center_intersection[0] < 0
+                    
+                    centering = 0.55 if turn_adjust or neg_turn_adjust else 0.75 
 
                     middle_intersection = [(centering*middle_point[0] + (1-centering)*center_intersection[0]),  (centering*middle_point[1] + (1-centering)*center_intersection[1])]
 
@@ -611,19 +621,23 @@ def exec_waypoint_nav_demo(args):
 
                     x = start_intersection[0]
                     
-                    center_x = -coeffs[0]/2
-                    center_y = -coeffs[1]/2
+                    internal_turn = 0 if turn_adjust or turn_adjust_2 or quater_part  else 1
+                    
+                    center_x = -coeffs[0]/2 + internal_turn * 0.10
+                    center_y = -coeffs[1]/2 + internal_turn * 0.10
 
                     r = sqrt(center_x**2 + center_y**2 - coeffs[2])
 
                     theta_start = math.atan2((start_intersection[1] - center_y),(start_intersection[0] - center_x))
                     theta_end = math.atan2((end_intersection[1] - center_y),(end_intersection[0] - center_x))
 
-                    theta = theta_start
-
                     start_to_end = 1 if theta_start < theta_end else -1
 
-                    while (start_to_end==1 and theta < theta_end) or (start_to_end==-1 and theta > theta_end):
+                    theta_step = (abs(theta_end - theta_start) * start_to_end) /20
+
+                    theta = theta_start + 6*theta_step
+
+                    while (start_to_end==1 and theta < theta_end - 3*theta_step) or (start_to_end==-1 and theta > theta_end - 6*theta_step):
                         waypoint_on_lane = [0,0,0]
 
                         waypoint_on_lane[0] = center_x + r * cos(theta)
@@ -631,7 +645,7 @@ def exec_waypoint_nav_demo(args):
                         waypoint_on_lane[2] = turn_speed
 
                         waypoints.append(waypoint_on_lane)
-                        theta += (abs(theta_end - theta_start) * start_to_end) / 10
+                        theta += theta_step 
                     
                     turn_cooldown = 4
             else:
@@ -782,7 +796,7 @@ def exec_waypoint_nav_demo(args):
 
         traffic_lights_manager = trafficLightsManager()
 
-        obstacles_manager = ObstaclesManager(LEAD_VEHICLE_LOOKAHEAD, VEHICLE_OBSTACLE_LOOKAHEAD, PEDESTRIAN_OBSTACLE_LOOKAHEAD, bp)
+        obstacles_manager = ObstaclesManager(LEAD_VEHICLE_LOOKAHEAD_BASE, VEHICLE_OBSTACLE_LOOKAHEAD, PEDESTRIAN_OBSTACLE_LOOKAHEAD, bp)
 
         #############################################
         # Scenario Execution Loop
@@ -909,6 +923,10 @@ def exec_waypoint_nav_demo(args):
                 else:
                     ### based on current speed.
                     bp.set_lookahead(BP_LOOKAHEAD_BASE + BP_LOOKAHEAD_TIME * open_loop_speed)
+                
+                ### set the new lookahead for the lead_vehicle based on the ego_vehicle speed
+                obstacles_manager.compute_lookahead(current_speed)
+                
                 # Perform a state transition in the behavioural planner.
                 bp.transition_state(waypoints, ego_state, current_speed)
 
@@ -941,7 +959,10 @@ def exec_waypoint_nav_demo(args):
                     
                     ###
                     lead_car_state = [lead_car_pos[0], lead_car_pos[1], lead_car_speed] if lead_car_pos != None else None
-                    local_waypoints = lp._velocity_planner.compute_velocity_profile(best_path, desired_speed, ego_state, current_speed, decelerate_to_stop, lead_car_state, bp._follow_lead_vehicle)
+                    if lead_car_state is not None and ego_state[3] < lead_car_state[2]:
+                        consider_lead = False
+                    consider_lead = True
+                    local_waypoints = lp._velocity_planner.compute_velocity_profile(best_path, desired_speed, ego_state, current_speed, decelerate_to_stop, lead_car_state, bp._follow_lead_vehicle, consider_lead)
 
                     if local_waypoints != None:
                         # Update the controller waypoint path with the best local path.

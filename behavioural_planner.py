@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from os import close
 import numpy as np
 import math
 
@@ -134,7 +135,7 @@ class BehaviouralPlanner:
         # the traffic light line.
         elif self._state == FOLLOW_LANE_HALF_SPEED:
             print("FSM STATE: FOLLOW_LANE_HALF_SPEED")
-            print(abs(closed_loop_speed))
+            # print(abs(closed_loop_speed))
 
             # First, find the closest index to the ego vehicle.
             closest_len, closest_index = get_closest_index(waypoints, ego_state)
@@ -223,6 +224,7 @@ class BehaviouralPlanner:
         # consideration.
         arc_length = closest_len
         wp_index = closest_index
+        
 
         # In this case, reaching the closest waypoint is already far enough for
         # the planner.  No need to check additional waypoints.
@@ -234,12 +236,28 @@ class BehaviouralPlanner:
             return wp_index
 
         # Otherwise, find our next waypoint.
+        print("Check for new waypoint")
+        print(F"Ego state X:{ego_state[0]} Y:{ego_state[1]}")
         while wp_index < len(waypoints) - 1:
+            print(F"Waypoints X:{waypoints[wp_index][0]} Y:{waypoints[wp_index][1]}")
             arc_length += np.sqrt((waypoints[wp_index][0] - waypoints[wp_index+1][0])**2 + (waypoints[wp_index][1] - waypoints[wp_index+1][1])**2)
+            # check for turn
+            if self._check_for_turn(ego_state, waypoints[wp_index]):
+                print("waypoint on turn")
+                break
             if arc_length > self._lookahead: break
             wp_index += 1
 
         return wp_index % len(waypoints)
+
+    def _check_for_turn(self, ego_state, closest_waypoint):
+        dx = ego_state[0] - closest_waypoint[0]
+        dy = ego_state[1] - closest_waypoint[1]
+        print(F"Dx X:{dx} Dy:{dy}")
+        if abs(dx) < 1 or abs(dy) < 1:
+            return False
+        else:
+            return True
 
 # Compute the waypoint index that is closest to the ego vehicle, and return
 # it as well as the distance from the ego vehicle to that waypoint.
