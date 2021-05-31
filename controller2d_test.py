@@ -169,11 +169,10 @@ class Controller2D(object):
             Ts = 0.03      # Sample time - 30FPS <-> 1/30
             kp = 1.0       # Proportional Gain
             ki = 0.5       # Integral Gain
-            kd = 0.01       # Derivative Gain
-            
-            #kp = 0.2       # Proportional Gain
-            #ki = 0.05       # Integral Gain
-            #kd = 0.01       # Derivative Gain
+            kd = 0.1       # Derivative Gain
+            #kp = 0.2
+            #ki = 0.05
+            #kd = 0.01
             
             # Constants for discrete implementation
             q0 = kp + (Ts * ki)  + (kd / Ts)

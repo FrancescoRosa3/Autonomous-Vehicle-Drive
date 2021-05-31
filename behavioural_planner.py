@@ -94,6 +94,9 @@ class BehaviouralPlanner:
             STOP_COUNTS     : Number of cycles (simulation iterations) 
                               before moving from stop sign.
         """
+        speed_km_h = (ego_state[2]*3600)/1000
+        # secure_distance_brake = (speed_km_h/10)*3
+        secure_distance_brake = 0
         # In this state, continue tracking the lane by finding the
         # goal index in the waypoint list that is within the lookahead
         # distance. Then, check to see if the waypoint path intersects
@@ -118,10 +121,10 @@ class BehaviouralPlanner:
             self._goal_state = waypoints[goal_index]
             
             if self._traffic_light_state == STOP and self._traffic_light_distance != None:
-                if self._traffic_light_distance < STOP_TRAFFIC_LIGHT:
+                if self._traffic_light_distance < (STOP_TRAFFIC_LIGHT + secure_distance_brake):
                     self._goal_state[2] = 0
                     self._state = DECELERATE_TO_STOP
-                elif self._traffic_light_distance < SLOW_DOWN_TRAFFIC_LIGHT:
+                elif self._traffic_light_distance < (SLOW_DOWN_TRAFFIC_LIGHT + secure_distance_brake) :
                     self._goal_state[2] = HALF_CRUISE_SPEED
                     self._state = FOLLOW_LANE_HALF_SPEED
 
@@ -152,7 +155,7 @@ class BehaviouralPlanner:
             # before the traffic light line.
             # If the traffic line is not red anymore return to lane following.
             if self._traffic_light_state == STOP:
-                if self._traffic_light_distance != None and self._traffic_light_distance < STOP_TRAFFIC_LIGHT:
+                if self._traffic_light_distance != None and self._traffic_light_distance < (STOP_TRAFFIC_LIGHT+secure_distance_brake):
                         self._goal_state[2] = 0
                         self._state = DECELERATE_TO_STOP
             elif self._traffic_light_state == GO:
@@ -224,14 +227,24 @@ class BehaviouralPlanner:
         # consideration.
         arc_length = closest_len
         wp_index = closest_index
+
         
+        #if there is a stop traffic light
+        """
+        if self._traffic_light_state == STOP:
+            # compute the move direction
+            dx = waypoints[wp_index][0] - ego_state[0]
+            dy = waypoints[wp_index][1] - ego_state[1]
+        """ 
 
         # In this case, reaching the closest waypoint is already far enough for
         # the planner.  No need to check additional waypoints.
+        
         if self._check_for_turn(ego_state, waypoints[wp_index]):
             #print("waypoint on turn")
             return wp_index
         
+
         if arc_length > self._lookahead:
             return wp_index
 
@@ -246,9 +259,11 @@ class BehaviouralPlanner:
             #print(F"Waypoints X:{waypoints[wp_index][0]} Y:{waypoints[wp_index][1]}")
             arc_length += np.sqrt((waypoints[wp_index][0] - waypoints[wp_index+1][0])**2 + (waypoints[wp_index][1] - waypoints[wp_index+1][1])**2)
             # check for turn
+            
             if self._check_for_turn(ego_state, waypoints[wp_index]):
                 #print("waypoint on turn")
                 break
+        
             if arc_length > self._lookahead: break
             wp_index += 1
 

@@ -65,7 +65,7 @@ class ObstaclesManager:
         speed_km_h = (ego_speed * 3600)/1000
         self._lead_vehicle_lookahead = self._lead_vehicle_lookahead_base + (speed_km_h/10)*3
 
-        self._vehicle_obstacle_lookahead = self._lead_vehicle_lookahead_base + (speed_km_h/10)*3
+        self._vehicle_obstacle_lookahead = self._vehicle_obstacle_lookahead_base + (speed_km_h/10)*3
 
         # print(F"New speed for vehicle lead {ego_speed}")
         # print(F"New look ahead for vehicle lead {self._lead_vehicle_lookahead}")
@@ -90,12 +90,12 @@ class ObstaclesManager:
                 if distance < self._vehicle_obstacle_lookahead:
                     # compute the bb with respect to the world frame
                     box_pts = main.obstacle_to_world(location,  dimension, rotation)
+                    print(distance)
                     all_vehicles.append(box_pts)
                     # check for vehicle on the same lane
                     if self._check_for_vehicle_on_same_lane(orientation):
                         # check if the vehicle on the same lane is a lead vehicle 
                         if self._check_for_lead_vehicle(location):
-                            print(F"CAR DISTANCE {distance}")
                             if distance < lead_vehicle_dist:
                                 lead_vehicle_dist = distance
                                 lead_vehicle = agent.vehicle 
