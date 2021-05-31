@@ -52,10 +52,10 @@ class Obstacle:
             [shift_y, shift_y, shift_y, shift_y, shift_y, shift_y, shift_y, shift_y]])
         
         self._future_locations = []
-        future_box_pts = []
         cpos = self._box_pts_to_cpos(self._curr_obs_box_pts)
         step = 5
         for i in range(1, future_frames_to_check+1, step):
+            future_box_pts = []
             temp_cpos_shift = cpos_shift * step 
             cpos = np.add(cpos, temp_cpos_shift)
             '''
@@ -87,5 +87,5 @@ class Obstacle:
             cpos[1].append(elem[1])
             
         cpos = np.array(cpos)
-
+        
         return cpos

@@ -163,7 +163,8 @@ class ObstaclesManager:
         future_obstacles = []
         for id, obs in self._obstacles.items():
             obstacles.append(obs.get_current_location())
-            future_obstacles += obs.get_future_locations()
+            for loc in obs.get_future_locations():
+                future_obstacles.append(loc) 
         return obstacles, future_obstacles
          
 

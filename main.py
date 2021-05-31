@@ -412,7 +412,6 @@ def write_collisioncount_file(collided_list):
         collision_file.write(str(sum(collided_list)))
 
 def make_correction(waypoint,previuos_waypoint,desired_speed):
-    print(f"waypoint before: {waypoint[0]}, {waypoint[1]}")
     offset = 2.0
 
     dx = waypoint[0] - previuos_waypoint[0]
@@ -426,25 +425,13 @@ def make_correction(waypoint,previuos_waypoint,desired_speed):
     x_contribute = cos(angle) * offset
     y_contribute = sin(angle) * offset
 
-    if dx < 0:
-        moveY = x_contribute
-    elif dx > 0:
-        moveY = x_contribute
-    else:
-        moveY = 0
-
-    if dy < 0:
-        moveX = -y_contribute
-    elif dy > 0:
-        moveX = -y_contribute
-    else:
-        moveX = 0
+    moveY = x_contribute
+    moveX = -y_contribute
 
     waypoint_on_lane = waypoint
     waypoint_on_lane[0] += moveX
     waypoint_on_lane[1] += moveY
     waypoint_on_lane[2] = desired_speed
-    print(f"waypoint after: {waypoint_on_lane[0]}, {waypoint_on_lane[1]}")
 
     return waypoint_on_lane
 
@@ -978,7 +965,7 @@ def exec_waypoint_nav_demo(args):
 
                 ### Perform collision checking.
                 # collision_check_array = lp._collision_checker.collision_check(paths, box_pts_obstacles)
-                all_obs = np.concatenate((box_pts_obstacles, box_pts_future_obstacles))
+                all_obs = box_pts_obstacles + box_pts_future_obstacles
                 collision_check_array = lp._collision_checker.collision_check(paths, all_obs)
 
                 bp.set_obstacle_on_lane(collision_check_array)

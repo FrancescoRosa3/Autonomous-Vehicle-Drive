@@ -128,7 +128,7 @@ class BehaviouralPlanner:
             self._goal_index = goal_index
             self._goal_state = waypoints[goal_index]
             
-
+            
 
             if self._traffic_light_state == STOP and self._traffic_light_distance != None:
                 if self._traffic_light_distance < (STOP_TRAFFIC_LIGHT + secure_distance_brake):
@@ -176,13 +176,13 @@ class BehaviouralPlanner:
         # closed loop speed to do so, to ensure we are actually at a complete
         # stop, and compare to STOP_THRESHOLD.  If so, transition to the next
         # state.
-            elif self._state == DECELERATE_TO_STOP:
-                print("FSM STATE: DECELERATE_TO_STOP")
-                # print(abs(closed_loop_speed), STOP_THRESHOLD)
-                if abs(closed_loop_speed) <= STOP_THRESHOLD:
-                    self._goal_state[2] = 0
-                    self._state = STAY_STOPPED
-                    self._stop_count = 0
+        elif self._state == DECELERATE_TO_STOP:
+            print("FSM STATE: DECELERATE_TO_STOP")
+            # print(abs(closed_loop_speed), STOP_THRESHOLD)
+            if abs(closed_loop_speed) <= STOP_THRESHOLD:
+                self._goal_state[2] = 0
+                self._state = STAY_STOPPED
+                self._stop_count = 0
 
         # In this state, check to see if the traffic light is not red anymore.
         # If so, we can now leave the traffic light and transition to the next state.
