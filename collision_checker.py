@@ -129,6 +129,7 @@ class CollisionChecker:
         """
         best_index = None
         best_score = float('Inf')
+        index = 0
         for i in range(len(paths)):
             # Handle the case of collision-free paths.
             if collision_check_array[i]:
@@ -136,7 +137,13 @@ class CollisionChecker:
                 # The centerline goal is given by goal_state.
                 # The exact choice of objective function is up to you.
                 # A lower score implies a more suitable path.
-                score = np.sqrt((paths[i][0][-1]-goal_state[0])**2+(paths[i][1][-1]-goal_state[1])**2)
+                path_curvature = self.compute_path_curvature(paths[i])
+                distance_from_centerline  = np.sqrt((paths[i][0][-1]-goal_state[0])**2+(paths[i][1][-1]-goal_state[1])**2)
+                # score = (distance_from_centerline - path_curvature/10)
+                score = distance_from_centerline
+
+                #print(f"index: {index} - score: {score:.2f} - curvature: {path_curvature:.2f} - distance from centerline: {distance_from_centerline:.2f}")
+                #index += 1
 
                 # Compute the "proximity to other colliding paths" score and
                 # add it to the "distance from centerline" score.
@@ -158,3 +165,8 @@ class CollisionChecker:
                 best_index = i
 
         return best_index
+
+    def compute_path_curvature(self, path):
+        dx = (path[0][-1] - path[0][0]) 
+        dy = (path[1][-1] - path[1][0])
+        return np.arctan2(dy, dx) * 180 / np.pi

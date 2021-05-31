@@ -24,6 +24,9 @@ from math import sin, cos, pi, tan, sqrt
 from traffic_lights_manager import trafficLightsManager
 from obstacles_manager import ObstaclesManager
 
+from scipy.interpolate import make_interp_spline
+from scipy.optimize import curve_fit
+
 # Script level imports
 sys.path.append(os.path.abspath(sys.path[0] + '/..'))
 import live_plotter as lv   # Custom live plotting library
@@ -43,7 +46,7 @@ from carla.planner.city_track import CityTrack
 PLAYER_START_INDEX = 51 #6         #  spawn index for player
 DESTINATION_INDEX = 90 #20         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 0      # total number of vehicles to spawn
+NUM_VEHICLES           = 30      # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0     # seed for vehicle spawn randomizer
 ###############################################################################àà
@@ -406,27 +409,26 @@ def write_collisioncount_file(collided_list):
         collision_file.write(str(sum(collided_list)))
 
 def make_correction(waypoint,previuos_waypoint,desired_speed):
+    
+    offset = 2.5
+
     dx = waypoint[0] - previuos_waypoint[0]
     dy = waypoint[1] - previuos_waypoint[1]
 
-    if dx < 0:
-        moveY = -1.5
-    elif dx > 0:
-        moveY = 1.5
-    else:
-        moveY = 0
-
-    if dy < 0:
-        moveX = 1.5
-    elif dy > 0:
-        moveX = -1.5
-    else:
-        moveX = 0
+    angle = np.arctan2(dy, dx)
+    x_contribute = cos(angle) * offset
+    y_contribute = sin(angle) * offset
     
+    moveY = x_contribute
+    moveX = -y_contribute
+       
+    #print(f"waypoint before: {waypoint[0]}, {waypoint[1]}")
+
     waypoint_on_lane = waypoint
     waypoint_on_lane[0] += moveX
     waypoint_on_lane[1] += moveY
     waypoint_on_lane[2] = desired_speed
+    # print(f"waypoint after: {waypoint_on_lane[0]}, {waypoint_on_lane[1]}")
 
     return waypoint_on_lane
 def exec_waypoint_nav_demo(args):
@@ -560,6 +562,8 @@ def exec_waypoint_nav_demo(args):
         prev_y = False
         # Put waypoints in the lane
         previuos_waypoint = mission_planner._map.convert_to_world(waypoints_route[0])
+
+
         for i in range(1,len(waypoints_route)):
             point = waypoints_route[i]
 
@@ -580,7 +584,7 @@ def exec_waypoint_nav_demo(args):
                 center_intersection = mission_planner._map.convert_to_world(waypoints_route[i])
 
                 start_intersection = mission_planner._map.convert_to_world(waypoints_route[i-1])
-                end_intersection = mission_planner._map.convert_to_world(waypoints_route[i+1])
+                end_intersection = mission_planner._map.convert_to_world(waypoints_route[i+2])
 
                 start_intersection = make_correction(start_intersection,prev_start_intersection,turn_speed)
                 end_intersection = make_correction(end_intersection,center_intersection,turn_speed)
@@ -608,6 +612,7 @@ def exec_waypoint_nav_demo(args):
 
                     middle_intersection = [(centering*middle_point[0] + (1-centering)*center_intersection[0]),  (centering*middle_point[1] + (1-centering)*center_intersection[1])]
 
+                    '''
                     # Point at intersection:
                     A = [[start_intersection[0], start_intersection[1], 1],
                          [end_intersection[0], end_intersection[1], 1],
@@ -636,17 +641,43 @@ def exec_waypoint_nav_demo(args):
                     theta_step = (abs(theta_end - theta_start) * start_to_end) /20
 
                     theta = theta_start + 6*theta_step
+                    '''
+                    
+                    x = np.array([start_intersection[0], middle_intersection[0], end_intersection[0]])
+                    x = np.sort(x)
+                    print(f"XXXX: {x}")
+                    y = np.array([start_intersection[1], middle_intersection[1], end_intersection[1]])
+                    y = np.sort(y)
+                    print(f"YYYY: {y}")
 
-                    while (start_to_end==1 and theta < theta_end - 3*theta_step) or (start_to_end==-1 and theta > theta_end - 6*theta_step):
+                    '''
+                    X_Y_Spline = make_interp_spline(x, y)
+
+                    curve_x = np.linspace(x.min(), x.max(), 20)
+                    curve_y = X_Y_Spline(curve_x)
+                    '''
+
+                    def fun(x, a, b, c):
+                        return a * np.cosh(b * x )+ c
+
+                    coef,_ = curve_fit(fun, x, y)
+                    curve_x = np.linspace(x[0],x[-1])
+                    curve_y = fun(np.linspace(x[0],x[-1]), *coef)
+                    
+                    print(curve_x)
+                    print(curve_y)
+                    
+
+                    
+                    for index in range(len(curve_x)):
                         waypoint_on_lane = [0,0,0]
 
-                        waypoint_on_lane[0] = center_x + r * cos(theta)
-                        waypoint_on_lane[1] = center_y + r * sin(theta)
+                        waypoint_on_lane[0] = curve_x[index]
+                        waypoint_on_lane[1] = curve_y[index]
                         waypoint_on_lane[2] = turn_speed
 
                         waypoints.append(waypoint_on_lane)
-                        theta += theta_step 
-                    
+                        
                     turn_cooldown = 4
             else:
                 waypoint = mission_planner._map.convert_to_world(point)
@@ -664,6 +695,8 @@ def exec_waypoint_nav_demo(args):
                 previuos_waypoint = waypoint
 
         waypoints = np.array(waypoints)
+
+
         #############################################
         # Controller 2D Class Declaration
         #############################################
@@ -922,7 +955,8 @@ def exec_waypoint_nav_demo(args):
                     bp.set_lookahead(tl_distance)
                 else:
                     ### based on current speed.
-                    bp.set_lookahead(BP_LOOKAHEAD_BASE + BP_LOOKAHEAD_TIME * open_loop_speed)
+                    # bp.set_lookahead(BP_LOOKAHEAD_BASE + BP_LOOKAHEAD_TIME * open_loop_speed)
+                    bp.set_lookahead(BP_LOOKAHEAD_BASE + BP_LOOKAHEAD_TIME * current_speed)
                 
                 ### set the new lookahead for the lead_vehicle based on the ego_vehicle speed
                 obstacles_manager.compute_lookahead(current_speed)
