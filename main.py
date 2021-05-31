@@ -693,6 +693,7 @@ def exec_waypoint_nav_demo(args):
         # and apply it to the simulator
         controller = controller2d_test.Controller2D(waypoints)
 
+        """
         #############################################
         # Vehicle Trajectory Live Plotting Setup
         #############################################
@@ -700,7 +701,7 @@ def exec_waypoint_nav_demo(args):
         # The two feedback includes the trajectory feedback and
         # the controller feedback (which includes the speed tracking).
         lp_traj = lv.LivePlotter(tk_title="Trajectory Trace")
-        lp_1d = lv.LivePlotter(tk_title="Controls Feedback")
+        #lp_1d = lv.LivePlotter(tk_title="Controls Feedback")
 
         ###
         # Add 2D position / trajectory plot
@@ -797,7 +798,7 @@ def exec_waypoint_nav_demo(args):
         if not enable_live_plot:
             lp_traj._root.withdraw()
             lp_1d._root.withdraw()        
-
+        """
 
         #############################################
         # Local Planner Variables
@@ -1041,6 +1042,7 @@ def exec_waypoint_nav_demo(args):
                 cmd_brake = 0.0
 
             # Skip the first frame or if there exists no local paths
+            """
             if skip_first_frame and frame == 0:
                 pass
             elif local_waypoints == None:
@@ -1110,7 +1112,7 @@ def exec_waypoint_nav_demo(args):
                     lp_traj.refresh()
                     lp_1d.refresh()
                     live_plot_timer.lap()
-
+            """
             # Output controller command to CARLA server
             send_control_command(client,
                                  throttle=cmd_throttle,
