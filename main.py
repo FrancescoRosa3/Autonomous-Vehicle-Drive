@@ -40,7 +40,11 @@ from carla.planner.city_track import CityTrack
 ###############################################################################
 # CONFIGURABLE PARAMENTERS DURING EXAM
 ###############################################################################
-PLAYER_START_INDEX = 6          #  spawn index for player
+
+### PERCORSI: 
+### 6-20
+
+PLAYER_START_INDEX = 11         #  spawn index for player
 DESTINATION_INDEX = 20          # Setting a Destination HERE
 NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
 NUM_VEHICLES           = 30    # total number of vehicles to spawn
@@ -120,6 +124,8 @@ VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 30 # m
 PEDESTRIAN_OBSTACLE_LOOKAHEAD = 10 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
+SHOW_LIVE_PLOTTER = True
+
 # Camera parameters
 camera_parameters = {}
 camera_parameters['x'] = 1.0
@@ -181,7 +187,7 @@ def obstacle_to_world(location, dimensions, orientation):
 
     for j in range(cpos.shape[1]):
         box_pts.append([cpos[0,j], cpos[1,j]])
-    
+
     return box_pts
 
 def make_carla_settings(args):
@@ -693,112 +699,118 @@ def exec_waypoint_nav_demo(args):
         # and apply it to the simulator
         controller = controller2d_test.Controller2D(waypoints)
 
-        """
-        #############################################
-        # Vehicle Trajectory Live Plotting Setup
-        #############################################
-        # Uses the live plotter to generate live feedback during the simulation
-        # The two feedback includes the trajectory feedback and
-        # the controller feedback (which includes the speed tracking).
-        lp_traj = lv.LivePlotter(tk_title="Trajectory Trace")
-        #lp_1d = lv.LivePlotter(tk_title="Controls Feedback")
+        if SHOW_LIVE_PLOTTER:
+            #############################################
+            # Vehicle Trajectory Live Plotting Setup
+            #############################################
+            # Uses the live plotter to generate live feedback during the simulation
+            # The two feedback includes the trajectory feedback and
+            # the controller feedback (which includes the speed tracking).
+            lp_traj = lv.LivePlotter(tk_title="Trajectory Trace")
+            lp_1d = lv.LivePlotter(tk_title="Controls Feedback")
 
-        ###
-        # Add 2D position / trajectory plot
-        ###
-        trajectory_fig = lp_traj.plot_new_dynamic_2d_figure(
-                title='Vehicle Trajectory',
-                figsize=(FIGSIZE_X_INCHES, FIGSIZE_Y_INCHES),
-                edgecolor="black",
-                rect=[PLOT_LEFT, PLOT_BOT, PLOT_WIDTH, PLOT_HEIGHT])
+            ###
+            # Add 2D position / trajectory plot
+            ###
+            trajectory_fig = lp_traj.plot_new_dynamic_2d_figure(
+                    title='Vehicle Trajectory',
+                    figsize=(FIGSIZE_X_INCHES, FIGSIZE_Y_INCHES),
+                    edgecolor="black",
+                    rect=[PLOT_LEFT, PLOT_BOT, PLOT_WIDTH, PLOT_HEIGHT])
 
-        trajectory_fig.set_invert_x_axis() # Because UE4 uses left-handed 
-                                           # coordinate system the X
-                                           # axis in the graph is flipped
-        trajectory_fig.set_axis_equal()    # X-Y spacing should be equal in size
+            trajectory_fig.set_invert_x_axis() # Because UE4 uses left-handed 
+                                            # coordinate system the X
+                                            # axis in the graph is flipped
+            trajectory_fig.set_axis_equal()    # X-Y spacing should be equal in size
 
-        # Add waypoint markers
-        trajectory_fig.add_graph("waypoints", window_size=len(waypoints),
-                                 x0=waypoints[:,0], y0=waypoints[:,1],
-                                 linestyle="-", marker="", color='g')
-        # Add trajectory markers
-        trajectory_fig.add_graph("trajectory", window_size=TOTAL_EPISODE_FRAMES,
-                                 x0=[start_x]*TOTAL_EPISODE_FRAMES, 
-                                 y0=[start_y]*TOTAL_EPISODE_FRAMES,
-                                 color=[1, 0.5, 0])
-        # Add starting position marker
-        trajectory_fig.add_graph("start_pos", window_size=1, 
-                                 x0=[start_x], y0=[start_y],
-                                 marker=11, color=[1, 0.5, 0], 
-                                 markertext="Start", marker_text_offset=1)
+            # Add waypoint markers
+            trajectory_fig.add_graph("waypoints", window_size=len(waypoints),
+                                    x0=waypoints[:,0], y0=waypoints[:,1],
+                                    linestyle="-", marker="", color='g')
+            # Add trajectory markers
+            trajectory_fig.add_graph("trajectory", window_size=TOTAL_EPISODE_FRAMES,
+                                    x0=[start_x]*TOTAL_EPISODE_FRAMES, 
+                                    y0=[start_y]*TOTAL_EPISODE_FRAMES,
+                                    color=[1, 0.5, 0])
+            # Add starting position marker
+            trajectory_fig.add_graph("start_pos", window_size=1, 
+                                    x0=[start_x], y0=[start_y],
+                                    marker=11, color=[1, 0.5, 0], 
+                                    markertext="Start", marker_text_offset=1)
 
-        trajectory_fig.add_graph("obstacles_points",
-                                 window_size=8 * (NUM_PEDESTRIANS + NUM_VEHICLES) ,
-                                 x0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)), 
-                                 y0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)),
-                                    linestyle="", marker="+", color='b')
+            trajectory_fig.add_graph("obstacles_points",
+                                    window_size=8 * (NUM_PEDESTRIANS + NUM_VEHICLES) ,
+                                    x0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)), 
+                                    y0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)),
+                                        linestyle="", marker="+", color='b')
 
-        # Add end position marker
-        trajectory_fig.add_graph("end_pos", window_size=1, 
-                                 x0=[waypoints[-1, 0]], 
-                                 y0=[waypoints[-1, 1]],
-                                 marker="D", color='r', 
-                                 markertext="End", marker_text_offset=1)
-        # Add car marker
-        trajectory_fig.add_graph("car", window_size=1, 
-                                 marker="s", color='b', markertext="Car",
-                                 marker_text_offset=1)
-        # Add lead car information
-        trajectory_fig.add_graph("leadcar", window_size=1, 
-                                 marker="s", color='g', markertext="Lead Car",
-                                 marker_text_offset=1)
+            trajectory_fig.add_graph("future_obstacles_points",
+                                    window_size=8 * (NUM_PEDESTRIANS + NUM_VEHICLES) ,
+                                    x0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)), 
+                                    y0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)),
+                                        linestyle="", marker="+", color='m')
 
-        # Add lookahead path
-        trajectory_fig.add_graph("selected_path", 
-                                 window_size=INTERP_MAX_POINTS_PLOT,
-                                 x0=[start_x]*INTERP_MAX_POINTS_PLOT, 
-                                 y0=[start_y]*INTERP_MAX_POINTS_PLOT,
-                                 color=[1, 0.5, 0.0],
-                                 linewidth=3)
+            # Add end position marker
+            trajectory_fig.add_graph("end_pos", window_size=1, 
+                                    x0=[waypoints[-1, 0]], 
+                                    y0=[waypoints[-1, 1]],
+                                    marker="D", color='r', 
+                                    markertext="End", marker_text_offset=1)
+            # Add car marker
+            trajectory_fig.add_graph("car", window_size=1, 
+                                    marker="s", color='b', markertext="Car",
+                                    marker_text_offset=1)
+            # Add lead car information
+            trajectory_fig.add_graph("leadcar", window_size=1, 
+                                    marker="s", color='g', markertext="Lead Car",
+                                    marker_text_offset=1)
 
-        # Add local path proposals
-        for i in range(NUM_PATHS):
-            trajectory_fig.add_graph("local_path " + str(i), window_size=200,
-                                     x0=None, y0=None, color=[0.0, 0.0, 1.0])
+            # Add lookahead path
+            trajectory_fig.add_graph("selected_path", 
+                                    window_size=INTERP_MAX_POINTS_PLOT,
+                                    x0=[start_x]*INTERP_MAX_POINTS_PLOT, 
+                                    y0=[start_y]*INTERP_MAX_POINTS_PLOT,
+                                    color=[1, 0.5, 0.0],
+                                    linewidth=3)
 
-        ###
-        # Add 1D speed profile updater
-        ###
-        forward_speed_fig =\
-                lp_1d.plot_new_dynamic_figure(title="Forward Speed (m/s)")
-        forward_speed_fig.add_graph("forward_speed", 
-                                    label="forward_speed", 
-                                    window_size=TOTAL_EPISODE_FRAMES)
-        forward_speed_fig.add_graph("reference_signal", 
-                                    label="reference_Signal", 
-                                    window_size=TOTAL_EPISODE_FRAMES)
+            # Add local path proposals
+            for i in range(NUM_PATHS):
+                trajectory_fig.add_graph("local_path " + str(i), window_size=200,
+                                        x0=None, y0=None, color=[0.0, 0.0, 1.0])
 
-        # Add throttle signals graph
-        throttle_fig = lp_1d.plot_new_dynamic_figure(title="Throttle")
-        throttle_fig.add_graph("throttle", 
-                              label="throttle", 
-                              window_size=TOTAL_EPISODE_FRAMES)
-        # Add brake signals graph
-        brake_fig = lp_1d.plot_new_dynamic_figure(title="Brake")
-        brake_fig.add_graph("brake", 
-                              label="brake", 
-                              window_size=TOTAL_EPISODE_FRAMES)
-        # Add steering signals graph
-        steer_fig = lp_1d.plot_new_dynamic_figure(title="Steer")
-        steer_fig.add_graph("steer", 
-                              label="steer", 
-                              window_size=TOTAL_EPISODE_FRAMES)
+            ###
+            # Add 1D speed profile updater
+            ###
+            forward_speed_fig =\
+                    lp_1d.plot_new_dynamic_figure(title="Forward Speed (m/s)")
+            forward_speed_fig.add_graph("forward_speed", 
+                                        label="forward_speed", 
+                                        window_size=TOTAL_EPISODE_FRAMES)
+            forward_speed_fig.add_graph("reference_signal", 
+                                        label="reference_Signal", 
+                                        window_size=TOTAL_EPISODE_FRAMES)
 
-        # live plotter is disabled, hide windows
-        if not enable_live_plot:
-            lp_traj._root.withdraw()
-            lp_1d._root.withdraw()        
-        """
+            # Add throttle signals graph
+            throttle_fig = lp_1d.plot_new_dynamic_figure(title="Throttle")
+            throttle_fig.add_graph("throttle", 
+                                label="throttle", 
+                                window_size=TOTAL_EPISODE_FRAMES)
+            # Add brake signals graph
+            brake_fig = lp_1d.plot_new_dynamic_figure(title="Brake")
+            brake_fig.add_graph("brake", 
+                                label="brake", 
+                                window_size=TOTAL_EPISODE_FRAMES)
+            # Add steering signals graph
+            steer_fig = lp_1d.plot_new_dynamic_figure(title="Steer")
+            steer_fig.add_graph("steer", 
+                                label="steer", 
+                                window_size=TOTAL_EPISODE_FRAMES)
+
+            # live plotter is disabled, hide windows
+            if not enable_live_plot:
+                lp_traj._root.withdraw()
+                lp_1d._root.withdraw()        
+        
 
         #############################################
         # Local Planner Variables
@@ -853,8 +865,9 @@ def exec_waypoint_nav_demo(args):
             
             ### UPDATE HERE the obstacles list and check to see if we need to follow the lead vehicle. 
             ego_pose = [current_x, current_y, current_yaw]
-            box_pts_all_agents, box_pts_obstacles, lead_vehicle = obstacles_manager.get_om_state(measurement_data, ego_pose)
+            box_pts_all_agents, box_pts_obstacles, box_pts_future_obstacles, lead_vehicle = obstacles_manager.get_om_state(measurement_data, ego_pose)
             obstacles = np.array(box_pts_all_agents)
+            future_obstacles = np.array(box_pts_future_obstacles)
 
             # Wait for some initial time before starting the demo
             if current_timestamp <= WAIT_TIME_BEFORE_START:
@@ -1042,77 +1055,86 @@ def exec_waypoint_nav_demo(args):
                 cmd_brake = 0.0
 
             # Skip the first frame or if there exists no local paths
-            """
-            if skip_first_frame and frame == 0:
-                pass
-            elif local_waypoints == None:
-                pass
-            else:
-                # Update live plotter with new feedback
-                trajectory_fig.roll("trajectory", current_x, current_y)
-                trajectory_fig.roll("car", current_x, current_y)
-                if lead_car_pos != None:    ### If there exists a lead car, plot it
-                    trajectory_fig.roll("leadcar", lead_car_pos[0],
-                                        lead_car_pos[1])
-                
-                # Load parked car points
-                if len(obstacles) > 0:
-                    x = obstacles[:, :, 0]
-                    y = obstacles[:, :, 1]
-                    x = np.reshape(x, x.shape[0] * x.shape[1])
-                    y = np.reshape(y, y.shape[0] * y.shape[1])
+            if SHOW_LIVE_PLOTTER:
+                if skip_first_frame and frame == 0:
+                    pass
+                elif local_waypoints == None:
+                    pass
+                else:
+                    # Update live plotter with new feedback
+                    trajectory_fig.roll("trajectory", current_x, current_y)
+                    trajectory_fig.roll("car", current_x, current_y)
+                    if lead_car_pos != None:    ### If there exists a lead car, plot it
+                        trajectory_fig.roll("leadcar", lead_car_pos[0],
+                                            lead_car_pos[1])
+                    
+                    # Load parked car points
+                    if len(obstacles) > 0:
+                        x = obstacles[:, :, 0]
+                        y = obstacles[:, :, 1]
+                        x = np.reshape(x, x.shape[0] * x.shape[1])
+                        y = np.reshape(y, y.shape[0] * y.shape[1])
 
-                    trajectory_fig.roll("obstacles_points", x, y)
+                        trajectory_fig.roll("obstacles_points", x, y)
 
-                
-                forward_speed_fig.roll("forward_speed", 
-                                       current_timestamp, 
-                                       current_speed)
-                forward_speed_fig.roll("reference_signal", 
-                                       current_timestamp, 
-                                       controller._desired_speed)
-                throttle_fig.roll("throttle", current_timestamp, cmd_throttle)
-                brake_fig.roll("brake", current_timestamp, cmd_brake)
-                steer_fig.roll("steer", current_timestamp, cmd_steer)
+                        # Load parked car points
+                    if len(future_obstacles) > 0:
+                        x = future_obstacles[:, :, 0]
+                        y = future_obstacles[:, :, 1]
+                        x = np.reshape(x, x.shape[0] * x.shape[1])
+                        y = np.reshape(y, y.shape[0] * y.shape[1])
 
-                # Local path plotter update
-                if frame % LP_FREQUENCY_DIVISOR == 0:
-                    path_counter = 0
-                    for i in range(NUM_PATHS):
-                        # If a path was invalid in the set, there is no path to plot.
-                        if path_validity[i]:
-                            # Colour paths according to collision checking.
-                            if not collision_check_array[path_counter]:
-                                colour = 'r'
-                            elif i == best_index:
-                                colour = 'k'
+                        trajectory_fig.roll("future_obstacles_points", x, y)
+
+                    
+                    forward_speed_fig.roll("forward_speed", 
+                                        current_timestamp, 
+                                        current_speed)
+                    forward_speed_fig.roll("reference_signal", 
+                                        current_timestamp, 
+                                        controller._desired_speed)
+                    throttle_fig.roll("throttle", current_timestamp, cmd_throttle)
+                    brake_fig.roll("brake", current_timestamp, cmd_brake)
+                    steer_fig.roll("steer", current_timestamp, cmd_steer)
+
+                    # Local path plotter update
+                    if frame % LP_FREQUENCY_DIVISOR == 0:
+                        path_counter = 0
+                        for i in range(NUM_PATHS):
+                            # If a path was invalid in the set, there is no path to plot.
+                            if path_validity[i]:
+                                # Colour paths according to collision checking.
+                                if not collision_check_array[path_counter]:
+                                    colour = 'r'
+                                elif i == best_index:
+                                    colour = 'k'
+                                else:
+                                    colour = 'b'
+                                trajectory_fig.update("local_path " + str(i), paths[path_counter][0], paths[path_counter][1], colour)
+                                path_counter += 1
                             else:
-                                colour = 'b'
-                            trajectory_fig.update("local_path " + str(i), paths[path_counter][0], paths[path_counter][1], colour)
-                            path_counter += 1
-                        else:
-                            trajectory_fig.update("local_path " + str(i), [ego_state[0]], [ego_state[1]], 'r')
-                # When plotting lookahead path, only plot a number of points
-                # (INTERP_MAX_POINTS_PLOT amount of points). This is meant
-                # to decrease load when live plotting
-                wp_interp_np = np.array(wp_interp)
-                path_indices = np.floor(np.linspace(0, 
-                                                    wp_interp_np.shape[0]-1,
-                                                    INTERP_MAX_POINTS_PLOT))
-                trajectory_fig.update("selected_path", 
-                        wp_interp_np[path_indices.astype(int), 0],
-                        wp_interp_np[path_indices.astype(int), 1],
-                        new_colour=[1, 0.5, 0.0])
+                                trajectory_fig.update("local_path " + str(i), [ego_state[0]], [ego_state[1]], 'r')
+                    # When plotting lookahead path, only plot a number of points
+                    # (INTERP_MAX_POINTS_PLOT amount of points). This is meant
+                    # to decrease load when live plotting
+                    wp_interp_np = np.array(wp_interp)
+                    path_indices = np.floor(np.linspace(0, 
+                                                        wp_interp_np.shape[0]-1,
+                                                        INTERP_MAX_POINTS_PLOT))
+                    trajectory_fig.update("selected_path", 
+                            wp_interp_np[path_indices.astype(int), 0],
+                            wp_interp_np[path_indices.astype(int), 1],
+                            new_colour=[1, 0.5, 0.0])
 
 
-                # Refresh the live plot based on the refresh rate 
-                # set by the options
-                if enable_live_plot and \
-                   live_plot_timer.has_exceeded_lap_period():
-                    lp_traj.refresh()
-                    lp_1d.refresh()
-                    live_plot_timer.lap()
-            """
+                    # Refresh the live plot based on the refresh rate 
+                    # set by the options
+                    if enable_live_plot and \
+                    live_plot_timer.has_exceeded_lap_period():
+                        lp_traj.refresh()
+                        lp_1d.refresh()
+                        live_plot_timer.lap()
+            
             # Output controller command to CARLA server
             send_control_command(client,
                                  throttle=cmd_throttle,

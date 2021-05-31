@@ -190,10 +190,10 @@ class LocalPlanner:
                                path[1][-1] - goal_state[1], 
                                path[2][-1] - goal_state[2]])
             if path_validity_score > 0.1:
-                print(f"PATH SCARTATO:\t{path_validity_score}")
+                # print(f"PATH SCARTATO:\t{path_validity_score}")
                 path_validity.append(False)
             else:
-                print(f"PATH CREATO:\t{path_validity_score}")
+                # print(f"PATH CREATO:\t{path_validity_score}")
                 paths.append(path)
                 path_validity.append(True)
 
