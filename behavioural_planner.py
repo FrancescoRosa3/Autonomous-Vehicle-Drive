@@ -229,15 +229,6 @@ class BehaviouralPlanner:
         arc_length = closest_len
         wp_index = closest_index
 
-        
-        #if there is a stop traffic light
-        """
-        if self._traffic_light_state == STOP:
-            # compute the move direction
-            dx = waypoints[wp_index][0] - ego_state[0]
-            dy = waypoints[wp_index][1] - ego_state[1]
-        """ 
-
         # In this case, reaching the closest waypoint is already far enough for
         # the planner.  No need to check additional waypoints.
         
