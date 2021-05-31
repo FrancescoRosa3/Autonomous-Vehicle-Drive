@@ -976,8 +976,12 @@ def exec_waypoint_nav_demo(args):
                 # Transform those paths back to the global frame.
                 paths = local_planner.transform_paths(paths, ego_state)
 
-                # Perform collision checking.
-                collision_check_array = lp._collision_checker.collision_check(paths, box_pts_obstacles)
+                ### Perform collision checking.
+                # collision_check_array = lp._collision_checker.collision_check(paths, box_pts_obstacles)
+                all_obs = np.concatenate((box_pts_obstacles, box_pts_future_obstacles))
+                collision_check_array = lp._collision_checker.collision_check(paths, all_obs)
+
+                bp.set_obstacle_on_lane(collision_check_array)
 
                 # Compute the best local path.
                 best_index = lp._collision_checker.select_best_path_index(paths, collision_check_array, bp._goal_state)

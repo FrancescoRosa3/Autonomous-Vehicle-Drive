@@ -63,20 +63,18 @@ class ObstaclesManager:
         # print("Compute distance and orientation")
         for agent in self.measurement_data.non_player_agents:
             if agent.HasField('vehicle'):
-                print("TEMP1")
                 location = agent.vehicle.transform.location
                 rotation = agent.vehicle.transform.rotation
                 dimension = agent.vehicle.bounding_box.extent
                 distance, orientation = self._compute_distance_orientation_from_vehicle(location, rotation)
                 # the vehicle is inside the obstacle range
                 if distance < self._vehicle_obstacle_lookahead:
-                    print("TEMP2")
+                    # print(f"VEHICLE ID: {agent.id} - VEHICLE SPEED: {agent.vehicle.forward_speed}")
                     # compute the bb with respect to the world frame
                     box_pts = main.obstacle_to_world(location, dimension, rotation)
                     all_vehicles_on_sight.append(box_pts)
                     # check for vehicle on the same lane
                     if self._check_for_vehicle_on_same_lane(orientation):
-                        print("TEMP3")
                         # check if the vehicle on the same lane is a lead vehicle 
                         if self._check_for_lead_vehicle(location):
                             if distance < lead_vehicle_dist:
@@ -86,7 +84,6 @@ class ObstaclesManager:
                         # the vehicle is not in the same lane.
                         # It is added as obstacle
                         #print("Vehicle at distance:" + str(distance))
-                        print("TEMP4")
                         self._add_obstacle(agent.vehicle, agent.id)
                         '''
                         future_boxes_pts = self.predict_future_location(agent.vehicle, box_pts)
@@ -155,10 +152,10 @@ class ObstaclesManager:
 
     def _add_obstacle(self, obstacle, id):
         if id in self._obstacles:
-            print("NEW OBS")
+            print("VEICOLO GIà PRESENTE")
             self._obstacles[id].update_state(obstacle)
         else:
-            print("OBS")
+            print("NUOVO VEICOLO")
             self._obstacles[id] = Obstacle(obstacle)
 
     def _get_obstacles(self):
@@ -167,7 +164,6 @@ class ObstaclesManager:
         for id, obs in self._obstacles.items():
             obstacles.append(obs.get_current_location())
             future_obstacles += obs.get_future_locations()
-        print(f"LEN 1: {obstacles} - LEN 2: {future_obstacles}")
         return obstacles, future_obstacles
          
 

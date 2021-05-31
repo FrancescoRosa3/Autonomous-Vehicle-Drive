@@ -13,6 +13,7 @@ STAY_STOPPED = 2
 
 # New implemented states 
 FOLLOW_LANE_HALF_SPEED = 3
+OBSTACLE_ON_LANE = 4
 
 # Stop speed threshold
 STOP_THRESHOLD = 0.05
@@ -43,6 +44,13 @@ class BehaviouralPlanner:
     def set_traffic_light_state(self, state):
         self._traffic_light_state = state
 
+    def set_obstacle_on_lane(self, collision_check_array):
+        for path_result in collision_check_array:
+            if path_result:
+                self._obstacle_on_lane = False
+                return
+        self._obstacle_on_lane = True
+    
     def set_traffic_light_distance(self, distance):
         self._traffic_light_distance = distance
 
@@ -120,6 +128,8 @@ class BehaviouralPlanner:
             self._goal_index = goal_index
             self._goal_state = waypoints[goal_index]
             
+
+
             if self._traffic_light_state == STOP and self._traffic_light_distance != None:
                 if self._traffic_light_distance < (STOP_TRAFFIC_LIGHT + secure_distance_brake):
                     self._goal_state[2] = 0
@@ -166,13 +176,13 @@ class BehaviouralPlanner:
         # closed loop speed to do so, to ensure we are actually at a complete
         # stop, and compare to STOP_THRESHOLD.  If so, transition to the next
         # state.
-        elif self._state == DECELERATE_TO_STOP:
-            print("FSM STATE: DECELERATE_TO_STOP")
-            # print(abs(closed_loop_speed), STOP_THRESHOLD)
-            if abs(closed_loop_speed) <= STOP_THRESHOLD:
-                self._goal_state[2] = 0
-                self._state = STAY_STOPPED
-                self._stop_count = 0
+            elif self._state == DECELERATE_TO_STOP:
+                print("FSM STATE: DECELERATE_TO_STOP")
+                # print(abs(closed_loop_speed), STOP_THRESHOLD)
+                if abs(closed_loop_speed) <= STOP_THRESHOLD:
+                    self._goal_state[2] = 0
+                    self._state = STAY_STOPPED
+                    self._stop_count = 0
 
         # In this state, check to see if the traffic light is not red anymore.
         # If so, we can now leave the traffic light and transition to the next state.
