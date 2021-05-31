@@ -90,7 +90,7 @@ class ObstaclesManager:
                 if distance < self._vehicle_obstacle_lookahead:
                     # compute the bb with respect to the world frame
                     box_pts = main.obstacle_to_world(location,  dimension, rotation)
-                    print(distance)
+                    # print(distance)
                     all_vehicles.append(box_pts)
                     # check for vehicle on the same lane
                     if self._check_for_vehicle_on_same_lane(orientation):

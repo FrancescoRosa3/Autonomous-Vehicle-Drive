@@ -186,11 +186,14 @@ class LocalPlanner:
             path = self._path_optimizer.optimize_spiral(goal_state[0], 
                                                         goal_state[1], 
                                                         goal_state[2])
-            if np.linalg.norm([path[0][-1] - goal_state[0], 
+            path_validity_score = np.linalg.norm([path[0][-1] - goal_state[0], 
                                path[1][-1] - goal_state[1], 
-                               path[2][-1] - goal_state[2]]) > 0.1:
+                               path[2][-1] - goal_state[2]])
+            if path_validity_score > 0.1:
+                print(f"PATH SCARTATO:\t{path_validity_score}")
                 path_validity.append(False)
             else:
+                print(f"PATH CREATO:\t{path_validity_score}")
                 paths.append(path)
                 path_validity.append(True)
 

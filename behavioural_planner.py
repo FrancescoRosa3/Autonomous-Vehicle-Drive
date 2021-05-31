@@ -170,6 +170,7 @@ class BehaviouralPlanner:
             print("FSM STATE: DECELERATE_TO_STOP")
             # print(abs(closed_loop_speed), STOP_THRESHOLD)
             if abs(closed_loop_speed) <= STOP_THRESHOLD:
+                self._goal_state[2] = 0
                 self._state = STAY_STOPPED
                 self._stop_count = 0
 
@@ -242,7 +243,7 @@ class BehaviouralPlanner:
         
         if self._check_for_turn(ego_state, waypoints[wp_index]):
             #print("waypoint on turn")
-            return wp_index
+            return wp_index+2
         
 
         if arc_length > self._lookahead:
@@ -262,6 +263,7 @@ class BehaviouralPlanner:
             
             if self._check_for_turn(ego_state, waypoints[wp_index]):
                 #print("waypoint on turn")
+                wp_index += 2
                 break
         
             if arc_length > self._lookahead: break
@@ -272,8 +274,11 @@ class BehaviouralPlanner:
     def _check_for_turn(self, ego_state, closest_waypoint):
         dx = ego_state[0] - closest_waypoint[0]
         dy = ego_state[1] - closest_waypoint[1]
+        
+        offset = 0.7
+
         #print(F"Dx X:{dx} Dy:{dy}")
-        if abs(dx) < 1 or abs(dy) < 1:
+        if abs(dx) < offset or abs(dy) < offset:
             return False
         else:
             return True
