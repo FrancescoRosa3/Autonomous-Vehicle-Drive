@@ -169,7 +169,11 @@ class Controller2D(object):
             Ts = 0.03      # Sample time - 30FPS <-> 1/30
             kp = 1.0       # Proportional Gain
             ki = 0.5       # Integral Gain
-            kd = 0.1       # Derivative Gain
+            kd = 0.01       # Derivative Gain
+            
+            #kp = 0.2       # Proportional Gain
+            #ki = 0.05       # Integral Gain
+            #kd = 0.01       # Derivative Gain
             
             # Constants for discrete implementation
             q0 = kp + (Ts * ki)  + (kd / Ts)
@@ -206,9 +210,9 @@ class Controller2D(object):
                 example, can treat self.vars.v_previous like a "global variable".
             """
 
-            """
+            """            
             k_e = 1.0
-            k_v = 1.0
+            k_v = 0.01
 
             #print(F"Parametri {k_e}, {k_v}")
                         
@@ -248,7 +252,6 @@ class Controller2D(object):
 
             # Control law
             steer_output = yaw_diff + yaw_diff_crosstrack
-            print()
             # Projection of the angle in the range [-pi,pi] 
             if steer_output > np.pi:
                 steer_output -= 2 * np.pi
@@ -258,6 +261,7 @@ class Controller2D(object):
             steer_output = min(1.22, steer_output)
             steer_output = max(-1.22, steer_output)
             """
+            
             
             # in this controller, we use pure pursuit method to design lateral controller
             # the dynamic model is not used here, just pure tuning of the gains.

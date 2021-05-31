@@ -228,6 +228,10 @@ class BehaviouralPlanner:
 
         # In this case, reaching the closest waypoint is already far enough for
         # the planner.  No need to check additional waypoints.
+        if self._check_for_turn(ego_state, waypoints[wp_index]):
+            #print("waypoint on turn")
+            return wp_index
+        
         if arc_length > self._lookahead:
             return wp_index
 
@@ -236,14 +240,14 @@ class BehaviouralPlanner:
             return wp_index
 
         # Otherwise, find our next waypoint.
-        print("Check for new waypoint")
-        print(F"Ego state X:{ego_state[0]} Y:{ego_state[1]}")
+        #print("Check for new waypoint")
+        #print(F"Ego state X:{ego_state[0]} Y:{ego_state[1]}")
         while wp_index < len(waypoints) - 1:
-            print(F"Waypoints X:{waypoints[wp_index][0]} Y:{waypoints[wp_index][1]}")
+            #print(F"Waypoints X:{waypoints[wp_index][0]} Y:{waypoints[wp_index][1]}")
             arc_length += np.sqrt((waypoints[wp_index][0] - waypoints[wp_index+1][0])**2 + (waypoints[wp_index][1] - waypoints[wp_index+1][1])**2)
             # check for turn
             if self._check_for_turn(ego_state, waypoints[wp_index]):
-                print("waypoint on turn")
+                #print("waypoint on turn")
                 break
             if arc_length > self._lookahead: break
             wp_index += 1
@@ -253,7 +257,7 @@ class BehaviouralPlanner:
     def _check_for_turn(self, ego_state, closest_waypoint):
         dx = ego_state[0] - closest_waypoint[0]
         dy = ego_state[1] - closest_waypoint[1]
-        print(F"Dx X:{dx} Dy:{dy}")
+        #print(F"Dx X:{dx} Dy:{dy}")
         if abs(dx) < 1 or abs(dy) < 1:
             return False
         else:

@@ -19,7 +19,7 @@ import local_planner
 import behavioural_planner
 import cv2
 import json 
-from math import sin, cos, pi, tan, sqrt
+from math import atan2, sin, cos, pi, tan, sqrt
 
 from traffic_lights_manager import trafficLightsManager
 from obstacles_manager import ObstaclesManager
@@ -40,10 +40,10 @@ from carla.planner.city_track import CityTrack
 ###############################################################################
 # CONFIGURABLE PARAMENTERS DURING EXAM
 ###############################################################################
-PLAYER_START_INDEX = 51 #6         #  spawn index for player
-DESTINATION_INDEX = 90 #20         # Setting a Destination HERE
+PLAYER_START_INDEX = 6 #51         #  spawn index for player
+DESTINATION_INDEX = 20 #90         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 0      # total number of vehicles to spawn
+NUM_VEHICLES           = 30    # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0     # seed for vehicle spawn randomizer
 ###############################################################################àà
@@ -116,7 +116,7 @@ CONTROLLER_OUTPUT_FOLDER = os.path.dirname(os.path.realpath(__file__)) +\
 ### NEW CONSTANT
 CRUISE_SPEED = 5 # m/s
 HALF_CRUISE_SPEED = 2.5 # m/s
-VEHICLE_OBSTACLE_LOOKAHEAD = 30 # m
+VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 30 # m
 PEDESTRIAN_OBSTACLE_LOOKAHEAD = 10 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
@@ -406,29 +406,42 @@ def write_collisioncount_file(collided_list):
         collision_file.write(str(sum(collided_list)))
 
 def make_correction(waypoint,previuos_waypoint,desired_speed):
+    print(f"waypoint before: {waypoint[0]}, {waypoint[1]}")
+    offset = 2.0
+
     dx = waypoint[0] - previuos_waypoint[0]
     dy = waypoint[1] - previuos_waypoint[1]
 
+    angle = np.arctan2(dy, dx)
+
+    moveX = 0
+    moveY = 0
+    
+    x_contribute = cos(angle) * offset
+    y_contribute = sin(angle) * offset
+
     if dx < 0:
-        moveY = -1.5
+        moveY = x_contribute
     elif dx > 0:
-        moveY = 1.5
+        moveY = x_contribute
     else:
         moveY = 0
 
     if dy < 0:
-        moveX = 1.5
+        moveX = -y_contribute
     elif dy > 0:
-        moveX = -1.5
+        moveX = -y_contribute
     else:
         moveX = 0
-    
+
     waypoint_on_lane = waypoint
     waypoint_on_lane[0] += moveX
     waypoint_on_lane[1] += moveY
     waypoint_on_lane[2] = desired_speed
+    print(f"waypoint after: {waypoint_on_lane[0]}, {waypoint_on_lane[1]}")
 
     return waypoint_on_lane
+
 def exec_waypoint_nav_demo(args):
     """ Executes waypoint navigation demo.
     """
@@ -560,13 +573,16 @@ def exec_waypoint_nav_demo(args):
         prev_y = False
         # Put waypoints in the lane
         previuos_waypoint = mission_planner._map.convert_to_world(waypoints_route[0])
+        
+        aftern_turn = False
         for i in range(1,len(waypoints_route)):
             point = waypoints_route[i]
 
+            """
             waypoint = mission_planner._map.convert_to_world(point)
-
-            current_waypoint = make_correction(waypoint,previuos_waypoint,desired_speed)
             
+            current_waypoint = make_correction(waypoint,previuos_waypoint,desired_speed)
+
             dx = current_waypoint[0] - previuos_waypoint[0]
             dy = current_waypoint[1] - previuos_waypoint[1]
 
@@ -574,17 +590,20 @@ def exec_waypoint_nav_demo(args):
 
             prev_x = abs(dx) > 0.1
             prev_y = abs(dy) > 0.1
+            """
 
-            if point in intersection_nodes:                
+            if point in intersection_nodes: 
+                aftern_turn = True
+
                 prev_start_intersection = mission_planner._map.convert_to_world(waypoints_route[i-2])
                 center_intersection = mission_planner._map.convert_to_world(waypoints_route[i])
 
-                start_intersection = mission_planner._map.convert_to_world(waypoints_route[i-1])
+                start_intersection = mission_planner._map.convert_to_world(waypoints_route[i-1])                
                 end_intersection = mission_planner._map.convert_to_world(waypoints_route[i+1])
-
+                
                 start_intersection = make_correction(start_intersection,prev_start_intersection,turn_speed)
                 end_intersection = make_correction(end_intersection,center_intersection,turn_speed)
-                
+
                 dx = start_intersection[0] - end_intersection[0]
                 dy = start_intersection[1] - end_intersection[1]
 
@@ -633,7 +652,7 @@ def exec_waypoint_nav_demo(args):
 
                     start_to_end = 1 if theta_start < theta_end else -1
 
-                    theta_step = (abs(theta_end - theta_start) * start_to_end) /20
+                    theta_step = (abs(theta_end - theta_start) * start_to_end) / 20
 
                     theta = theta_start + 6*theta_step
 
@@ -657,8 +676,11 @@ def exec_waypoint_nav_demo(args):
                 else:
                     target_speed = desired_speed
                 
-                waypoint_on_lane = make_correction(waypoint,previuos_waypoint,target_speed)
-
+                if not aftern_turn:
+                    waypoint_on_lane = make_correction(waypoint,previuos_waypoint,target_speed)
+                else:
+                    waypoint_on_lane = waypoints[-1]
+                    aftern_turn = False
                 waypoints.append(waypoint_on_lane)
 
                 previuos_waypoint = waypoint
@@ -796,7 +818,7 @@ def exec_waypoint_nav_demo(args):
 
         traffic_lights_manager = trafficLightsManager()
 
-        obstacles_manager = ObstaclesManager(LEAD_VEHICLE_LOOKAHEAD_BASE, VEHICLE_OBSTACLE_LOOKAHEAD, PEDESTRIAN_OBSTACLE_LOOKAHEAD, bp)
+        obstacles_manager = ObstaclesManager(LEAD_VEHICLE_LOOKAHEAD_BASE, VEHICLE_OBSTACLE_LOOKAHEAD_BASE, PEDESTRIAN_OBSTACLE_LOOKAHEAD, bp)
 
         #############################################
         # Scenario Execution Loop

@@ -11,11 +11,15 @@ LEAD_VEHILCE_LOOKAHEAD_OFFSET_FOR_RELEASE = 5
 
 class ObstaclesManager:
 
-    def __init__(self, lead_vehicle_lookahead_base, vehicle_obstacle_lookahead, pedestrian_obstacle_lookahead, behavioral_planner):
+    def __init__(self, lead_vehicle_lookahead_base, vehicle_obstacle_lookahead_base, pedestrian_obstacle_lookahead, behavioral_planner):
         self._lead_vehicle_lookahead_base = lead_vehicle_lookahead_base
         self._lead_vehicle_lookahead = self._lead_vehicle_lookahead_base
-        self._vehicle_obstacle_lookahead =  vehicle_obstacle_lookahead
+
+        self._vehicle_obstacle_lookahead_base =  vehicle_obstacle_lookahead_base
+        self._vehicle_obstacle_lookahead =  self._vehicle_obstacle_lookahead_base
+        
         self._pedestrian_obstacle_lookahead = pedestrian_obstacle_lookahead
+        
         self._bp = behavioral_planner
         
 
@@ -60,8 +64,11 @@ class ObstaclesManager:
         # safe brake space
         speed_km_h = (ego_speed * 3600)/1000
         self._lead_vehicle_lookahead = self._lead_vehicle_lookahead_base + (speed_km_h/10)*3
-        print(F"New speed for vehicle lead {ego_speed}")
-        print(F"New look ahead for vehicle lead {self._lead_vehicle_lookahead}")
+
+        self._vehicle_obstacle_lookahead = self._lead_vehicle_lookahead_base + (speed_km_h/10)*3
+
+        # print(F"New speed for vehicle lead {ego_speed}")
+        # print(F"New look ahead for vehicle lead {self._lead_vehicle_lookahead}")
 
     def _update_vehicle(self):
         obstacles_vehicles = []
