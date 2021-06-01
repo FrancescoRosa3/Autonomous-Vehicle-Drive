@@ -22,6 +22,23 @@ class Obstacle:
         self._obstacle = obstacle
         self._predict_future_location()
 
+    import math
+
+    def rotate(self, origin, point, angle):
+        """
+        Rotate a point clockwise by a given angle around a given origin.
+
+        The angle should be given in radians.
+        """
+        ox, oy = origin
+        px, py = point
+        print(F"Origin {origin}, angle {angle}")
+        qx = ox + math.cos(angle) * (px - ox) + math.sin(angle) * (py - oy)
+        qy = oy - math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
+        print(F"New pint: {qx} { qy}")
+        return qx,  qy
+
+
     def _predict_future_location(self):
 
         location = self._obstacle.transform.location
@@ -30,7 +47,7 @@ class Obstacle:
         self._curr_obs_box_pts = main.obstacle_to_world(location, dimension, rotation)
 
         obstacle_speed = self._obstacle.forward_speed
-        future_frames_to_check = 15
+        future_frames_to_check = 50
         frames_update_frequency = 0.033
         # frames_update_frequency = 1
 
@@ -54,21 +71,17 @@ class Obstacle:
         for i in range(1, future_frames_to_check+1, step):
             future_box_pts = []
             temp_cpos_shift = cpos_shift * step 
-            cpos = np.add(cpos, temp_cpos_shift) 
-            '''
+            cpos_trans = np.add(cpos, temp_cpos_shift)
+            
             if self._prev_state != None:
                 # Rotation of the obstacle
                 prev_yaw_angle = self._prev_state.transform.rotation.yaw * pi / 180
-                yaw_difference = round(prev_yaw_angle - obstacle_yaw_angle, 2)
-                print(f"obstacle_yaw_angle:\t{math.degrees(obstacle_yaw_angle):.2f} - prev_yaw_angle:\t{math.degrees(prev_yaw_angle):.2f} - yaw_diff:\t{math.degrees(yaw_difference):.2f}")
-                rotyaw = np.array([
-                        [np.cos(yaw_difference), np.sin(yaw_difference)],
-                        [-np.sin(yaw_difference), np.cos(yaw_difference)]])
-                
-                print(f"before: {cpos}")
-                cpos = np.matmul(rotyaw, cpos)
-                print(f"after: {cpos}")
-            '''
+                yaw_diff = obstacle_yaw_angle - prev_yaw_angle
+
+                for i in range(0, cpos.shape[1]):    
+                    print(F"cpos[0][{i}]: { cpos[0][i]}, cpos[1][{i}]: {cpos[1][i]}")
+                    cpos[0][i],  cpos[1][i] = self.rotate( [cpos[0][i],  cpos[1][i]], [cpos_trans[0][i], cpos_trans[1][i]], yaw_diff)
+ 
             for j in range(cpos.shape[1]):
                 future_box_pts.append([cpos[0,j], cpos[1,j]])
             self._future_locations.append(future_box_pts)
