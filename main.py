@@ -45,15 +45,20 @@ from PIL import Image
 
 ### PERCORSI: 
 ### 6-20
+### 13-20
+### 2-23
+### 93-20 semaforo rosso con macchina di fronte che non gira
+### 133-21
 ### 7-15, stop a semaforo da giallo a rosso
 
+'''
 PLAYER_START_INDEX = 13           #  spawn index for player
 DESTINATION_INDEX = 29          # Setting a Destination HERE
-NUM_PEDESTRIANS        = 100      # total number of pedestrians to spawn
+NUM_PEDESTRIANS        = 300      # total number of pedestrians to spawn
 NUM_VEHICLES           = 20    # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0     # seed for vehicle spawn randomizer
-
+'''
 '''
 PLAYER_START_INDEX = 100           #  spawn index for player
 DESTINATION_INDEX = 96          # Setting a Destination HERE
@@ -62,6 +67,14 @@ NUM_VEHICLES           = 50    # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 10     # seed for vehicle spawn randomizer
 '''
+
+PLAYER_START_INDEX = 13        #  spawn index for player
+DESTINATION_INDEX = 20         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 30   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+
 ###############################################################################àà
 
 ITER_FOR_SIM_TIMESTEP  = 10         # no. iterations to compute approx sim timestep

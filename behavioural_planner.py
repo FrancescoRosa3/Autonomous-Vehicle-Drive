@@ -30,8 +30,6 @@ class BehaviouralPlanner:
         self._goal_state                    = [0.0, 0.0, 0.0]
         self._goal_index                    = 0
         self._lookahead_collision_index     = 0
-        self._temp_init_counter = 3
-        self._temp_counter = 3
     
 
         ## New parameters
@@ -154,8 +152,9 @@ class BehaviouralPlanner:
                             self._goal_state[2] = 0
                             self._state = STOP_AT_TRAFFIC_LIGHT
                 elif self._traffic_light_state == GO:
-                    self._goal_state[2] = CRUISE_SPEED
+                    self._update_goal_index(waypoints, ego_state)
                     self._state = FOLLOW_LANE
+                    
             
         # In this state, the car is stopped at traffic light.
         # Transit to the the "follow lane" state if the traffic light becomes green
@@ -164,15 +163,11 @@ class BehaviouralPlanner:
         # enforcing the car to stay stopped.
         elif self._state == STOP_AT_TRAFFIC_LIGHT:
             print("FSM STATE: STOP_AT_TRAFFIC_LIGHT")
-            # print(abs(closed_loo  p_speed), STOP_THRESHOLD)
-            if abs(closed_loop_speed) <= STOP_THRESHOLD:
-                self._update_goal_index(waypoints, ego_state)
             self._goal_state[2] = 0
             if self._obstacle_on_lane:
                 self._state = STOP_AT_OBSTACLE
             elif self._traffic_light_state == GO:
                 self._update_goal_index(waypoints, ego_state)
-                self._goal_state[2] = CRUISE_SPEED
                 self._state = FOLLOW_LANE
 
 
@@ -183,35 +178,22 @@ class BehaviouralPlanner:
         # enforcing the car to stay stopped.
         elif self._state == STOP_AT_OBSTACLE:
             print("FSM STATE: STOP_AT_OBSTACLE")
-            if abs(closed_loop_speed) <= STOP_THRESHOLD:
-                self._update_goal_index(waypoints, ego_state)
-            ##
-            if self._temp_counter > 0:
-                self._goal_state[2] = HALF_CRUISE_SPEED
-                self._temp_counter -= 1
-            else:
-                self._goal_state[2] = 0
+            self._goal_state[2] = 0
             if not self._obstacle_on_lane:
                 if self._traffic_light_state == STOP and self._traffic_light_distance != None:
                     if self._traffic_light_distance < (STOP_TRAFFIC_LIGHT + secure_distance_brake):
-                        ##
-                        self._temp_counter = self._temp_init_counter
-                        self._state = STOP_AT_TRAFFIC_LIGHT
+                       self._state = STOP_AT_TRAFFIC_LIGHT
                     elif self._traffic_light_distance < (SLOW_DOWN_TRAFFIC_LIGHT + secure_distance_brake) :
-                        ##
-                        self._temp_counter = self._temp_init_counter
                         self._goal_state[2] = HALF_CRUISE_SPEED
                         self._state = APPROACHING_RED_TRAFFIC_LIGHT
                 else:
-                    ##
-                    self._temp_counter = self._temp_init_counter
                     self._update_goal_index(waypoints, ego_state)
-                    self._goal_state[2] = CRUISE_SPEED
                     self._state = FOLLOW_LANE
 
         else:
             raise ValueError('Invalid state value.')
 
+        print(F"Goal state out {self._goal_state}")
     # Gets the goal index in the list of waypoints, based on the lookahead and
     # the current ego state. In particular, find the earliest waypoint that has accumulated
     # arc length (including closest_len) that is greater than or equal to self._lookahead.
@@ -258,7 +240,7 @@ class BehaviouralPlanner:
         # In this case, reaching the closest waypoint is already far enough for
         # the planner.  No need to check additional waypoints.
         
-        if self._check_for_turn(ego_state, waypoints[wp_index]):
+        if self._check_for_turn(ego_state, waypoints[wp_index]) and ego_state[3] > STOP_THRESHOLD :
             #print("waypoint on turn")
             return wp_index+2
         
@@ -278,7 +260,7 @@ class BehaviouralPlanner:
             arc_length += np.sqrt((waypoints[wp_index][0] - waypoints[wp_index+1][0])**2 + (waypoints[wp_index][1] - waypoints[wp_index+1][1])**2)
             # check for turn
             
-            if self._check_for_turn(ego_state, waypoints[wp_index]):
+            if self._check_for_turn(ego_state, waypoints[wp_index]) and ego_state[3] > STOP_THRESHOLD:
                 #print("waypoint on turn")
                 wp_index += 2
                 break
@@ -310,8 +292,9 @@ class BehaviouralPlanner:
         while waypoints[goal_index][2] <= 0.1 and goal_index < len(waypoints[2]):
             goal_index += 1
         self._goal_index = goal_index % len(waypoints[2])
-        self._goal_state = waypoints[goal_index]
-
+        self._goal_state = list(waypoints[goal_index])
+        print(F"Goal wp {waypoints[goal_index]}")
+        print(F"Goal state first {self._goal_state}")
 # Compute the waypoint index that is closest to the ego vehicle, and return
 # it as well as the distance from the ego vehicle to that waypoint.
 def get_closest_index(waypoints, ego_state):

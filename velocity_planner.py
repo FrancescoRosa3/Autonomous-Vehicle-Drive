@@ -265,7 +265,7 @@ class VelocityPlanner:
                                              path[1][decel_index+1] - path[1][decel_index]])
                 decel_index += 1
 
-            print(f"brake_index: {brake_index} - decel_index: {decel_index}")
+            #print(f"brake_index: {brake_index} - decel_index: {decel_index}")
 
             # The speeds from the start to decel_index should be a linear ramp
             # from the current speed down to the slow_speed, decelerating at

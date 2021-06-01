@@ -32,10 +32,8 @@ class Obstacle:
         """
         ox, oy = origin
         px, py = point
-        print(F"Origin {origin}, angle {angle}")
         qx = ox + math.cos(angle) * (px - ox) + math.sin(angle) * (py - oy)
         qy = oy - math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
-        print(F"New pint: {qx} { qy}")
         return qx,  qy
 
 
@@ -47,7 +45,7 @@ class Obstacle:
         self._curr_obs_box_pts = main.obstacle_to_world(location, dimension, rotation)
 
         obstacle_speed = self._obstacle.forward_speed
-        future_frames_to_check = 50
+        future_frames_to_check = 15
         frames_update_frequency = 0.033
         # frames_update_frequency = 1
 
@@ -79,7 +77,6 @@ class Obstacle:
                 yaw_diff = obstacle_yaw_angle - prev_yaw_angle
 
                 for i in range(0, cpos.shape[1]):    
-                    print(F"cpos[0][{i}]: { cpos[0][i]}, cpos[1][{i}]: {cpos[1][i]}")
                     cpos[0][i],  cpos[1][i] = self.rotate( [cpos[0][i],  cpos[1][i]], [cpos_trans[0][i], cpos_trans[1][i]], yaw_diff)
  
             for j in range(cpos.shape[1]):
