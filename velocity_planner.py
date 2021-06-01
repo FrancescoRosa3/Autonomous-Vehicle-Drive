@@ -58,7 +58,7 @@ class VelocityPlanner:
     # For all profiles, the required acceleration is given by self._a_max.
     # Recall that the path is of the form [x_points, y_points, t_points].
     def compute_velocity_profile(self, path, desired_speed, ego_state, 
-                                 closed_loop_speed, decelerate_to_stop, 
+                                 closed_loop_speed, stop_to_obstacle, stop_to_red_traffic_light,
                                  lead_car_state, follow_lead_vehicle,
                                  consider_lead):
         """Computes the velocity profile for the local planner path.
@@ -113,17 +113,25 @@ class VelocityPlanner:
         profile = []
         # For our profile, use the open loop speed as our initial speed.
         start_speed = ego_state[3]
+
+        # s o l
+
+        # 0 0 0 nominal                 +
+        # 0 0 1 follow lead vehicle     -
+        # 0 1 0 decelerate              -
+        # 0 1 1 decelerate              -
+        # 1 0 0 decelerate              
+        # 1 0 1 follow lead vehicle     -
+        # 1 1 0 decelerate              -
+        # 1 1 1 decelerate              -
+
         # Generate a trapezoidal profile to decelerate to stop.
-        if decelerate_to_stop:
+        if stop_to_obstacle:
             profile = self.decelerate_profile(path, start_speed)
-
-        # If we need to follow the lead vehicle, make sure we decelerate to its
-        # speed by the time we reach the time gap point.
-        elif lead_car_state is not None and follow_lead_vehicle and consider_lead:
-            profile = self.follow_profile(path, start_speed, desired_speed, 
-                                          lead_car_state)
-
-        # Otherwise, compute the profile to reach our desired speed.
+        elif (lead_car_state is not None and follow_lead_vehicle and consider_lead):
+            profile = self.follow_profile(path, start_speed, desired_speed, lead_car_state)
+        elif stop_to_red_traffic_light:
+            profile = self.decelerate_profile(path, start_speed)
         else:
             profile = self.nominal_profile(path, start_speed, desired_speed)
 

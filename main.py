@@ -43,13 +43,23 @@ from carla.planner.city_track import CityTrack
 
 ### PERCORSI: 
 ### 6-20
+### 7-15, stop a semaforo da giallo a rosso
 
-PLAYER_START_INDEX = 11         #  spawn index for player
-DESTINATION_INDEX = 20          # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 30    # total number of vehicles to spawn
+PLAYER_START_INDEX = 13           #  spawn index for player
+DESTINATION_INDEX = 29          # Setting a Destination HERE
+NUM_PEDESTRIANS        = 300      # total number of pedestrians to spawn
+NUM_VEHICLES           = 20    # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0     # seed for vehicle spawn randomizer
+
+'''
+PLAYER_START_INDEX = 100           #  spawn index for player
+DESTINATION_INDEX = 96          # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 50    # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 10     # seed for vehicle spawn randomizer
+'''
 ###############################################################################àà
 
 ITER_FOR_SIM_TIMESTEP  = 10         # no. iterations to compute approx sim timestep
@@ -121,10 +131,10 @@ CONTROLLER_OUTPUT_FOLDER = os.path.dirname(os.path.realpath(__file__)) +\
 CRUISE_SPEED = 5 # m/s
 HALF_CRUISE_SPEED = 2.5 # m/s
 VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 30 # m
-PEDESTRIAN_OBSTACLE_LOOKAHEAD = 10 # m
+PEDESTRIAN_OBSTACLE_LOOKAHEAD = 20 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
-SHOW_LIVE_PLOTTER = True
+SHOW_LIVE_PLOTTER = False
 
 # Camera parameters
 camera_parameters = {}
@@ -747,6 +757,7 @@ def exec_waypoint_nav_demo(args):
             trajectory_fig.add_graph("car", window_size=1, 
                                     marker="s", color='b', markertext="Car",
                                     marker_text_offset=1)
+            
             # Add lead car information
             trajectory_fig.add_graph("leadcar", window_size=1, 
                                     marker="s", color='g', markertext="Lead Car",
@@ -982,14 +993,17 @@ def exec_waypoint_nav_demo(args):
                 if best_path is not None:
                     # Compute the velocity profile for the path, and compute the waypoints.
                     desired_speed = bp._goal_state[2]
-                    decelerate_to_stop = bp._state == behavioural_planner.DECELERATE_TO_STOP
-                    
+                    stop_to_obstacle = bp._state == behavioural_planner.STOP_AT_OBSTACLE
+                    stop_to_red_traffic_light = bp._state == behavioural_planner.STOP_AT_TRAFFIC_LIGHT 
+
                     ###
                     lead_car_state = [lead_car_pos[0], lead_car_pos[1], lead_car_speed] if lead_car_pos != None else None
                     if lead_car_state is not None and ego_state[3] < lead_car_state[2]:
                         consider_lead = False
                     consider_lead = True
-                    local_waypoints = lp._velocity_planner.compute_velocity_profile(best_path, desired_speed, ego_state, current_speed, decelerate_to_stop, lead_car_state, bp._follow_lead_vehicle, consider_lead)
+                    local_waypoints = lp._velocity_planner.compute_velocity_profile(best_path, desired_speed, ego_state, current_speed, stop_to_obstacle, stop_to_red_traffic_light, lead_car_state, bp._follow_lead_vehicle, consider_lead)
+
+                    print(f"PROFILE: {local_waypoints}")
 
                     if local_waypoints != None:
                         # Update the controller waypoint path with the best local path.
@@ -1040,11 +1054,12 @@ def exec_waypoint_nav_demo(args):
                                          current_timestamp, frame)
                 controller.update_controls()
                 cmd_throttle, cmd_steer, cmd_brake = controller.get_commands()
+            '''
             else:
                 cmd_throttle = 0.0
                 cmd_steer = 0.0
                 cmd_brake = 0.0
-
+            '''
             # Skip the first frame or if there exists no local paths
             if SHOW_LIVE_PLOTTER:
                 if skip_first_frame and frame == 0:

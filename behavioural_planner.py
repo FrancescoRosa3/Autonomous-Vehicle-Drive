@@ -8,12 +8,9 @@ from traffic_lights_manager import GO, STOP, UNKNOWN
 
 # State machine states
 FOLLOW_LANE = 0
-DECELERATE_TO_STOP = 1
-STAY_STOPPED = 2
-
-# New implemented states 
-FOLLOW_LANE_HALF_SPEED = 3
-OBSTACLE_ON_LANE = 4
+STOP_AT_TRAFFIC_LIGHT = 1
+STOP_AT_OBSTACLE = 2
+APPROACHING_RED_TRAFFIC_LIGHT = 3
 
 # Stop speed threshold
 STOP_THRESHOLD = 0.05
@@ -32,7 +29,6 @@ class BehaviouralPlanner:
         self._obstacle_on_lane              = False
         self._goal_state                    = [0.0, 0.0, 0.0]
         self._goal_index                    = 0
-        self._stop_count                    = 0
         self._lookahead_collision_index     = 0
 
         ## New parameters
@@ -45,11 +41,14 @@ class BehaviouralPlanner:
         self._traffic_light_state = state
 
     def set_obstacle_on_lane(self, collision_check_array):
-        for path_result in collision_check_array:
-            if path_result:
-                self._obstacle_on_lane = False
-                return
-        self._obstacle_on_lane = True
+        if len(collision_check_array)>0:
+            for path_result in collision_check_array:
+                if path_result:
+                    self._obstacle_on_lane = False
+                    return
+            self._obstacle_on_lane = True
+        else:
+            self._obstacle_on_lane = False
     
     def set_traffic_light_distance(self, distance):
         self._traffic_light_distance = distance
@@ -92,10 +91,8 @@ class BehaviouralPlanner:
             self._state: The current state of the vehicle.
                 available states: 
                     FOLLOW_LANE         : Follow the global waypoints (lane).
-                    DECELERATE_TO_STOP  : Decelerate to stop.
+                    STOP_AT_TRAFFIC_LIGHT  : Decelerate to stop.
                     STAY_STOPPED        : Stay stopped.
-            self._stop_count: Counter used to count the number of cycles which
-                the vehicle was in the STAY_STOPPED state so far.
         useful_constants:
             STOP_THRESHOLD  : Stop speed threshold (m). The vehicle should fully
                               stop when its speed falls within this threshold.
@@ -108,94 +105,96 @@ class BehaviouralPlanner:
         # In this state, continue tracking the lane by finding the
         # goal index in the waypoint list that is within the lookahead
         # distance. Then, check to see if the waypoint path intersects
-        # with any stop lines. If it does, then ensure that the goal
-        # state enforces the car to be stopped before the stop line.
-        # You should use the get_closest_index(), get_goal_index(), and
-        # check_for_stop_signs() helper functions.
-        # Make sure that get_closest_index() and get_goal_index() functions are
-        # complete, and examine the check_for_stop_signs() function to
-        # understand it.
+        # with any onstacle or red traffic light.
+        # In the first case, enforce the car to stop immediately.
+        # In the second case, check the distance to the traffic light
+        # and slow down if it is between the first and the secondo threshold,
+        # or enforce the car to stop if it is under the second thresold.
         if self._state == FOLLOW_LANE:
             print("FSM STATE: FOLLOW_LANE")
-            # First, find the closest index to the ego vehicle.
-            closest_len, closest_index = get_closest_index(waypoints, ego_state)
 
-            # Next, find the goal index that lies within the lookahead distance
-            # along the waypoints.
-            goal_index = self.get_goal_index(waypoints, ego_state, closest_len, closest_index)
-            while waypoints[goal_index][2] <= 0.1: goal_index += 1
-
-            self._goal_index = goal_index
-            self._goal_state = waypoints[goal_index]
-            
-            
-
-            if self._traffic_light_state == STOP and self._traffic_light_distance != None:
-                if self._traffic_light_distance < (STOP_TRAFFIC_LIGHT + secure_distance_brake):
-                    self._goal_state[2] = 0
-                    self._state = DECELERATE_TO_STOP
-                elif self._traffic_light_distance < (SLOW_DOWN_TRAFFIC_LIGHT + secure_distance_brake) :
-                    self._goal_state[2] = HALF_CRUISE_SPEED
-                    self._state = FOLLOW_LANE_HALF_SPEED
+            self._update_goal_index(waypoints, ego_state)
+             
+            if self._obstacle_on_lane:
+                self._goal_state[2] = 0
+                self._state = STOP_AT_OBSTACLE
+            else:
+                if self._traffic_light_state == STOP and self._traffic_light_distance != None:
+                    if self._traffic_light_distance < (STOP_TRAFFIC_LIGHT + secure_distance_brake):
+                        self._goal_state[2] = 0
+                        self._state = STOP_AT_TRAFFIC_LIGHT
+                    elif self._traffic_light_distance < (SLOW_DOWN_TRAFFIC_LIGHT + secure_distance_brake) :
+                        self._goal_state[2] = HALF_CRUISE_SPEED
+                        self._state = APPROACHING_RED_TRAFFIC_LIGHT
 
         ## New state
         # In this state, continue tracking the lane by finding the
         # goal index in the waypoint list that is within the lookahead
         # distance. Procede at half cruise speed.
-        # If the traffic light state is red but above a certain threshold
+        # If an obstacle is detected, enforce the car to stop immediately.
+        # If the traffic light state is red but above the first threshold
         # keep the same speed. If the distance drops below the threshold
-        # ensure that the goal state enforces the car to be stopped before
+        # ensure that the goal state enforce the car to be stopped before
         # the traffic light line.
-        elif self._state == FOLLOW_LANE_HALF_SPEED:
-            print("FSM STATE: FOLLOW_LANE_HALF_SPEED")
-            # print(abs(closed_loop_speed))
+        elif self._state == APPROACHING_RED_TRAFFIC_LIGHT:
+            print("FSM STATE: APPROACHING_RED_TRAFFIC_LIGHT")
 
-            # First, find the closest index to the ego vehicle.
-            closest_len, closest_index = get_closest_index(waypoints, ego_state)
+            self._update_goal_index(waypoints, ego_state)
+            self._goal_state[2] = HALF_CRUISE_SPEED
 
-            # Next, find the goal index that lies within the lookahead distance
-            # along the waypoints.
-            goal_index = self.get_goal_index(waypoints, ego_state, closest_len, closest_index)
-            while waypoints[goal_index][2] <= 0.1: goal_index += 1
-
-            self._goal_index = goal_index
-
-            # If the traffic light is still red, check the distance.
-            # If it is below the given threshold, enforces the car to be stopped
-            # before the traffic light line.
-            # If the traffic line is not red anymore return to lane following.
-            if self._traffic_light_state == STOP:
-                if self._traffic_light_distance != None and self._traffic_light_distance < (STOP_TRAFFIC_LIGHT+secure_distance_brake):
-                        self._goal_state[2] = 0
-                        self._state = DECELERATE_TO_STOP
-            elif self._traffic_light_state == GO:
-                self._goal_state = waypoints[goal_index]
-                self._state = FOLLOW_LANE
-            
-        # In this state, check if we have reached a complete stop. Use the
-        # closed loop speed to do so, to ensure we are actually at a complete
-        # stop, and compare to STOP_THRESHOLD.  If so, transition to the next
-        # state.
-        elif self._state == DECELERATE_TO_STOP:
-            print("FSM STATE: DECELERATE_TO_STOP")
-            # print(abs(closed_loop_speed), STOP_THRESHOLD)
-            if abs(closed_loop_speed) <= STOP_THRESHOLD:
+            if self._obstacle_on_lane:
                 self._goal_state[2] = 0
-                self._state = STAY_STOPPED
-                self._stop_count = 0
-
-        # In this state, check to see if the traffic light is not red anymore.
-        # If so, we can now leave the traffic light and transition to the next state.
-        elif self._state == STAY_STOPPED:
-            print("FSM STATE: STAY_STOPPED")
-            # If the traffic light is no longer red, we can now
-            # transition back to our lane following state.
-            if self._traffic_light_state == GO:
+                self._state = STOP_AT_OBSTACLE
+            else:
+                if self._traffic_light_state == STOP:
+                    if self._traffic_light_distance != None and self._traffic_light_distance < (STOP_TRAFFIC_LIGHT+secure_distance_brake):
+                            self._goal_state[2] = 0
+                            self._state = STOP_AT_TRAFFIC_LIGHT
+                elif self._traffic_light_state == GO:
+                    self._state = FOLLOW_LANE
+            
+        # In this state, the car is stopped at traffic light.
+        # Transit to the the "follow lane" state if the traffic light becomes green
+        # and there are no obstacle on lane.
+        # If an obstacle happens to be on the lane, transit to "stop ato obstacle" state
+        # enforcing the car to stay stopped.
+        elif self._state == STOP_AT_TRAFFIC_LIGHT:
+            print("FSM STATE: STOP_AT_TRAFFIC_LIGHT")
+            # print(abs(closed_loo  p_speed), STOP_THRESHOLD)
+            if abs(closed_loop_speed) <= STOP_THRESHOLD:
+                self._update_goal_index(waypoints, ego_state)
+            self._goal_state[2] = 0
+            if self._obstacle_on_lane:
+                self._state = STOP_AT_OBSTACLE
+            elif self._traffic_light_state == GO:
+                self._update_goal_index(waypoints, ego_state)
                 self._state = FOLLOW_LANE
-                
+
+
+        # In this state, the car is stopped at traffic light.
+        # Transit to the the "follow lane" state if the traffic light becomes green
+        # and there are no obstacle on lane.
+        # If an obstacle happens to be on the lane, transit to "stop ato obstacle" state
+        # enforcing the car to stay stopped.
+        elif self._state == STOP_AT_OBSTACLE:
+            print("FSM STATE: STOP_AT_OBSTACLE")
+            if abs(closed_loop_speed) <= STOP_THRESHOLD:
+                self._update_goal_index(waypoints, ego_state)
+            self._goal_state[2] = 0
+            if not self._obstacle_on_lane:
+                if self._traffic_light_state == STOP and self._traffic_light_distance != None:
+                    if self._traffic_light_distance < (STOP_TRAFFIC_LIGHT + secure_distance_brake):
+                        self._state = STOP_AT_TRAFFIC_LIGHT
+                    elif self._traffic_light_distance < (SLOW_DOWN_TRAFFIC_LIGHT + secure_distance_brake) :
+                        self._goal_state[2] = HALF_CRUISE_SPEED
+                        self._state = APPROACHING_RED_TRAFFIC_LIGHT
+                else:
+                    self._update_goal_index(waypoints, ego_state)
+                    self._state = FOLLOW_LANE
+
         else:
             raise ValueError('Invalid state value.')
-        
+
     # Gets the goal index in the list of waypoints, based on the lookahead and
     # the current ego state. In particular, find the earliest waypoint that has accumulated
     # arc length (including closest_len) that is greater than or equal to self._lookahead.
@@ -283,6 +282,18 @@ class BehaviouralPlanner:
             return False
         else:
             return True
+
+    def _update_goal_index(self, waypoints, ego_state):
+        # First, find the closest index to the ego vehicle.
+        closest_len, closest_index = get_closest_index(waypoints, ego_state)
+
+        # Next, find the goal index that lies within the lookahead distance
+        # along the waypoints.
+        goal_index = self.get_goal_index(waypoints, ego_state, closest_len, closest_index)
+        while waypoints[goal_index][2] <= 0.1 and goal_index < len(waypoints[2]):
+            goal_index += 1
+        self._goal_index = goal_index % len(waypoints[2])
+        self._goal_state = waypoints[goal_index]
 
 # Compute the waypoint index that is closest to the ego vehicle, and return
 # it as well as the distance from the ego vehicle to that waypoint.

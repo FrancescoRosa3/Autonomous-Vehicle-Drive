@@ -24,8 +24,6 @@ class Obstacle:
 
     def _predict_future_location(self):
 
-        print(f"OBSTACLE: ")
-
         location = self._obstacle.transform.location
         rotation = self._obstacle.transform.rotation
         dimension = self._obstacle.bounding_box.extent
@@ -39,7 +37,6 @@ class Obstacle:
         obstacle_yaw_angle = self._obstacle.transform.rotation.yaw * pi / 180
         
         # Compute space shift to get future Location in the world frame
-        cpos_shift_arr = []
         v_x = obstacle_speed * cos(obstacle_yaw_angle)
         v_y = obstacle_speed * sin(obstacle_yaw_angle)
         #print(f"object yaw angle: {obstacle_yaw_angle:.2f} - speed: {obstacle_speed:.2f} - v_x: {v_x:.2f} - v_y: {v_y:.2f}")
@@ -57,7 +54,7 @@ class Obstacle:
         for i in range(1, future_frames_to_check+1, step):
             future_box_pts = []
             temp_cpos_shift = cpos_shift * step 
-            cpos = np.add(cpos, temp_cpos_shift)
+            cpos = np.add(cpos, temp_cpos_shift) 
             '''
             if self._prev_state != None:
                 # Rotation of the obstacle

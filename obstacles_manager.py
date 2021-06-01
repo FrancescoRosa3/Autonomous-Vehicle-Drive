@@ -108,13 +108,13 @@ class ObstaclesManager:
                 location = agent.pedestrian.transform.location
                 dist = sqrt((self._ego_pose[0] - location.x)**2 + (self._ego_pose[1] - location.y)**2) 
                 if dist < self._pedestrian_obstacle_lookahead:
-                    #print("Pedestrian at distance:" + str(dist))
-                    rotation = agent.pedestrian.transform.rotation
-                    dimension = agent.pedestrian.bounding_box.extent
-                    box_pts = main.obstacle_to_world(location,  dimension, rotation)
-                    obstacles_pedestrian.append(box_pts)
+                    self._add_obstacle(agent.pedestrian, agent.id)
+                else:
+                    try:
+                        self._obstacles.pop(agent.id)
+                    except KeyError:
+                        pass
 
-        return obstacles_pedestrian
 
     def _compute_distance_orientation_from_vehicle(self, car_location, car_rotation):
         # compute the distance between the player agent and the obstacle
@@ -152,10 +152,8 @@ class ObstaclesManager:
 
     def _add_obstacle(self, obstacle, id):
         if id in self._obstacles:
-            print("VEICOLO GIà PRESENTE")
             self._obstacles[id].update_state(obstacle)
         else:
-            print("NUOVO VEICOLO")
             self._obstacles[id] = Obstacle(obstacle)
 
     def _get_obstacles(self):
