@@ -127,6 +127,7 @@ class VelocityPlanner:
 
         # Generate a trapezoidal profile to decelerate to stop.
         if stop_to_obstacle:
+            print("OBSTACLE PROFILE")
             profile = self.decelerate_profile(path, start_speed)
         elif (lead_car_state is not None and follow_lead_vehicle and consider_lead):
             profile = self.follow_profile(path, start_speed, desired_speed, lead_car_state)
@@ -263,6 +264,8 @@ class VelocityPlanner:
                 temp_dist += np.linalg.norm([path[0][decel_index+1] - path[0][decel_index], 
                                              path[1][decel_index+1] - path[1][decel_index]])
                 decel_index += 1
+
+            print(f"brake_index: {brake_index} - decel_index: {decel_index}")
 
             # The speeds from the start to decel_index should be a linear ramp
             # from the current speed down to the slow_speed, decelerating at

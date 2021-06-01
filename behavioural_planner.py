@@ -30,6 +30,9 @@ class BehaviouralPlanner:
         self._goal_state                    = [0.0, 0.0, 0.0]
         self._goal_index                    = 0
         self._lookahead_collision_index     = 0
+        self._temp_init_counter = 3
+        self._temp_counter = 3
+    
 
         ## New parameters
         ### traffic light state
@@ -151,6 +154,7 @@ class BehaviouralPlanner:
                             self._goal_state[2] = 0
                             self._state = STOP_AT_TRAFFIC_LIGHT
                 elif self._traffic_light_state == GO:
+                    self._goal_state[2] = CRUISE_SPEED
                     self._state = FOLLOW_LANE
             
         # In this state, the car is stopped at traffic light.
@@ -168,6 +172,7 @@ class BehaviouralPlanner:
                 self._state = STOP_AT_OBSTACLE
             elif self._traffic_light_state == GO:
                 self._update_goal_index(waypoints, ego_state)
+                self._goal_state[2] = CRUISE_SPEED
                 self._state = FOLLOW_LANE
 
 
@@ -180,16 +185,28 @@ class BehaviouralPlanner:
             print("FSM STATE: STOP_AT_OBSTACLE")
             if abs(closed_loop_speed) <= STOP_THRESHOLD:
                 self._update_goal_index(waypoints, ego_state)
-            self._goal_state[2] = 0
+            ##
+            if self._temp_counter > 0:
+                self._goal_state[2] = HALF_CRUISE_SPEED
+                self._temp_counter -= 1
+            else:
+                self._goal_state[2] = 0
             if not self._obstacle_on_lane:
                 if self._traffic_light_state == STOP and self._traffic_light_distance != None:
                     if self._traffic_light_distance < (STOP_TRAFFIC_LIGHT + secure_distance_brake):
+                        ##
+                        self._temp_counter = self._temp_init_counter
                         self._state = STOP_AT_TRAFFIC_LIGHT
                     elif self._traffic_light_distance < (SLOW_DOWN_TRAFFIC_LIGHT + secure_distance_brake) :
+                        ##
+                        self._temp_counter = self._temp_init_counter
                         self._goal_state[2] = HALF_CRUISE_SPEED
                         self._state = APPROACHING_RED_TRAFFIC_LIGHT
                 else:
+                    ##
+                    self._temp_counter = self._temp_init_counter
                     self._update_goal_index(waypoints, ego_state)
+                    self._goal_state[2] = CRUISE_SPEED
                     self._state = FOLLOW_LANE
 
         else:

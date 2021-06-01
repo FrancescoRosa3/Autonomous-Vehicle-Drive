@@ -35,6 +35,8 @@ from carla.controller import utils
 from carla.sensor import Camera, Lidar
 from carla.image_converter import labels_to_array, depth_to_array, to_bgra_array, to_rgb_array, labels_to_cityscapes_palette
 from carla.planner.city_track import CityTrack
+from PIL import Image
+
 
 
 ###############################################################################
@@ -47,7 +49,7 @@ from carla.planner.city_track import CityTrack
 
 PLAYER_START_INDEX = 13           #  spawn index for player
 DESTINATION_INDEX = 29          # Setting a Destination HERE
-NUM_PEDESTRIANS        = 300      # total number of pedestrians to spawn
+NUM_PEDESTRIANS        = 100      # total number of pedestrians to spawn
 NUM_VEHICLES           = 20    # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0     # seed for vehicle spawn randomizer
@@ -109,7 +111,7 @@ CIRCLE_RADII           = [1.5, 1.5, 1.5]  # m
 TIME_GAP               = 1.0              # s
 PATH_SELECT_WEIGHT     = 10
 A_MAX                  = 2.5              # m/s^2
-SLOW_SPEED             = 2.0              # m/s
+SLOW_SPEED             = 2              # m/s
 STOP_LINE_BUFFER       = 3.5              # m
 LP_FREQUENCY_DIVISOR   = 2                # Frequency divisor to make the 
                                           # local planner operate at a lower
@@ -135,6 +137,7 @@ PEDESTRIAN_OBSTACLE_LOOKAHEAD = 20 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
 SHOW_LIVE_PLOTTER = False
+PRODUCE_VIDEO = False
 
 # Camera parameters
 camera_parameters = {}
@@ -245,6 +248,22 @@ def make_carla_settings(args):
     camera.set(FOV=camera_fov)
     # Adding camera to configuration 
     settings.add_sensor(camera)
+
+    if PRODUCE_VIDEO:
+        # Video Camera
+        video_width = 800
+        video_height = 600
+        video_camera = Camera('video_camera')
+        # set pixel Resolution: WIDTH * HEIGHT
+        video_camera.set_image_size(video_width, video_height)
+        # set position X (front), Y (lateral), Z (height) relative to the car in meters
+        # (0,0,0) is at center of baseline of car 
+        video_camera.set_position(cam_x_pos, 0, cam_height)
+        # set fov
+        video_camera.set(FOV=camera_fov)
+        # Adding camera to configuration 
+        settings.add_sensor(video_camera)
+
 
     # Camera Depth
     camera_depth = Camera('CameraDepth', PostProcessing='Depth')
@@ -849,6 +868,8 @@ def exec_waypoint_nav_demo(args):
         prev_collision_pedestrians = 0
         prev_collision_other       = 0
 
+        video_frame_index = 0
+
         for frame in range(TOTAL_EPISODE_FRAMES):
             # Gather current data from the CARLA server
             measurement_data, sensor_data = client.read_data()
@@ -916,10 +937,17 @@ def exec_waypoint_nav_demo(args):
 
                 tl_state = tl_distance = None 
 
+                if PRODUCE_VIDEO:
+                    if sensor_data.get("video_camera", None) is not None:
+                        video_frame = to_rgb_array(sensor_data["video_camera"])
+                        im = Image.fromarray(video_frame)
+                        im.save(f"Temp/{video_frame_index}.jpeg")
+                        video_frame_index += 1
+
                 # Camera image and depth image acquiring
-                if sensor_data.get("CameraRGB", None) is not None and sensor_data.get("CameraDepth",None) is not None:
+                if sensor_data.get("CameraRGB", None) is not None:
                     image_BGRA = to_bgra_array(sensor_data["CameraRGB"])
-                
+                    
                 depth_image = None
                 # Camera depth image acquiring
                 if sensor_data.get("CameraDepth",None) is not None:
@@ -1003,7 +1031,8 @@ def exec_waypoint_nav_demo(args):
                     consider_lead = True
                     local_waypoints = lp._velocity_planner.compute_velocity_profile(best_path, desired_speed, ego_state, current_speed, stop_to_obstacle, stop_to_red_traffic_light, lead_car_state, bp._follow_lead_vehicle, consider_lead)
 
-                    print(f"PROFILE: {local_waypoints}")
+                    # print(f"PROFILE: {local_waypoints}")
+                    print(f"speed: {current_speed}")
 
                     if local_waypoints != None:
                         # Update the controller waypoint path with the best local path.
