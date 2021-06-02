@@ -125,7 +125,7 @@ TIME_GAP               = 1.0              # s
 PATH_SELECT_WEIGHT     = 10
 A_MAX                  = 2.5              # m/s^2
 SLOW_SPEED             = 2              # m/s
-STOP_LINE_BUFFER       = 3.5              # m
+STOP_LINE_BUFFER       = 1              # m
 LP_FREQUENCY_DIVISOR   = 2                # Frequency divisor to make the 
                                           # local planner operate at a lower
                                           # frequency than the controller
