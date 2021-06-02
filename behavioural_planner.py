@@ -239,11 +239,9 @@ class BehaviouralPlanner:
 
         # In this case, reaching the closest waypoint is already far enough for
         # the planner.  No need to check additional waypoints.
-        
-        if self._check_for_turn(ego_state, waypoints[wp_index]) and ego_state[3] > STOP_THRESHOLD :
+        if self._check_for_turn(ego_state, waypoints[wp_index]):
             #print("waypoint on turn")
-            return wp_index+2
-        
+            return wp_index+4
 
         if arc_length > self._lookahead:
             return wp_index
@@ -258,13 +256,13 @@ class BehaviouralPlanner:
         while wp_index < len(waypoints) - 1:
             #print(F"Waypoints X:{waypoints[wp_index][0]} Y:{waypoints[wp_index][1]}")
             arc_length += np.sqrt((waypoints[wp_index][0] - waypoints[wp_index+1][0])**2 + (waypoints[wp_index][1] - waypoints[wp_index+1][1])**2)
-            # check for turn
             
-            if self._check_for_turn(ego_state, waypoints[wp_index]) and ego_state[3] > STOP_THRESHOLD:
+            # check for turn
+            if self._check_for_turn(ego_state, waypoints[wp_index]):
                 #print("waypoint on turn")
-                wp_index += 2
+                wp_index += 4
                 break
-        
+            
             if arc_length > self._lookahead: break
             wp_index += 1
 
@@ -289,12 +287,11 @@ class BehaviouralPlanner:
         # Next, find the goal index that lies within the lookahead distance
         # along the waypoints.
         goal_index = self.get_goal_index(waypoints, ego_state, closest_len, closest_index)
-        while waypoints[goal_index][2] <= 0.1 and goal_index < len(waypoints[2]):
+        while waypoints[goal_index][2] <= 0.1:
             goal_index += 1
-        self._goal_index = goal_index % len(waypoints[2])
-        self._goal_state = list(waypoints[goal_index])
-        print(F"Goal wp {waypoints[goal_index]}")
-        print(F"Goal state first {self._goal_state}")
+        self._goal_index = goal_index
+        self._goal_state = waypoints[goal_index]
+        
 # Compute the waypoint index that is closest to the ego vehicle, and return
 # it as well as the distance from the ego vehicle to that waypoint.
 def get_closest_index(waypoints, ego_state):

@@ -127,7 +127,6 @@ class VelocityPlanner:
 
         # Generate a trapezoidal profile to decelerate to stop.
         if stop_to_obstacle:
-            print("OBSTACLE PROFILE")
             profile = self.decelerate_profile(path, start_speed)
         elif (lead_car_state is not None and follow_lead_vehicle and consider_lead):
             profile = self.follow_profile(path, start_speed, desired_speed, lead_car_state)

@@ -149,7 +149,7 @@ VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 30 # m
 PEDESTRIAN_OBSTACLE_LOOKAHEAD = 20 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
-SHOW_LIVE_PLOTTER = False
+SHOW_LIVE_PLOTTER = True
 PRODUCE_VIDEO = False
 
 # Camera parameters
@@ -455,7 +455,6 @@ def write_collisioncount_file(collided_list):
 
 def make_correction(waypoint,previuos_waypoint,desired_speed):
     offset = 2.0
-
     dx = waypoint[0] - previuos_waypoint[0]
     dy = waypoint[1] - previuos_waypoint[1]
 
@@ -608,16 +607,13 @@ def exec_waypoint_nav_demo(args):
         prev_y = False
         # Put waypoints in the lane
         previuos_waypoint = mission_planner._map.convert_to_world(waypoints_route[0])
-        
-        aftern_turn = False
         for i in range(1,len(waypoints_route)):
             point = waypoints_route[i]
 
-            """
             waypoint = mission_planner._map.convert_to_world(point)
-            
-            current_waypoint = make_correction(waypoint,previuos_waypoint,desired_speed)
 
+            current_waypoint = make_correction(waypoint,previuos_waypoint,desired_speed)
+            
             dx = current_waypoint[0] - previuos_waypoint[0]
             dy = current_waypoint[1] - previuos_waypoint[1]
 
@@ -625,20 +621,17 @@ def exec_waypoint_nav_demo(args):
 
             prev_x = abs(dx) > 0.1
             prev_y = abs(dy) > 0.1
-            """
 
-            if point in intersection_nodes: 
-                aftern_turn = True
-
+            if point in intersection_nodes:                
                 prev_start_intersection = mission_planner._map.convert_to_world(waypoints_route[i-2])
                 center_intersection = mission_planner._map.convert_to_world(waypoints_route[i])
 
-                start_intersection = mission_planner._map.convert_to_world(waypoints_route[i-1])                
+                start_intersection = mission_planner._map.convert_to_world(waypoints_route[i-1])
                 end_intersection = mission_planner._map.convert_to_world(waypoints_route[i+1])
-                
+
                 start_intersection = make_correction(start_intersection,prev_start_intersection,turn_speed)
                 end_intersection = make_correction(end_intersection,center_intersection,turn_speed)
-
+                
                 dx = start_intersection[0] - end_intersection[0]
                 dy = start_intersection[1] - end_intersection[1]
 
@@ -687,7 +680,7 @@ def exec_waypoint_nav_demo(args):
 
                     start_to_end = 1 if theta_start < theta_end else -1
 
-                    theta_step = (abs(theta_end - theta_start) * start_to_end) / 20
+                    theta_step = (abs(theta_end - theta_start) * start_to_end) /20
 
                     theta = theta_start + 6*theta_step
 
@@ -711,11 +704,8 @@ def exec_waypoint_nav_demo(args):
                 else:
                     target_speed = desired_speed
                 
-                if not aftern_turn:
-                    waypoint_on_lane = make_correction(waypoint,previuos_waypoint,target_speed)
-                else:
-                    waypoint_on_lane = waypoints[-1]
-                    aftern_turn = False
+                waypoint_on_lane = make_correction(waypoint,previuos_waypoint,target_speed)
+
                 waypoints.append(waypoint_on_lane)
 
                 previuos_waypoint = waypoint
@@ -988,7 +978,6 @@ def exec_waypoint_nav_demo(args):
                 # Calculate the goal state set in the local frame for the local planner.
                 # Current speed should be open loop for the velocity profile generation.
                 ego_state = [current_x, current_y, current_yaw, open_loop_speed]
-
                 # Set lookahead .
                 if tl_distance != None:
                     # if there is a traffic ligt
@@ -1004,17 +993,16 @@ def exec_waypoint_nav_demo(args):
                 
                 # Perform a state transition in the behavioural planner.
                 bp.transition_state(waypoints, ego_state, current_speed)
-
                 
                 # Compute the goal state set from the behavioural planner's computed goal state.
                 goal_state_set = lp.get_goal_state_set(bp._goal_index, bp._goal_state, waypoints, ego_state)
-
+                
                 # Calculate planned paths in the local frame.
                 paths, path_validity = lp.plan_paths(goal_state_set)
 
                 # Transform those paths back to the global frame.
                 paths = local_planner.transform_paths(paths, ego_state)
-
+                
                 ### Perform collision checking.
                 # collision_check_array = lp._collision_checker.collision_check(paths, box_pts_obstacles)
                 all_obs = box_pts_obstacles + box_pts_future_obstacles
@@ -1042,11 +1030,8 @@ def exec_waypoint_nav_demo(args):
                     if lead_car_state is not None and ego_state[3] < lead_car_state[2]:
                         consider_lead = False
                     consider_lead = True
+                    
                     local_waypoints = lp._velocity_planner.compute_velocity_profile(best_path, desired_speed, ego_state, current_speed, stop_to_obstacle, stop_to_red_traffic_light, lead_car_state, bp._follow_lead_vehicle, consider_lead)
-
-                    # print(f"PROFILE: {local_waypoints}")
-                    print(f"speed: {current_speed}")
-
                     if local_waypoints != None:
                         # Update the controller waypoint path with the best local path.
                         # This controller is similar to that developed in Course 1 of this

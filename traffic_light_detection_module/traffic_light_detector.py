@@ -27,8 +27,8 @@ class trafficLightDetector:
             image = draw_boxes(image, [best_bb], self.config['model']['classes'])
 
         # Show and save image
-        cv2.imshow('demo', image)
-        cv2.waitKey(1)
+        #cv2.imshow('demo', image)
+        #cv2.waitKey(1)
         
         img_path = f"traffic_light_detection_module\\out\\out{self.i}.jpg"
         # img_path = os.path.join(BASE_DIR, img_name)
