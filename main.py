@@ -149,7 +149,7 @@ VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 30 # m
 PEDESTRIAN_OBSTACLE_LOOKAHEAD = 20 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
-SHOW_LIVE_PLOTTER = True
+SHOW_LIVE_PLOTTER = False
 PRODUCE_VIDEO = False
 
 # Camera parameters
@@ -454,7 +454,7 @@ def write_collisioncount_file(collided_list):
         collision_file.write(str(sum(collided_list)))
 
 def make_correction(waypoint,previuos_waypoint,desired_speed):
-    offset = 2.0
+    offset = 2
     dx = waypoint[0] - previuos_waypoint[0]
     dy = waypoint[1] - previuos_waypoint[1]
 
@@ -942,6 +942,9 @@ def exec_waypoint_nav_demo(args):
             # stored in the variable LP_FREQUENCY_DIVISOR, as it is analogous
             # to be operating at a frequency that is a division to the 
             # simulation frequency.
+
+            stop_to_obstacle = False
+
             if frame % LP_FREQUENCY_DIVISOR == 0:
 
                 tl_state = tl_distance = None 
@@ -1081,12 +1084,17 @@ def exec_waypoint_nav_demo(args):
             ###
             # Controller Update
             ###
-            if local_waypoints != None and local_waypoints != []:
+            if local_waypoints != None and local_waypoints != [] and not stop_to_obstacle:
                 controller.update_values(current_x, current_y, current_yaw, 
                                          current_speed,
                                          current_timestamp, frame)
                 controller.update_controls()
                 cmd_throttle, cmd_steer, cmd_brake = controller.get_commands()
+            elif stop_to_obstacle:
+                cmd_throttle = 0.0
+                cmd_steer = 0.0
+                cmd_brake = 1.0
+
             '''
             else:
                 cmd_throttle = 0.0

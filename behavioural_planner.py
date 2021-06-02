@@ -237,11 +237,14 @@ class BehaviouralPlanner:
         arc_length = closest_len
         wp_index = closest_index
 
+        wp_lookahead = 2
+
+
         # In this case, reaching the closest waypoint is already far enough for
         # the planner.  No need to check additional waypoints.
         if self._check_for_turn(ego_state, waypoints[wp_index]):
             #print("waypoint on turn")
-            return wp_index+4
+            return wp_index + wp_lookahead
 
         if arc_length > self._lookahead:
             return wp_index
@@ -260,7 +263,7 @@ class BehaviouralPlanner:
             # check for turn
             if self._check_for_turn(ego_state, waypoints[wp_index]):
                 #print("waypoint on turn")
-                wp_index += 4
+                wp_index += wp_lookahead
                 break
             
             if arc_length > self._lookahead: break
