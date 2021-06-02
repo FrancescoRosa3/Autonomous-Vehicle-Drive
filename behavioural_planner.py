@@ -200,7 +200,6 @@ class BehaviouralPlanner:
         else:
             raise ValueError('Invalid state value.')
 
-        print(F"Goal state out {self._goal_state}")
     # Gets the goal index in the list of waypoints, based on the lookahead and
     # the current ego state. In particular, find the earliest waypoint that has accumulated
     # arc length (including closest_len) that is greater than or equal to self._lookahead.
@@ -246,11 +245,13 @@ class BehaviouralPlanner:
 
         wp_lookahead = 1
 
+        '''
         # In this case, reaching the closest waypoint is already far enough for
         # the planner.  No need to check additional waypoints.
         if self._check_for_turn(ego_state, waypoints[wp_index]):
             final = wp_index + wp_lookahead
             return wp_index + wp_lookahead
+        '''
 
         if arc_length > self._lookahead:
             return wp_index
@@ -265,11 +266,13 @@ class BehaviouralPlanner:
         while wp_index < len(waypoints) - 1:
             #print(F"Waypoints X:{waypoints[wp_index][0]} Y:{waypoints[wp_index][1]}")
             arc_length += np.sqrt((waypoints[wp_index][0] - waypoints[wp_index+1][0])**2 + (waypoints[wp_index][1] - waypoints[wp_index+1][1])**2)
-            
+
+            '''    
             # check for turn
             if self._check_for_turn(ego_state, waypoints[wp_index]):
                 wp_index += wp_lookahead
                 break
+            '''
             
             if arc_length > self._lookahead: break
             wp_index += 1
@@ -282,7 +285,6 @@ class BehaviouralPlanner:
         
         offset = 1
 
-        print(F"Dx X:{dx} Dy:{dy}")
         if abs(dx) < offset or abs(dy) < offset:
             return False
         else:

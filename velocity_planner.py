@@ -128,14 +128,12 @@ class VelocityPlanner:
         # Generate a trapezoidal profile to decelerate to stop.
         if stop_to_obstacle:
             profile = self.emergency_stop_profile(path, start_speed)
-            print(F"EMERGENCY STOP:\n{profile}")
         elif (lead_car_state is not None and follow_lead_vehicle and consider_lead):
             profile = self.follow_profile(path, start_speed, desired_speed, lead_car_state)
         elif stop_to_red_traffic_light:
             profile = self.decelerate_profile(path, start_speed)
         else:
             profile = self.nominal_profile(path, start_speed, desired_speed)
-            print(F"NOMINAL PROFILE:\n{profile}")
 
         # Interpolate between the zeroth state and the first state.
         # This prevents the myopic controller from getting stuck at the zeroth
@@ -366,7 +364,7 @@ class VelocityPlanner:
             vf = calc_final_speed(vi, -self._a_max, dist)
             speeds.append(vf)
             vi = vf
-            
+
         for i in range(stop_index, len(path[0])):
             speeds.append(0)
         
@@ -575,12 +573,9 @@ def calc_final_speed(v_i, a, d):
     returns:
         v_f: the final speed (m/s)
     """
-    #pass
 
     
     temp = v_i*v_i+2*d*a
-    print(f"vi: {v_i} - d: {d} - a: {a}")
-    print(f"temp: {temp}")
     if temp < 0: return 0.0000001
     else: return sqrt(temp)
 

@@ -43,7 +43,7 @@ class CollisionChecker:
             path           = paths[i]
 
             # Iterate over the points in the path.
-            for j in range(len(path[0])):
+            for j in range(10, len(path[0])):
                 # Compute the circle locations along this point in the path.
                 # These circle represent an approximate collision
                 # border for the vehicle, which will be used to check

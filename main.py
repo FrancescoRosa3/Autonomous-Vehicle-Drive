@@ -68,14 +68,15 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 10     # seed for vehicle spawn randomizer
 '''
 
-PLAYER_START_INDEX = 51        #  spawn index for player
-DESTINATION_INDEX = 90         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 30   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+######################### TESTS ON PEDESTRIANS ###############################
+PLAYER_START_INDEX = 6        #  spawn index for player
+DESTINATION_INDEX = 20         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 300      # total number of pedestrians to spawn
+NUM_VEHICLES           = 0   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 
-###############################################################################àà
+###############################################################################
 
 ITER_FOR_SIM_TIMESTEP  = 10         # no. iterations to compute approx sim timestep
 WAIT_TIME_BEFORE_START = 1.00       # game seconds (time before controller start)
@@ -146,10 +147,10 @@ CONTROLLER_OUTPUT_FOLDER = os.path.dirname(os.path.realpath(__file__)) +\
 CRUISE_SPEED = 5 # m/s
 HALF_CRUISE_SPEED = 2.5 # m/s
 VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 30 # m
-PEDESTRIAN_OBSTACLE_LOOKAHEAD = 20 # m
+PEDESTRIAN_OBSTACLE_LOOKAHEAD = 8 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
-SHOW_LIVE_PLOTTER = True
+SHOW_LIVE_PLOTTER = False
 PRODUCE_VIDEO = False
 
 # Camera parameters
@@ -1077,7 +1078,7 @@ def exec_waypoint_nav_demo(args):
                         # Update the other controller values and controls
                         controller.update_waypoints(wp_interp)
                     else:
-                        print("No best path")
+                        print("No velocity profile computed")
 
             ###
             # Controller Update
