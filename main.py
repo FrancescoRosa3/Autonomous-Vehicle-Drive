@@ -607,6 +607,7 @@ def exec_waypoint_nav_demo(args):
         prev_y = False
         # Put waypoints in the lane
         previuos_waypoint = mission_planner._map.convert_to_world(waypoints_route[0])
+        aftern_turn = False
         for i in range(1,len(waypoints_route)):
             point = waypoints_route[i]
 
@@ -622,7 +623,8 @@ def exec_waypoint_nav_demo(args):
             prev_x = abs(dx) > 0.1
             prev_y = abs(dy) > 0.1
 
-            if point in intersection_nodes:                
+            if point in intersection_nodes:
+                aftern_turn = True                
                 prev_start_intersection = mission_planner._map.convert_to_world(waypoints_route[i-2])
                 center_intersection = mission_planner._map.convert_to_world(waypoints_route[i])
 
@@ -704,7 +706,11 @@ def exec_waypoint_nav_demo(args):
                 else:
                     target_speed = desired_speed
                 
-                waypoint_on_lane = make_correction(waypoint,previuos_waypoint,target_speed)
+                if not aftern_turn:
+                    waypoint_on_lane = make_correction(waypoint,previuos_waypoint,target_speed)
+                else:
+                    waypoint_on_lane = waypoints[-1]
+                    aftern_turn = False
 
                 waypoints.append(waypoint_on_lane)
 
