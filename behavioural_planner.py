@@ -21,6 +21,9 @@ STOP_COUNTS = 10
 STOP_TRAFFIC_LIGHT = 5
 SLOW_DOWN_TRAFFIC_LIGHT = 15
 
+# 
+TURN_LOOKAHEAD = 1 #m
+
 class BehaviouralPlanner:
     def __init__(self, lookahead):
         self._lookahead                     = lookahead
@@ -163,6 +166,8 @@ class BehaviouralPlanner:
         # enforcing the car to stay stopped.
         elif self._state == STOP_AT_TRAFFIC_LIGHT:
             print("FSM STATE: STOP_AT_TRAFFIC_LIGHT")
+            if closed_loop_speed > STOP_THRESHOLD:
+                self._update_goal_index(waypoints, ego_state)
             self._goal_state[2] = 0
             if self._obstacle_on_lane:
                 self._state = STOP_AT_OBSTACLE
@@ -178,6 +183,8 @@ class BehaviouralPlanner:
         # enforcing the car to stay stopped.
         elif self._state == STOP_AT_OBSTACLE:
             print("FSM STATE: STOP_AT_OBSTACLE")
+            if closed_loop_speed > STOP_THRESHOLD:
+                self._update_goal_index(waypoints, ego_state)
             self._goal_state[2] = 0
             if not self._obstacle_on_lane:
                 if self._traffic_light_state == STOP and self._traffic_light_distance != None:
@@ -239,11 +246,10 @@ class BehaviouralPlanner:
 
         wp_lookahead = 1
 
-
         # In this case, reaching the closest waypoint is already far enough for
         # the planner.  No need to check additional waypoints.
         if self._check_for_turn(ego_state, waypoints[wp_index]):
-            #print("waypoint on turn")
+            final = wp_index + wp_lookahead
             return wp_index + wp_lookahead
 
         if arc_length > self._lookahead:
@@ -262,13 +268,12 @@ class BehaviouralPlanner:
             
             # check for turn
             if self._check_for_turn(ego_state, waypoints[wp_index]):
-                #print("waypoint on turn")
                 wp_index += wp_lookahead
                 break
             
             if arc_length > self._lookahead: break
             wp_index += 1
-
+        
         return wp_index % len(waypoints)
 
     def _check_for_turn(self, ego_state, closest_waypoint):
@@ -277,7 +282,7 @@ class BehaviouralPlanner:
         
         offset = 1
 
-        #print(F"Dx X:{dx} Dy:{dy}")
+        print(F"Dx X:{dx} Dy:{dy}")
         if abs(dx) < offset or abs(dy) < offset:
             return False
         else:
@@ -293,7 +298,7 @@ class BehaviouralPlanner:
         while waypoints[goal_index][2] <= 0.1:
             goal_index += 1
         self._goal_index = goal_index
-        self._goal_state = waypoints[goal_index]
+        self._goal_state = list(waypoints[goal_index])
         
 # Compute the waypoint index that is closest to the ego vehicle, and return
 # it as well as the distance from the ego vehicle to that waypoint.

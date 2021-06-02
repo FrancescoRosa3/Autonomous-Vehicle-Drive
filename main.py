@@ -149,7 +149,7 @@ VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 30 # m
 PEDESTRIAN_OBSTACLE_LOOKAHEAD = 20 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
-SHOW_LIVE_PLOTTER = False
+SHOW_LIVE_PLOTTER = True
 PRODUCE_VIDEO = False
 
 # Camera parameters
@@ -623,8 +623,7 @@ def exec_waypoint_nav_demo(args):
             prev_x = abs(dx) > 0.1
             prev_y = abs(dy) > 0.1
 
-            if point in intersection_nodes:
-                aftern_turn = True                
+            if point in intersection_nodes:   
                 prev_start_intersection = mission_planner._map.convert_to_world(waypoints_route[i-2])
                 center_intersection = mission_planner._map.convert_to_world(waypoints_route[i])
 
@@ -706,12 +705,8 @@ def exec_waypoint_nav_demo(args):
                 else:
                     target_speed = desired_speed
                 
-                if not aftern_turn:
-                    waypoint_on_lane = make_correction(waypoint,previuos_waypoint,target_speed)
-                else:
-                    waypoint_on_lane = waypoints[-1]
-                    aftern_turn = False
-
+                waypoint_on_lane = make_correction(waypoint,previuos_waypoint,target_speed)
+                
                 waypoints.append(waypoint_on_lane)
 
                 previuos_waypoint = waypoint
@@ -1023,6 +1018,7 @@ def exec_waypoint_nav_demo(args):
                 best_index = lp._collision_checker.select_best_path_index(paths, collision_check_array, bp._goal_state)
                 # If no path was feasible, continue to follow the previous best path.
                 if best_index == None:
+                    print("No best path")
                     best_path = lp._prev_best_path
                 else:
                     best_path = paths[best_index]
@@ -1080,6 +1076,8 @@ def exec_waypoint_nav_demo(args):
                         
                         # Update the other controller values and controls
                         controller.update_waypoints(wp_interp)
+                    else:
+                        print("No best path")
 
             ###
             # Controller Update
