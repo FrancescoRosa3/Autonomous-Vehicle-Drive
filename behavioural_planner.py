@@ -237,7 +237,7 @@ class BehaviouralPlanner:
         arc_length = closest_len
         wp_index = closest_index
 
-        wp_lookahead = 2
+        wp_lookahead = 1
 
 
         # In this case, reaching the closest waypoint is already far enough for
@@ -275,7 +275,7 @@ class BehaviouralPlanner:
         dx = ego_state[0] - closest_waypoint[0]
         dy = ego_state[1] - closest_waypoint[1]
         
-        offset = 0.7
+        offset = 1
 
         #print(F"Dx X:{dx} Dy:{dy}")
         if abs(dx) < offset or abs(dy) < offset:

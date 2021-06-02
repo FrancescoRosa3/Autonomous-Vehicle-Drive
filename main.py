@@ -454,7 +454,7 @@ def write_collisioncount_file(collided_list):
         collision_file.write(str(sum(collided_list)))
 
 def make_correction(waypoint,previuos_waypoint,desired_speed):
-    offset = 2
+    offset = 1.5
     dx = waypoint[0] - previuos_waypoint[0]
     dy = waypoint[1] - previuos_waypoint[1]
 
@@ -1084,23 +1084,17 @@ def exec_waypoint_nav_demo(args):
             ###
             # Controller Update
             ###
-            if local_waypoints != None and local_waypoints != [] and not stop_to_obstacle:
+            if local_waypoints != None and local_waypoints != []:
                 controller.update_values(current_x, current_y, current_yaw, 
                                          current_speed,
                                          current_timestamp, frame)
                 controller.update_controls()
                 cmd_throttle, cmd_steer, cmd_brake = controller.get_commands()
-            elif stop_to_obstacle:
-                cmd_throttle = 0.0
-                cmd_steer = 0.0
-                cmd_brake = 1.0
-
-            '''
             else:
                 cmd_throttle = 0.0
                 cmd_steer = 0.0
                 cmd_brake = 0.0
-            '''
+            
             # Skip the first frame or if there exists no local paths
             if SHOW_LIVE_PLOTTER:
                 if skip_first_frame and frame == 0:
