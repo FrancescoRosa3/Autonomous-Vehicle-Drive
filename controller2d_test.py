@@ -261,7 +261,7 @@ class Controller2D(object):
             steer_output = max(-1.22, steer_output)
             """
             
-            
+            '''
             # in this controller, we use pure pursuit method to design lateral controller
             # the dynamic model is not used here, just pure tuning of the gains.
 
@@ -301,7 +301,7 @@ class Controller2D(object):
             steer_output = min(steer_output,1.22)
             steer_output = max(steer_output,-1.22)
             #print("steer_output: ",steer_output/3.1415926*180)
-            
+            '''
             ######################################################
             # SET CONTROLS OUTPUT
             ######################################################
