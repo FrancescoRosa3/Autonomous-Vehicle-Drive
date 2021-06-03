@@ -80,10 +80,10 @@ SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 
 
 ######################### TESTS ON PEDESTRIANS ###############################
-PLAYER_START_INDEX = 6        #  spawn index for player
+PLAYER_START_INDEX = 13        #  spawn index for player
 DESTINATION_INDEX = 27         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 300      # total number of pedestrians to spawn
-NUM_VEHICLES           = 0   # total number of vehicles to spawn
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 30   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 
@@ -771,7 +771,7 @@ def exec_waypoint_nav_demo(args):
             
             
             file_name = os.path.join(CONTROLLER_OUTPUT_FOLDER, 'reference_trajectory.txt')
-            with open(file_name, "a") as reference_file:
+            with open(file_name, "w") as reference_file:
                 for wp in wp_interp:
                     reference_file.write('%3.3f, %3.3f, %6.3f \n' %\
                                             (wp[0], wp[1], wp[2]))
