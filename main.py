@@ -467,7 +467,7 @@ def write_collisioncount_file(collided_list):
         collision_file.write(str(sum(collided_list)))
 
 def make_correction(waypoint,previuos_waypoint,desired_speed):
-    offset = 1.5
+    offset = 2
     dx = waypoint[0] - previuos_waypoint[0]
     dy = waypoint[1] - previuos_waypoint[1]
 
@@ -1028,7 +1028,9 @@ def exec_waypoint_nav_demo(args):
                 bp.set_obstacle_on_lane(collision_check_array)
 
                 # Compute the best local path.
-                best_index = lp._collision_checker.select_best_path_index(paths, collision_check_array, bp._goal_state)
+                best_index, out_lane_check_array = lp._collision_checker.select_best_path_index(paths, collision_check_array, bp._goal_state)
+
+                collision_check_array = collision_check_array | out_lane_check_array
                 # If no path was feasible, continue to follow the previous best path.
                 if best_index == None:
                     print("No best path")

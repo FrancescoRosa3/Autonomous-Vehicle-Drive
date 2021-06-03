@@ -129,6 +129,7 @@ class CollisionChecker:
         """
         best_index = None
         best_score = float('Inf')
+        out_lane_check_array = np.zeros(len(paths), dtype=bool)
         for i in range(len(paths)):
             # Handle the case of collision-free paths.
             if collision_check_array[i]:
@@ -137,7 +138,12 @@ class CollisionChecker:
                 # The exact choice of objective function is up to you.
                 # A lower score implies a more suitable path.
                 score = np.sqrt((paths[i][0][-1]-goal_state[0])**2+(paths[i][1][-1]-goal_state[1])**2)
-
+                out_lane_check_array[i] = False
+                
+                if score > 2:
+                    score = float('Inf')
+                    out_lane_check_array[i] = True
+                
                 # Compute the "proximity to other colliding paths" score and
                 # add it to the "distance from centerline" score.
                 # The exact choice of objective function is up to you.
@@ -157,4 +163,4 @@ class CollisionChecker:
                 best_score = score
                 best_index = i
 
-        return best_index
+        return best_index, out_lane_check_array
