@@ -163,6 +163,7 @@ PEDESTRIAN_OBSTACLE_LOOKAHEAD = 15 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
 SHOW_LIVE_PLOTTER = True
+SAVE_PATH_REFERENCE = True
 PRODUCE_VIDEO = False
 
 # Camera parameters
@@ -725,6 +726,55 @@ def exec_waypoint_nav_demo(args):
                 previuos_waypoint = waypoint
 
         waypoints = np.array(waypoints)
+        
+        if SAVE_PATH_REFERENCE:
+            waypoints_np = np.array(waypoints)    
+            # Linear interpolation computations
+            # Compute a list of distances between waypoints
+            wp_distance = []   # distance array
+            for i in range(1, waypoints_np.shape[0]):
+                wp_distance.append(
+                        np.sqrt((waypoints_np[i, 0] - waypoints_np[i-1, 0])**2 +
+                                (waypoints_np[i, 1] - waypoints_np[i-1, 1])**2))
+            wp_distance.append(0)  # last distance is 0 because it is the distance
+                                # from the last waypoint to the last waypoint
+
+            # Linearly interpolate between waypoints and store in a list
+            wp_interp      = []    # interpolated values 
+                                # (rows = waypoints, columns = [x, y, v])
+            wp_interp_hash = []    # hash table which indexes waypoints_np
+                                # to the index of the waypoint in wp_interp
+            interp_counter = 0     # counter for current interpolated point index
+            for i in range(waypoints_np.shape[0] - 1):
+                # Add original waypoint to interpolated waypoints list (and append
+                # it to the hash table)
+                wp_interp.append(list(waypoints_np[i]))
+                wp_interp_hash.append(interp_counter)   
+                interp_counter+=1
+                
+                # Interpolate to the next waypoint. First compute the number of
+                # points to interpolate based on the desired resolution and
+                # incrementally add interpolated points until the next waypoint
+                # is about to be reached.
+                num_pts_to_interp = int(np.floor(wp_distance[i] /\
+                                            float(INTERP_DISTANCE_RES)) - 1)
+                wp_vector = waypoints_np[i+1] - waypoints_np[i]
+                wp_uvector = wp_vector / np.linalg.norm(wp_vector)
+                for j in range(num_pts_to_interp):
+                    next_wp_vector = INTERP_DISTANCE_RES * float(j+1) * wp_uvector
+                    wp_interp.append(list(waypoints_np[i] + next_wp_vector))
+                    interp_counter+=1
+            # add last waypoint at the end
+            wp_interp.append(list(waypoints_np[-1]))
+            wp_interp_hash.append(interp_counter)   
+            interp_counter+=1
+            
+            
+            file_name = os.path.join(CONTROLLER_OUTPUT_FOLDER, 'reference_trajectory.txt')
+            with open(file_name, "a") as reference_file:
+                for wp in wp_interp:
+                    reference_file.write('%3.3f, %3.3f, %6.3f \n' %\
+                                            (wp[0], wp[1], wp[2]))
         #############################################
         # Controller 2D Class Declaration
         #############################################
@@ -1033,7 +1083,7 @@ def exec_waypoint_nav_demo(args):
                 collision_check_array = collision_check_array | out_lane_check_array
                 # If no path was feasible, continue to follow the previous best path.
                 if best_index == None:
-                    print("No best path")
+                    print("No best index")
                     best_path = lp._prev_best_path
                 else:
                     best_path = paths[best_index]
@@ -1088,7 +1138,7 @@ def exec_waypoint_nav_demo(args):
                                 wp_interp.append(list(local_waypoints_np[i] + next_wp_vector))
                         # add last waypoint at the end
                         wp_interp.append(list(local_waypoints_np[-1]))
-                        
+                                            
                         # Update the other controller values and controls
                         controller.update_waypoints(wp_interp)
                     else:
@@ -1215,11 +1265,12 @@ def exec_waypoint_nav_demo(args):
         # Stop the car
         send_control_command(client, throttle=0.0, steer=0.0, brake=1.0)
         # Store the various outputs
-        store_trajectory_plot(trajectory_fig.fig, 'trajectory.png')
-        store_trajectory_plot(forward_speed_fig.fig, 'forward_speed.png')
-        store_trajectory_plot(throttle_fig.fig, 'throttle_output.png')
-        store_trajectory_plot(brake_fig.fig, 'brake_output.png')
-        store_trajectory_plot(steer_fig.fig, 'steer_output.png')
+        if SHOW_LIVE_PLOTTER:
+            store_trajectory_plot(trajectory_fig.fig, 'trajectory.png')
+            store_trajectory_plot(forward_speed_fig.fig, 'forward_speed.png')
+            store_trajectory_plot(throttle_fig.fig, 'throttle_output.png')
+            store_trajectory_plot(brake_fig.fig, 'brake_output.png')
+            store_trajectory_plot(steer_fig.fig, 'steer_output.png')
         write_trajectory_file(x_history, y_history, speed_history, time_history,
                               collided_flag_history)
         write_collisioncount_file(collided_flag_history)
