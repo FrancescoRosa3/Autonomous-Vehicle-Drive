@@ -50,7 +50,7 @@ class BehaviouralPlanner:
                 if path_result:
                     self._obstacle_on_lane = False
                     return
-            self._obstacle_on_lane = True
+                self._obstacle_on_lane = True
         else:
             self._obstacle_on_lane = False
     
@@ -183,8 +183,8 @@ class BehaviouralPlanner:
         # enforcing the car to stay stopped.
         elif self._state == STOP_AT_OBSTACLE:
             print("FSM STATE: STOP_AT_OBSTACLE")
-            if closed_loop_speed > STOP_THRESHOLD:
-                self._update_goal_index(waypoints, ego_state)
+            #if closed_loop_speed > STOP_THRESHOLD:
+            self._update_goal_index(waypoints, ego_state)
             self._goal_state[2] = 0
             if not self._obstacle_on_lane:
                 if self._traffic_light_state == STOP and self._traffic_light_distance != None:
@@ -273,7 +273,7 @@ class BehaviouralPlanner:
                 wp_index += wp_lookahead
                 break
             '''
-            
+
             if arc_length > self._lookahead: break
             wp_index += 1
         

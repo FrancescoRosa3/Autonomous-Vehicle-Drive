@@ -68,13 +68,25 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 10     # seed for vehicle spawn randomizer
 '''
 
-######################### TESTS ON PEDESTRIANS ###############################
-PLAYER_START_INDEX = 6        #  spawn index for player
+'''
+######################### RED TRAFFIC LIGHT - NO OBSTACLES ###############################
+PLAYER_START_INDEX = 13        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 300      # total number of pedestrians to spawn
-NUM_VEHICLES           = 0   # total number of vehicles to spawn
+NUM_PEDESTRIANS        = 50      # total number of pedestrians to spawn
+NUM_VEHICLES           = 50   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
+
+
+######################### TESTS ON PEDESTRIANS ###############################
+PLAYER_START_INDEX = 6        #  spawn index for player
+DESTINATION_INDEX = 27         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 300      # total number of pedestrians to spawn
+NUM_VEHICLES           = 0   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+
 
 ###############################################################################
 
@@ -116,7 +128,7 @@ DIST_THRESHOLD_TO_LAST_WAYPOINT = 2.0  # some distance from last position before
                                        # simulation ends
 
 # Planning Constants
-NUM_PATHS = 7
+NUM_PATHS = 5
 BP_LOOKAHEAD_BASE      = 16.0             # m
 BP_LOOKAHEAD_TIME      = 1.0              # s
 PATH_OFFSET            = 1.5              # m
@@ -147,10 +159,10 @@ CONTROLLER_OUTPUT_FOLDER = os.path.dirname(os.path.realpath(__file__)) +\
 CRUISE_SPEED = 5 # m/s
 HALF_CRUISE_SPEED = 2.5 # m/s
 VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 30 # m
-PEDESTRIAN_OBSTACLE_LOOKAHEAD = 8 # m
+PEDESTRIAN_OBSTACLE_LOOKAHEAD = 15 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
-SHOW_LIVE_PLOTTER = False
+SHOW_LIVE_PLOTTER = True
 PRODUCE_VIDEO = False
 
 # Camera parameters

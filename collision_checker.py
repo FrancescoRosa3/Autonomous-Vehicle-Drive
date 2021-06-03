@@ -89,7 +89,7 @@ class CollisionChecker:
                     break
 
             collision_check_array[i] = collision_free
-
+        print(f"collision_check_array: {collision_check_array}")
         return collision_check_array
 
     # Selects the best path in the path set, according to how closely

@@ -45,7 +45,8 @@ class Obstacle:
         self._curr_obs_box_pts = main.obstacle_to_world(location, dimension, rotation)
 
         obstacle_speed = self._obstacle.forward_speed
-        future_frames_to_check = 20
+        print(f"OBSTACLE SPEED: {obstacle_speed }")
+        future_frames_to_check = 45
         frames_update_frequency = 0.033
         # frames_update_frequency = 1
 
@@ -65,7 +66,7 @@ class Obstacle:
         
         self._future_locations = []
         cpos = self._box_pts_to_cpos(self._curr_obs_box_pts)
-        step = 10
+        step = 15
         for i in range(1, future_frames_to_check+1, step):
             future_box_pts = []
             temp_cpos_shift = cpos_shift * step 
