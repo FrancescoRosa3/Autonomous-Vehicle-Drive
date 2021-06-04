@@ -11,7 +11,7 @@ class CollisionChecker:
 
     # Takes in a set of paths and obstacles, and returns an array
     # of bools that says whether or not each path is collision free.
-    def collision_check(self, paths, obstacles):
+    def collision_check(self, paths, obstacles, closed_loop_speed):
         """Returns a bool array on whether each path is collision free.
 
         args:
@@ -42,8 +42,18 @@ class CollisionChecker:
             collision_free = True
             path           = paths[i]
 
+            ### compute the offset path index
+            offset_to_ignore = closed_loop_speed*1.5 + 2
+            dist = 0
+            path_index = 0
+            while dist < offset_to_ignore and path_index < (len(path[0])-2):
+                temp_dist = np.sqrt((path[0][path_index+1]-path[0][path_index])**2+(path[1][path_index+1]-path[1][path_index])**2)
+                dist += temp_dist
+                path_index += 1
+            # print(f"distance: {dist:.2f} - path_index: {path_index}")
+
             # Iterate over the points in the path.
-            for j in range(10, len(path[0])):
+            for j in range(path_index, len(path[0])):
                 # Compute the circle locations along this point in the path.
                 # These circle represent an approximate collision
                 # border for the vehicle, which will be used to check
