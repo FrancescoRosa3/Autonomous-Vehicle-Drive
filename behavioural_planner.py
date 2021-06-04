@@ -3,6 +3,8 @@ from os import close
 import numpy as np
 import math
 
+from numpy.core.numeric import ones
+
 from main import CRUISE_SPEED, HALF_CRUISE_SPEED
 from traffic_lights_manager import GO, STOP, UNKNOWN
 
@@ -265,16 +267,10 @@ class BehaviouralPlanner:
         while wp_index < len(waypoints) - 1:
             #print(F"Waypoints X:{waypoints[wp_index][0]} Y:{waypoints[wp_index][1]}")
             arc_length += np.sqrt((waypoints[wp_index][0] - waypoints[wp_index+1][0])**2 + (waypoints[wp_index][1] - waypoints[wp_index+1][1])**2)
-            '''    
-            # check for turn
-            if self._check_for_turn(ego_state, waypoints[wp_index]):
-                wp_index += wp_lookahead
-                break
-            '''
-
+           
             if arc_length > self._lookahead: break
             wp_index += 1
-        
+
         return wp_index % len(waypoints)
 
     def _check_for_turn(self, ego_state, closest_waypoint):
@@ -291,7 +287,9 @@ class BehaviouralPlanner:
     def _update_goal_index(self, waypoints, ego_state):
         # First, find the closest index to the ego vehicle.
         closest_len, closest_index = get_closest_index(waypoints, ego_state, self._goal_index)
-       # Next, find the goal index that lies within the lookahead distance
+        print(f"closest index {closest_index}")
+        print(f"Closest waypoint {waypoints[closest_index]}")
+        # Next, find the goal index that lies within the lookahead distance
         # along the waypoints.
         goal_index = self.get_goal_index(waypoints, ego_state, closest_len, closest_index)
         while waypoints[goal_index][2] <= 0.1:
@@ -333,11 +331,24 @@ def get_closest_index(waypoints, ego_state, goal_index):
     closest_len = float('Inf')
     closest_index = 0
 
-    for i in range(goal_index, len(waypoints)):
+    for i in range(len(waypoints)):
         temp = (waypoints[i][0] - ego_state[0])**2 + (waypoints[i][1] - ego_state[1])**2
-        if temp < closest_len:
-            closest_len = temp
-            closest_index = i
+        
+        p_wp_world = np.array([waypoints[i][0], waypoints[i][1]]).T
+        o_world_vehicle = np.array([ego_state[0], ego_state[1]]).T
+
+        R_world_vehicle =  np.array([
+                                    [np.cos(ego_state[2]), -np.sin(ego_state[2])],
+                                    [np.sin(ego_state[2]), np.cos(ego_state[2])]])
+        
+        p_wp_vehicle = -np.matmul(R_world_vehicle.T, o_world_vehicle) + np.matmul(R_world_vehicle.T, p_wp_world)
+        #print(f"Ego state {ego_state[:2]},\n Point in world {waypoints[i][:2]}\n, Transformed wp{p_wp_vehicle}")
+        #print(f"Point in world {waypoints[i][:2]}\n, Transformed wp{p_wp_vehicle}")
+        if(p_wp_vehicle[0] > 0):               
+            if temp < closest_len:
+                closest_len = temp
+                closest_index = i
+
     closest_len = np.sqrt(closest_len)
 
     return closest_len, closest_index

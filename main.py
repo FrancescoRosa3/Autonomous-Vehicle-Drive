@@ -91,7 +91,7 @@ SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 
 '''
 ######################### RED TRAFFIC LIGHT - NO OBSTACLES ###############################
-PLAYER_START_INDEX = 13        #  spawn index for player
+PLAYER_START_INDEX = 8        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 50      # total number of pedestrians to spawn
 NUM_VEHICLES           = 50   # total number of vehicles to spawn
@@ -139,15 +139,15 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-
+#'''
 ######################### lead vehicle seen as obstacle on turn ###############################
-PLAYER_START_INDEX = 17        #  spawn index for player
+PLAYER_START_INDEX = 17       #  spawn index for player
 DESTINATION_INDEX = 90         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 30   # total number of vehicles to spawn
+NUM_PEDESTRIANS        = 1     # total number of pedestrians to spawn
+NUM_VEHICLES           = 0   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-
+#'''
 ###############################################################################
 
 ITER_FOR_SIM_TIMESTEP  = 10         # no. iterations to compute approx sim timestep
@@ -191,7 +191,7 @@ DIST_THRESHOLD_TO_LAST_WAYPOINT = 2.0  # some distance from last position before
 
 # Planning Constants
 NUM_PATHS = 5
-BP_LOOKAHEAD_BASE      = 16.0             # m
+BP_LOOKAHEAD_BASE      = 8.0             # m
 BP_LOOKAHEAD_TIME      = 1.0              # s
 PATH_OFFSET            = 1                # m
 CIRCLE_OFFSETS         = [-1.0, 1.0, 3.0] # m
@@ -200,7 +200,7 @@ TIME_GAP               = 1.0              # s
 PATH_SELECT_WEIGHT     = 10
 A_MAX                  = 2.5              # m/s^2
 SLOW_SPEED             = 2              # m/s
-STOP_LINE_BUFFER       = 1              # m
+STOP_LINE_BUFFER       = 3.5              # m
 LP_FREQUENCY_DIVISOR   = 2                # Frequency divisor to make the 
                                           # local planner operate at a lower
                                           # frequency than the controller
@@ -1126,7 +1126,7 @@ def exec_waypoint_nav_demo(args):
                 
                 # Compute open loop speed estimate.
                 open_loop_speed = lp._velocity_planner.get_open_loop_speed(current_timestamp - prev_timestamp)
-
+                print(open_loop_speed)
                 # Calculate the goal state set in the local frame for the local planner.
                 # Current speed should be open loop for the velocity profile generation.
                 ego_state = [current_x, current_y, current_yaw, open_loop_speed]

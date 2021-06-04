@@ -133,10 +133,7 @@ class VelocityPlanner:
         elif (lead_car_state is not None and follow_lead_vehicle and consider_lead):
             profile = self.follow_profile(path, start_speed, desired_speed, lead_car_state)
         elif stop_to_red_traffic_light:
-            if stop_traffic_light_distance != None:
-                profile = self.decelerate_profile(path, start_speed, stop_traffic_light_distance-2)
-            else:
-                profile = self.decelerate_profile(path, start_speed, self._stop_line_buffer)
+            profile = self.decelerate_profile(path, start_speed)
         else:
             profile = self.nominal_profile(path, start_speed, desired_speed)
 
@@ -156,7 +153,7 @@ class VelocityPlanner:
         return profile
 
     # Computes a trapezoidal profile for decelerating to stop.
-    def decelerate_profile(self, path, start_speed, stop_line): 
+    def decelerate_profile(self, path, start_speed): 
         """Computes the velocity profile for the local path to decelerate to a
         stop.
         
@@ -193,8 +190,7 @@ class VelocityPlanner:
         """
         profile          = []
         slow_speed       = self._slow_speed
-        #stop_line_buffer = self._stop_line_buffer
-        stop_line_buffer = stop_line
+        stop_line_buffer = self._stop_line_buffer
         # Using d = (v_f^2 - v_i^2) / (2 * a), compute the two distances
         # used in the trapezoidal stop behaviour. decel_distance goes from
         #  start_speed to some coasting speed (slow_speed), then brake_distance
@@ -221,6 +217,7 @@ class VelocityPlanner:
         # the path up in reverse to ensure we reach zero speed at the required
         # time.
         if brake_distance + decel_distance + stop_line_buffer > path_length:
+            print("NO SPACE FOR BRAKING")
             speeds = []
             vf = 0.0
             # The speeds past the stop line buffer should be zero.
@@ -250,6 +247,7 @@ class VelocityPlanner:
         # decelerating to our slow_speed. These two indices denote the
         # endpoints of the ramps in our trapezoidal profile.
         else:
+            print("SPACE FOR BRAKING")
             brake_index = stop_index 
             temp_dist = 0.0
             # Compute the index at which to start braking down to zero.
