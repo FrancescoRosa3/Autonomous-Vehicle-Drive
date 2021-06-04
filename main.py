@@ -119,7 +119,7 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-#'''
+'''
 ######################### TESTS ON PEDESTRIANS 3 ###############################
 PLAYER_START_INDEX = 91        #  spawn index for player
 DESTINATION_INDEX = 148         # Setting a Destination HERE
@@ -127,7 +127,7 @@ NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
 NUM_VEHICLES           = 0   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-#'''
+'''
 
 '''
 ######################### lead vehicle seen as obstacle on turn ###############################
@@ -138,6 +138,15 @@ NUM_VEHICLES           = 70   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
+
+
+######################### lead vehicle seen as obstacle on turn ###############################
+PLAYER_START_INDEX = 17        #  spawn index for player
+DESTINATION_INDEX = 90         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 30   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 
 ###############################################################################
 
@@ -215,8 +224,8 @@ VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 20 # m
 PEDESTRIAN_OBSTACLE_LOOKAHEAD = 15 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
-SHOW_LIVE_PLOTTER = False
-PRODUCE_VIDEO = True
+SHOW_LIVE_PLOTTER = True
+PRODUCE_VIDEO = False
 SAVE_PATH_REFERENCE = False
 
 # Camera parameters
@@ -1178,7 +1187,11 @@ def exec_waypoint_nav_demo(args):
                         consider_lead = False
                     consider_lead = True
                     
-                    local_waypoints = lp._velocity_planner.compute_velocity_profile(best_path, desired_speed, ego_state, current_speed, stop_to_obstacle, stop_to_red_traffic_light, lead_car_state, bp._follow_lead_vehicle, consider_lead)
+                    local_waypoints = lp._velocity_planner.compute_velocity_profile(best_path, desired_speed, 
+                                                                                    ego_state, current_speed, 
+                                                                                    stop_to_obstacle, stop_to_red_traffic_light, 
+                                                                                    lead_car_state, bp._follow_lead_vehicle, 
+                                                                                    consider_lead, bp._traffic_light_distance)
                     if local_waypoints != None:
                         # Update the controller waypoint path with the best local path.
                         # This controller is similar to that developed in Course 1 of this

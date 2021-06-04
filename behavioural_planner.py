@@ -18,7 +18,7 @@ STOP_THRESHOLD = 0.05
 STOP_COUNTS = 10
 
 # Stop traffic light threshold
-STOP_TRAFFIC_LIGHT = 5
+STOP_TRAFFIC_LIGHT = 3
 SLOW_DOWN_TRAFFIC_LIGHT = 15
 
 # 
@@ -33,7 +33,6 @@ class BehaviouralPlanner:
         self._goal_state                    = [0.0, 0.0, 0.0]
         self._goal_index                    = 0
         self._lookahead_collision_index     = 0
-    
 
         ## New parameters
         ### traffic light state
@@ -103,9 +102,9 @@ class BehaviouralPlanner:
             STOP_COUNTS     : Number of cycles (simulation iterations) 
                               before moving from stop sign.
         """
-        speed_km_h = (ego_state[2]*3600)/1000
-        # secure_distance_brake = (speed_km_h/10)*3
-        secure_distance_brake = 0
+        speed_km_h = (ego_state[3]*3600)/1000
+        secure_distance_brake = (speed_km_h/10)*3
+        print(secure_distance_brake)
         # In this state, continue tracking the lane by finding the
         # goal index in the waypoint list that is within the lookahead
         # distance. Then, check to see if the waypoint path intersects
@@ -144,6 +143,7 @@ class BehaviouralPlanner:
             print("FSM STATE: APPROACHING_RED_TRAFFIC_LIGHT")
 
             self._update_goal_index(waypoints, ego_state)
+            
             self._goal_state[2] = HALF_CRUISE_SPEED
 
             if self._obstacle_on_lane:
@@ -265,7 +265,6 @@ class BehaviouralPlanner:
         while wp_index < len(waypoints) - 1:
             #print(F"Waypoints X:{waypoints[wp_index][0]} Y:{waypoints[wp_index][1]}")
             arc_length += np.sqrt((waypoints[wp_index][0] - waypoints[wp_index+1][0])**2 + (waypoints[wp_index][1] - waypoints[wp_index+1][1])**2)
-
             '''    
             # check for turn
             if self._check_for_turn(ego_state, waypoints[wp_index]):
@@ -291,9 +290,8 @@ class BehaviouralPlanner:
 
     def _update_goal_index(self, waypoints, ego_state):
         # First, find the closest index to the ego vehicle.
-        closest_len, closest_index = get_closest_index(waypoints, ego_state)
-
-        # Next, find the goal index that lies within the lookahead distance
+        closest_len, closest_index = get_closest_index(waypoints, ego_state, self._goal_index)
+       # Next, find the goal index that lies within the lookahead distance
         # along the waypoints.
         goal_index = self.get_goal_index(waypoints, ego_state, closest_len, closest_index)
         while waypoints[goal_index][2] <= 0.1:
@@ -303,7 +301,7 @@ class BehaviouralPlanner:
         
 # Compute the waypoint index that is closest to the ego vehicle, and return
 # it as well as the distance from the ego vehicle to that waypoint.
-def get_closest_index(waypoints, ego_state):
+def get_closest_index(waypoints, ego_state, goal_index):
     """Gets closest index a given list of waypoints to the vehicle position.
 
     args:
@@ -335,7 +333,7 @@ def get_closest_index(waypoints, ego_state):
     closest_len = float('Inf')
     closest_index = 0
 
-    for i in range(len(waypoints)):
+    for i in range(goal_index, len(waypoints)):
         temp = (waypoints[i][0] - ego_state[0])**2 + (waypoints[i][1] - ego_state[1])**2
         if temp < closest_len:
             closest_len = temp

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from behavioural_planner import STOP_TRAFFIC_LIGHT
 import numpy as np
 from math import sin, cos, pi, sqrt
 
@@ -60,7 +61,8 @@ class VelocityPlanner:
     def compute_velocity_profile(self, path, desired_speed, ego_state, 
                                  closed_loop_speed, stop_to_obstacle, stop_to_red_traffic_light,
                                  lead_car_state, follow_lead_vehicle,
-                                 consider_lead):
+                                 consider_lead,
+                                 stop_traffic_light_distance):
         """Computes the velocity profile for the local planner path.
         
         args:
@@ -131,7 +133,10 @@ class VelocityPlanner:
         elif (lead_car_state is not None and follow_lead_vehicle and consider_lead):
             profile = self.follow_profile(path, start_speed, desired_speed, lead_car_state)
         elif stop_to_red_traffic_light:
-            profile = self.decelerate_profile(path, start_speed)
+            if stop_traffic_light_distance != None:
+                profile = self.decelerate_profile(path, start_speed, stop_traffic_light_distance-2)
+            else:
+                profile = self.decelerate_profile(path, start_speed, self._stop_line_buffer)
         else:
             profile = self.nominal_profile(path, start_speed, desired_speed)
 
@@ -151,7 +156,7 @@ class VelocityPlanner:
         return profile
 
     # Computes a trapezoidal profile for decelerating to stop.
-    def decelerate_profile(self, path, start_speed): 
+    def decelerate_profile(self, path, start_speed, stop_line): 
         """Computes the velocity profile for the local path to decelerate to a
         stop.
         
@@ -188,8 +193,8 @@ class VelocityPlanner:
         """
         profile          = []
         slow_speed       = self._slow_speed
-        stop_line_buffer = self._stop_line_buffer
-
+        #stop_line_buffer = self._stop_line_buffer
+        stop_line_buffer = stop_line
         # Using d = (v_f^2 - v_i^2) / (2 * a), compute the two distances
         # used in the trapezoidal stop behaviour. decel_distance goes from
         #  start_speed to some coasting speed (slow_speed), then brake_distance
