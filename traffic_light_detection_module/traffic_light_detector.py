@@ -8,7 +8,6 @@ import main
 
 from traffic_light_detection_module.postprocessing import bbox_iou, draw_boxes
 
-
 BASE_DIR = os.path.dirname(__file__)
 
 class trafficLightDetector:
@@ -20,6 +19,9 @@ class trafficLightDetector:
         self.config = config
         self.model = get_model(self.config)
         self.i = 0
+
+        ### da eliminare
+        self.frame_counter = 0
         
     def detect_on_image(self, image, save_image = False):
         
@@ -33,19 +35,11 @@ class trafficLightDetector:
             cv2.imshow('demo', image)
             cv2.waitKey(1)
         
-        '''
+        ### da eliminare
         if main.PRODUCE_VIDEO:
-            main.save_video_image(image, f"Videos/{main.PARAMS_STRING}/Temp/tl_camera_{frame_counter}{main.PARAMS_STRING}.jpeg")
-        '''
-        
-        img_path = f"traffic_light_detection_module\\out\\out{self.i}.jpg"
-        # img_path = os.path.join(BASE_DIR, img_name)
-        if save_image:  
-            if cv2.imwrite(img_path, image):
-                print("Image saved")
-            else:
-                print("Failed to save the image")
-        self.i += 1
+            image = cv2.cvtColor(image, cv2.COLOR_BGRA2RGB)
+            main.save_video_image(image, "tl_camera", self.frame_counter)
+            self.frame_counter += 1
 
         # return the bounding box with the higher score
         return best_bb

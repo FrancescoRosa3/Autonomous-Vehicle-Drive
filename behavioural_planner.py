@@ -42,6 +42,9 @@ class BehaviouralPlanner:
         ### traffic light distance
         self._traffic_light_distance        = None
     
+    def get_state(self):
+        return self._state
+
     def set_traffic_light_state(self, state):
         self._traffic_light_state = state
 
@@ -353,7 +356,7 @@ def get_closest_index(waypoints, ego_state, goal_index):
 
     return closest_len, closest_index
 
-# Checks if p2 lies on segment p1-p3, if p1, p2, p3 are collinear.        
+# Checks if p2 lies on segment p1-p3, if p1, p2, p3 are collinear.
 def pointOnSegment(p1, p2, p3):
     if (p2[0] <= max(p1[0], p3[0]) and (p2[0] >= min(p1[0], p3[0])) and \
        (p2[1] <= max(p1[1], p3[1])) and (p2[1] >= min(p1[1], p3[1]))):

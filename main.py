@@ -23,6 +23,7 @@ from math import atan2, sin, cos, pi, tan, sqrt
 
 from traffic_lights_manager import trafficLightsManager
 from obstacles_manager import ObstaclesManager
+import shutil
 
 # Script level imports
 sys.path.append(os.path.abspath(sys.path[0] + '/..'))
@@ -89,7 +90,7 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-'''
+
 ######################### RED TRAFFIC LIGHT - NO OBSTACLES ###############################
 PLAYER_START_INDEX = 8        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
@@ -97,7 +98,7 @@ NUM_PEDESTRIANS        = 50      # total number of pedestrians to spawn
 NUM_VEHICLES           = 50   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
+
 
 '''
 ######################### TESTS ON PEDESTRIANS ###############################
@@ -124,6 +125,26 @@ SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 PLAYER_START_INDEX = 91        #  spawn index for player
 DESTINATION_INDEX = 148         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
+NUM_VEHICLES           = 0   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
+
+'''
+######################### TESTS ON PEDESTRIANS 4 ###############################
+PLAYER_START_INDEX = 139        #  spawn index for player
+DESTINATION_INDEX = 148         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
+NUM_VEHICLES           = 0   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
+
+'''
+######################### TESTS ON PEDESTRIANS 4 ###############################
+PLAYER_START_INDEX = 0        #  spawn index for player
+DESTINATION_INDEX = 20         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
 NUM_VEHICLES           = 0   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
@@ -236,6 +257,8 @@ camera_parameters['z'] = 1.3
 camera_parameters['width'] = 416
 camera_parameters['height'] = 416
 camera_parameters['fov'] = 90
+
+frame_counter = 0
 
 
 def rotate_x(angle):
@@ -508,14 +531,29 @@ def create_video_output_dir(output_folder):
         os.makedirs(output_folder)
         os.makedirs(output_folder+ "/Temp")
 
-def save_video_graph(graph, path):
+def save_video_graph(graph, name):
+    global frame_counter
     create_video_output_dir(f"Videos/{PARAMS_STRING}")
-    graph.savefig(path)
+    graph.savefig(f'Videos/{PARAMS_STRING}/Temp/{name}_{frame_counter}{PARAMS_STRING}.png')
 
-def save_video_image(img, path):
+def save_video_image(img, name, frame_counter):
     create_video_output_dir(f"Videos/{PARAMS_STRING}")
     im = Image.fromarray(img)
-    im.save(path)
+    im.save(f"Videos/{PARAMS_STRING}/Temp/{name}_{frame_counter}{PARAMS_STRING}.jpeg")
+
+def copy_state_image(state, frame_counter):
+    create_video_output_dir(f"Videos/{PARAMS_STRING}")
+    out_path = f"Videos/{PARAMS_STRING}/Temp/fsm_{frame_counter}{PARAMS_STRING}.png"
+    in_path = ""
+    if state == behavioural_planner.STOP_AT_OBSTACLE:
+        in_path = "fsm_imgs\\fsm_stop_at_obstacle.png"
+    elif state == behavioural_planner.FOLLOW_LANE:
+        in_path = "fsm_imgs\\fsm_follow_lane.png"
+    elif state == behavioural_planner.STOP_AT_TRAFFIC_LIGHT:
+        in_path = "fsm_imgs\\fsm_stop_at_traffic_light.png"
+    elif state == behavioural_planner.APPROACHING_RED_TRAFFIC_LIGHT:
+        in_path = "fsm_imgs\\fsm_approaching_red_traffic_light.png"
+    shutil.copy(in_path, out_path)
 
 
 def create_controller_output_dir(output_folder):
@@ -1020,6 +1058,7 @@ def exec_waypoint_nav_demo(args):
 
         
         ### frame counter
+        global frame_counter
         frame_counter = 0
 
         for frame in range(TOTAL_EPISODE_FRAMES):
@@ -1080,7 +1119,8 @@ def exec_waypoint_nav_demo(args):
             if PRODUCE_VIDEO:
                 if sensor_data.get("video_camera", None) is not None:
                     video_frame = to_rgb_array(sensor_data["video_camera"])
-                    save_video_image(video_frame, f"Videos/{PARAMS_STRING}/Temp/camera_{frame_counter}{PARAMS_STRING}.jpeg")
+                    save_video_image(video_frame, "camera", frame_counter)
+                    copy_state_image(bp.get_state(), frame_counter)
                     #cv2.imshow('demo2', video_frame)
                     #cv2.waitKey(1)
 
@@ -1158,7 +1198,7 @@ def exec_waypoint_nav_demo(args):
                 ### Perform collision checking.
                 # collision_check_array = lp._collision_checker.collision_check(paths, box_pts_obstacles)
                 all_obs = box_pts_obstacles + box_pts_future_obstacles
-                collision_check_array = lp._collision_checker.collision_check(paths, all_obs)
+                collision_check_array = lp._collision_checker.collision_check(paths, all_obs, current_speed)
 
                 bp.set_obstacle_on_lane(collision_check_array)
 
@@ -1335,7 +1375,7 @@ def exec_waypoint_nav_demo(args):
 
                 ### save trajectory png
                 if PRODUCE_VIDEO:
-                    save_video_graph(trajectory_fig.fig, f'Videos/{PARAMS_STRING}/Temp/trajectory_{frame_counter}{PARAMS_STRING}.png')
+                    save_video_graph(trajectory_fig.fig, "trajectory")
             
             if frame % LP_FREQUENCY_DIVISOR == 0:
                 frame_counter += 1
