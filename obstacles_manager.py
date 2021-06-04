@@ -123,13 +123,15 @@ class ObstaclesManager:
 
         ego_heading_vector = [cos(self._ego_pose[2]), sin(self._ego_pose[2])]
         car_heading_vector = [cos(math.radians(car_rotation.yaw)), sin(math.radians(car_rotation.yaw))]
+        print(f"ego_heading_vector: {ego_heading_vector} - car_heading_vector: {car_heading_vector}")
 
         dot_product = np.dot(car_heading_vector, ego_heading_vector)
+        print(f"dot_product: {dot_product:.2f}")
         
         return car_distance, dot_product
 
     def _check_for_vehicle_on_same_lane(self, orientation):
-        return orientation > 1/sqrt(2)
+        return orientation > cos(math.radians(45))
 
     # Checks to see if we need to modify our velocity profile to accomodate the
     # lead vehicle.

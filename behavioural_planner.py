@@ -155,7 +155,6 @@ class BehaviouralPlanner:
                             self._goal_state[2] = 0
                             self._state = STOP_AT_TRAFFIC_LIGHT
                 elif self._traffic_light_state == GO:
-                    self._update_goal_index(waypoints, ego_state)
                     self._state = FOLLOW_LANE
                     
             

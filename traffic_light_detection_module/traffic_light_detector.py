@@ -4,6 +4,8 @@ import argparse
 from traffic_light_detection_module.predict import get_model, predict_with_model_from_image
 import cv2
 
+import main
+
 from traffic_light_detection_module.postprocessing import bbox_iou, draw_boxes
 
 
@@ -27,8 +29,14 @@ class trafficLightDetector:
             image = draw_boxes(image, [best_bb], self.config['model']['classes'])
 
         # Show and save image
-        #cv2.imshow('demo', image)
-        #cv2.waitKey(1)
+        if main.SHOW_LIVE_PLOTTER:
+            cv2.imshow('demo', image)
+            cv2.waitKey(1)
+        
+        '''
+        if main.PRODUCE_VIDEO:
+            main.save_video_image(image, f"Videos/{main.PARAMS_STRING}/Temp/tl_camera_{frame_counter}{main.PARAMS_STRING}.jpeg")
+        '''
         
         img_path = f"traffic_light_detection_module\\out\\out{self.i}.jpg"
         # img_path = os.path.join(BASE_DIR, img_name)

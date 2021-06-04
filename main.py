@@ -69,6 +69,26 @@ SEED_VEHICLES          = 10     # seed for vehicle spawn randomizer
 '''
 
 '''
+######################### SUV ###############################
+PLAYER_START_INDEX = 51        #  spawn index for player
+DESTINATION_INDEX = 90         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
+NUM_VEHICLES           = 30   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
+
+
+######################### SUV ###############################
+PLAYER_START_INDEX = 17        #  spawn index for player
+DESTINATION_INDEX = 90         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
+NUM_VEHICLES           = 30   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+
+
+'''
 ######################### RED TRAFFIC LIGHT - NO OBSTACLES ###############################
 PLAYER_START_INDEX = 13        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
@@ -78,7 +98,7 @@ SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-
+'''
 ######################### TESTS ON PEDESTRIANS ###############################
 PLAYER_START_INDEX = 6        #  spawn index for player
 DESTINATION_INDEX = 27         # Setting a Destination HERE
@@ -86,7 +106,17 @@ NUM_PEDESTRIANS        = 300      # total number of pedestrians to spawn
 NUM_VEHICLES           = 0   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
 
+'''
+######################### lead vehicle seen as obstacle on turn ###############################
+PLAYER_START_INDEX = 6        #  spawn index for player
+DESTINATION_INDEX = 134         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 70      # total number of pedestrians to spawn
+NUM_VEHICLES           = 70   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
 
 ###############################################################################
 
@@ -97,6 +127,8 @@ TOTAL_FRAME_BUFFER     = 300        # number of frames to buffer after total run
 CLIENT_WAIT_TIME       = 3          # wait time for client before starting episode
                                     # used to make sure the server loads
                                     # consistently
+
+PARAMS_STRING = F"_{PLAYER_START_INDEX}-{DESTINATION_INDEX}-{NUM_PEDESTRIANS}-{NUM_VEHICLES}-{SEED_PEDESTRIANS}-{SEED_VEHICLES}_"
 
 WEATHERID = {
     "DEFAULT": 0,
@@ -131,7 +163,7 @@ DIST_THRESHOLD_TO_LAST_WAYPOINT = 2.0  # some distance from last position before
 NUM_PATHS = 5
 BP_LOOKAHEAD_BASE      = 16.0             # m
 BP_LOOKAHEAD_TIME      = 1.0              # s
-PATH_OFFSET            = 1.5              # m
+PATH_OFFSET            = 1                # m
 CIRCLE_OFFSETS         = [-1.0, 1.0, 3.0] # m
 CIRCLE_RADII           = [1.5, 1.5, 1.5]  # m
 TIME_GAP               = 1.0              # s
@@ -163,8 +195,8 @@ PEDESTRIAN_OBSTACLE_LOOKAHEAD = 15 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
 SHOW_LIVE_PLOTTER = True
-SAVE_PATH_REFERENCE = True
 PRODUCE_VIDEO = False
+SAVE_PATH_REFERENCE = False
 
 # Camera parameters
 camera_parameters = {}
@@ -278,14 +310,16 @@ def make_carla_settings(args):
 
     if PRODUCE_VIDEO:
         # Video Camera
-        video_width = 800
-        video_height = 600
+        video_width = 1280
+        video_height = 720
         video_camera = Camera('video_camera')
         # set pixel Resolution: WIDTH * HEIGHT
         video_camera.set_image_size(video_width, video_height)
         # set position X (front), Y (lateral), Z (height) relative to the car in meters
         # (0,0,0) is at center of baseline of car 
-        video_camera.set_position(cam_x_pos, 0, cam_height)
+        video_camera.set_position(-6, 0, 3)
+        # set angles
+        video_camera.set_rotation(pitch=-15, yaw=0, roll=0)
         # set fov
         video_camera.set(FOV=camera_fov)
         # Adding camera to configuration 
@@ -438,6 +472,22 @@ def send_control_command(client, throttle, steer, brake,
     control.reverse = reverse
     client.send_control(control)
 
+###
+def create_video_output_dir(output_folder):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+        os.makedirs(output_folder+ "/Temp")
+
+def save_video_graph(graph, path):
+    create_video_output_dir(f"Videos/{PARAMS_STRING}")
+    graph.savefig(path)
+
+def save_video_image(img, path):
+    create_video_output_dir(f"Videos/{PARAMS_STRING}")
+    im = Image.fromarray(img)
+    im.save(path)
+
+
 def create_controller_output_dir(output_folder):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -468,7 +518,7 @@ def write_collisioncount_file(collided_list):
         collision_file.write(str(sum(collided_list)))
 
 def make_correction(waypoint,previuos_waypoint,desired_speed):
-    offset = 2
+    offset = 1.75
     dx = waypoint[0] - previuos_waypoint[0]
     dy = waypoint[1] - previuos_waypoint[1]
 
@@ -782,7 +832,7 @@ def exec_waypoint_nav_demo(args):
         # and apply it to the simulator
         controller = controller2d_test.Controller2D(waypoints)
 
-        if SHOW_LIVE_PLOTTER:
+        if SHOW_LIVE_PLOTTER or PRODUCE_VIDEO:
             #############################################
             # Vehicle Trajectory Live Plotting Setup
             #############################################
@@ -790,7 +840,6 @@ def exec_waypoint_nav_demo(args):
             # The two feedback includes the trajectory feedback and
             # the controller feedback (which includes the speed tracking).
             lp_traj = lv.LivePlotter(tk_title="Trajectory Trace")
-            lp_1d = lv.LivePlotter(tk_title="Controls Feedback")
 
             ###
             # Add 2D position / trajectory plot
@@ -862,9 +911,13 @@ def exec_waypoint_nav_demo(args):
                 trajectory_fig.add_graph("local_path " + str(i), window_size=200,
                                         x0=None, y0=None, color=[0.0, 0.0, 1.0])
 
+        if SHOW_LIVE_PLOTTER:
             ###
             # Add 1D speed profile updater
             ###
+            
+            lp_1d = lv.LivePlotter(tk_title="Controls Feedback")
+
             forward_speed_fig =\
                     lp_1d.plot_new_dynamic_figure(title="Forward Speed (m/s)")
             forward_speed_fig.add_graph("forward_speed", 
@@ -935,7 +988,9 @@ def exec_waypoint_nav_demo(args):
         prev_collision_pedestrians = 0
         prev_collision_other       = 0
 
-        video_frame_index = 0
+        
+        ### frame counter
+        frame_counter = 0
 
         for frame in range(TOTAL_EPISODE_FRAMES):
             # Gather current data from the CARLA server
@@ -992,6 +1047,13 @@ def exec_waypoint_nav_demo(args):
             else:
                 bp.set_follow_lead_vehicle(False)
 
+            if PRODUCE_VIDEO:
+                if sensor_data.get("video_camera", None) is not None:
+                    video_frame = to_rgb_array(sensor_data["video_camera"])
+                    save_video_image(video_frame, f"Videos/{PARAMS_STRING}/Temp/camera_{frame_counter}{PARAMS_STRING}.jpeg")
+                    #cv2.imshow('demo2', video_frame)
+                    #cv2.waitKey(1)
+
             # Execute the behaviour and local planning in the current instance
             # Note that updating the local path during every controller update
             # produces issues with the tracking performance (imagine everytime
@@ -1006,13 +1068,6 @@ def exec_waypoint_nav_demo(args):
             if frame % LP_FREQUENCY_DIVISOR == 0:
 
                 tl_state = tl_distance = None 
-
-                if PRODUCE_VIDEO:
-                    if sensor_data.get("video_camera", None) is not None:
-                        video_frame = to_rgb_array(sensor_data["video_camera"])
-                        im = Image.fromarray(video_frame)
-                        im.save(f"Temp/{video_frame_index}.jpeg")
-                        video_frame_index += 1
 
                 # Camera image and depth image acquiring
                 if sensor_data.get("CameraRGB", None) is not None:
@@ -1078,12 +1133,13 @@ def exec_waypoint_nav_demo(args):
                 bp.set_obstacle_on_lane(collision_check_array)
 
                 # Compute the best local path.
-                best_index, out_lane_check_array = lp._collision_checker.select_best_path_index(paths, collision_check_array, bp._goal_state)
+                best_index = lp._collision_checker.select_best_path_index(paths, collision_check_array, bp._goal_state)
+                # best_index, out_lane_check_array = lp._collision_checker.select_best_path_index(paths, collision_check_array, bp._goal_state)
 
-                collision_check_array = collision_check_array | out_lane_check_array
+                #collision_check_array = collision_check_array & out_lane_check_array
                 # If no path was feasible, continue to follow the previous best path.
                 if best_index == None:
-                    print("No best index")
+                    print("NO BEST INDEX")
                     best_path = lp._prev_best_path
                 else:
                     best_path = paths[best_index]
@@ -1142,7 +1198,9 @@ def exec_waypoint_nav_demo(args):
                         # Update the other controller values and controls
                         controller.update_waypoints(wp_interp)
                     else:
-                        print("No velocity profile computed")
+                        print("NO VELOCITY PROFILE COMPUTED")
+                else:
+                    print("NO BEST PATH")
 
             ###
             # Controller Update
@@ -1157,14 +1215,15 @@ def exec_waypoint_nav_demo(args):
                 cmd_throttle = 0.0
                 cmd_steer = 0.0
                 cmd_brake = 0.0
-            
-            # Skip the first frame or if there exists no local paths
-            if SHOW_LIVE_PLOTTER:
+
+            if SHOW_LIVE_PLOTTER or PRODUCE_VIDEO:
+                # Skip the first frame or if there exists no local paths 
                 if skip_first_frame and frame == 0:
                     pass
                 elif local_waypoints == None:
                     pass
                 else:
+
                     # Update live plotter with new feedback
                     trajectory_fig.roll("trajectory", current_x, current_y)
                     trajectory_fig.roll("car", current_x, current_y)
@@ -1189,48 +1248,49 @@ def exec_waypoint_nav_demo(args):
                         y = np.reshape(y, y.shape[0] * y.shape[1])
 
                         trajectory_fig.roll("future_obstacles_points", x, y)
-
                     
-                    forward_speed_fig.roll("forward_speed", 
-                                        current_timestamp, 
-                                        current_speed)
-                    forward_speed_fig.roll("reference_signal", 
-                                        current_timestamp, 
-                                        controller._desired_speed)
-                    throttle_fig.roll("throttle", current_timestamp, cmd_throttle)
-                    brake_fig.roll("brake", current_timestamp, cmd_brake)
-                    steer_fig.roll("steer", current_timestamp, cmd_steer)
+                    if SHOW_LIVE_PLOTTER:
+                        forward_speed_fig.roll("forward_speed", 
+                                            current_timestamp, 
+                                            current_speed)
+                        forward_speed_fig.roll("reference_signal", 
+                                            current_timestamp, 
+                                            controller._desired_speed)
+                        throttle_fig.roll("throttle", current_timestamp, cmd_throttle)
+                        brake_fig.roll("brake", current_timestamp, cmd_brake)
+                        steer_fig.roll("steer", current_timestamp, cmd_steer)
 
-                    # Local path plotter update
-                    if frame % LP_FREQUENCY_DIVISOR == 0:
-                        path_counter = 0
-                        for i in range(NUM_PATHS):
-                            # If a path was invalid in the set, there is no path to plot.
-                            if path_validity[i]:
-                                # Colour paths according to collision checking.
-                                if not collision_check_array[path_counter]:
-                                    colour = 'r'
-                                elif i == best_index:
-                                    colour = 'k'
-                                else:
-                                    colour = 'b'
-                                trajectory_fig.update("local_path " + str(i), paths[path_counter][0], paths[path_counter][1], colour)
-                                path_counter += 1
+                # Local path plotter update
+                if frame % LP_FREQUENCY_DIVISOR == 0:
+                    path_counter = 0
+                    for i in range(NUM_PATHS):
+                        # If a path was invalid in the set, there is no path to plot.
+                        if path_validity[i]:
+                            # Colour paths according to collision checking.
+                            if not collision_check_array[path_counter]:
+                                colour = 'r'
+                            elif i == best_index:
+                                colour = 'k'
                             else:
-                                trajectory_fig.update("local_path " + str(i), [ego_state[0]], [ego_state[1]], 'r')
-                    # When plotting lookahead path, only plot a number of points
-                    # (INTERP_MAX_POINTS_PLOT amount of points). This is meant
-                    # to decrease load when live plotting
-                    wp_interp_np = np.array(wp_interp)
-                    path_indices = np.floor(np.linspace(0, 
-                                                        wp_interp_np.shape[0]-1,
-                                                        INTERP_MAX_POINTS_PLOT))
-                    trajectory_fig.update("selected_path", 
-                            wp_interp_np[path_indices.astype(int), 0],
-                            wp_interp_np[path_indices.astype(int), 1],
-                            new_colour=[1, 0.5, 0.0])
+                                colour = 'b'
+                            trajectory_fig.update("local_path " + str(i), paths[path_counter][0], paths[path_counter][1], colour)
+                            path_counter += 1
+                        else:
+                            trajectory_fig.update("local_path " + str(i), [ego_state[0]], [ego_state[1]], 'r')
+                # When plotting lookahead path, only plot a number of points
+                # (INTERP_MAX_POINTS_PLOT amount of points). This is meant
+                # to decrease load when live plotting
+                wp_interp_np = np.array(wp_interp)
+                path_indices = np.floor(np.linspace(0, 
+                                                    wp_interp_np.shape[0]-1,
+                                                    INTERP_MAX_POINTS_PLOT))
+                trajectory_fig.update("selected_path", 
+                        wp_interp_np[path_indices.astype(int), 0],
+                        wp_interp_np[path_indices.astype(int), 1],
+                        new_colour=[1, 0.5, 0.0])
 
 
+                if SHOW_LIVE_PLOTTER:
                     # Refresh the live plot based on the refresh rate 
                     # set by the options
                     if enable_live_plot and \
@@ -1238,7 +1298,14 @@ def exec_waypoint_nav_demo(args):
                         lp_traj.refresh()
                         lp_1d.refresh()
                         live_plot_timer.lap()
+
+                ### save trajectory png
+                if PRODUCE_VIDEO:
+                    save_video_graph(trajectory_fig.fig, f'Videos/{PARAMS_STRING}/Temp/trajectory_{frame_counter}{PARAMS_STRING}.png')
             
+            if frame % LP_FREQUENCY_DIVISOR == 0:
+                frame_counter += 1
+
             # Output controller command to CARLA server
             send_control_command(client,
                                  throttle=cmd_throttle,

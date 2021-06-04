@@ -45,7 +45,7 @@ class Obstacle:
         self._curr_obs_box_pts = main.obstacle_to_world(location, dimension, rotation)
 
         obstacle_speed = self._obstacle.forward_speed
-        print(f"OBSTACLE SPEED: {obstacle_speed }")
+
         future_frames_to_check = 45
         frames_update_frequency = 0.033
         # frames_update_frequency = 1

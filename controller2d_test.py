@@ -266,8 +266,8 @@ class Controller2D(object):
             # the dynamic model is not used here, just pure tuning of the gains.
 
             L = 1
-            kp_lat = 1
-            ki_lat = 1
+            kp_lat = 3
+            ki_lat = 1.5
             kd_lat = 1
 
             dt = t - self.vars.t_previous
