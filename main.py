@@ -59,6 +59,7 @@ NUM_VEHICLES           = 20    # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0     # seed for vehicle spawn randomizer
 '''
+
 '''
 PLAYER_START_INDEX = 100           #  spawn index for player
 DESTINATION_INDEX = 96          # Setting a Destination HERE
@@ -78,15 +79,15 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-
-######################### SUV ###############################
+'''
+######################### problem with projections ghosts ###############################
 PLAYER_START_INDEX = 17        #  spawn index for player
 DESTINATION_INDEX = 90         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
 NUM_VEHICLES           = 30   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-
+'''
 
 '''
 ######################### RED TRAFFIC LIGHT - NO OBSTACLES ###############################
@@ -107,6 +108,26 @@ NUM_VEHICLES           = 30   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
+
+'''
+######################### TESTS ON PEDESTRIANS 2 ###############################
+PLAYER_START_INDEX = 89        #  spawn index for player
+DESTINATION_INDEX = 135         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
+NUM_VEHICLES           = 0   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
+
+#'''
+######################### TESTS ON PEDESTRIANS 3 ###############################
+PLAYER_START_INDEX = 91        #  spawn index for player
+DESTINATION_INDEX = 148         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
+NUM_VEHICLES           = 0   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+#'''
 
 '''
 ######################### lead vehicle seen as obstacle on turn ###############################
@@ -190,12 +211,12 @@ CONTROLLER_OUTPUT_FOLDER = os.path.dirname(os.path.realpath(__file__)) +\
 ### NEW CONSTANT
 CRUISE_SPEED = 5 # m/s
 HALF_CRUISE_SPEED = 2.5 # m/s
-VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 30 # m
+VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 20 # m
 PEDESTRIAN_OBSTACLE_LOOKAHEAD = 15 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
-SHOW_LIVE_PLOTTER = True
-PRODUCE_VIDEO = False
+SHOW_LIVE_PLOTTER = False
+PRODUCE_VIDEO = True
 SAVE_PATH_REFERENCE = False
 
 # Camera parameters

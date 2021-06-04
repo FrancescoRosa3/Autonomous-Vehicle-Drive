@@ -69,28 +69,25 @@ class ObstaclesManager:
                 distance, orientation = self._compute_distance_orientation_from_vehicle(location, rotation)
                 # the vehicle is inside the obstacle range
                 if distance < self._vehicle_obstacle_lookahead:
+                    
                     # print(f"VEHICLE ID: {agent.id} - VEHICLE SPEED: {agent.vehicle.forward_speed}")
                     # compute the bb with respect to the world frame
                     box_pts = main.obstacle_to_world(location, dimension, rotation)
                     all_vehicles_on_sight.append(box_pts)
                     # check for vehicle on the same lane
                     if self._check_for_vehicle_on_same_lane(orientation):
+                        try:
+                            self._obstacles.pop(agent.id)
+                        except KeyError:
+                            pass
+                        # print(f"SAME LANE - distance: {distance} - orientation: {math.acos(orientation)}")
                         # check if the vehicle on the same lane is a lead vehicle 
                         if self._check_for_lead_vehicle(location):
                             if distance < lead_vehicle_dist:
                                 lead_vehicle_dist = distance
                                 lead_vehicle = agent.vehicle
                     else:
-                        # the vehicle is not in the same lane.
-                        # It is added as obstacle
-                        #print("Vehicle at distance:" + str(distance))
                         self._add_obstacle(agent.vehicle, agent.id)
-                        '''
-                        future_boxes_pts = self.predict_future_location(agent.vehicle, box_pts)
-                        for box in future_boxes_pts:
-                            all_future_vehicles.append(box)
-                        obstacles_vehicles.append(box_pts)
-                        '''
                 else:   
                     try:
                         self._obstacles.pop(agent.id)
@@ -123,10 +120,10 @@ class ObstaclesManager:
 
         ego_heading_vector = [cos(self._ego_pose[2]), sin(self._ego_pose[2])]
         car_heading_vector = [cos(math.radians(car_rotation.yaw)), sin(math.radians(car_rotation.yaw))]
-        print(f"ego_heading_vector: {ego_heading_vector} - car_heading_vector: {car_heading_vector}")
+        # print(f"ego_heading_vector: {ego_heading_vector} - car_heading_vector: {car_heading_vector}")
 
         dot_product = np.dot(car_heading_vector, ego_heading_vector)
-        print(f"dot_product: {dot_product:.2f}")
+        # print(f"dot_product: {dot_product:.2f}")
         
         return car_distance, dot_product
 
@@ -164,7 +161,7 @@ class ObstaclesManager:
         for id, obs in self._obstacles.items():
             obstacles.append(obs.get_current_location())
             for loc in obs.get_future_locations():
-                future_obstacles.append(loc) 
+                future_obstacles.append(loc)
         return obstacles, future_obstacles
          
 
