@@ -50,7 +50,7 @@ def grade(waypoints, solution, visualize = False):
     N = waypoints.shape[0]
 
     results = {
-    'd_thresh' : 3,           # distance to waypoints
+    'd_thresh' : 1.5,           # distance to waypoints
     'v_thresh' : 3,           # speed difference at waypoints
     'pass_percentage': 50,    # percentage of correct waypoints required
     'solution' : solution,
@@ -96,11 +96,12 @@ def display_path(results):
     fig, ax = plt.subplots()
     plt.plot(results['waypoints'][:,0], results['waypoints'][:,1], '*', label='waypoints')
     plt.plot(results['solution'][:,0], results['solution'][:,1], label='solution')
+    '''
     for i in range(results['waypoints'].shape[0]):
         center = (results['waypoints'][i,0],results['waypoints'][i,1])
         circle = plt.Circle(center, results['d_thresh'], color='g', fill=False)
         ax.add_artist(circle)
-        
+    '''
     plt.legend()
     plt.xlabel('x (m)')
     plt.ylabel('y (m)')

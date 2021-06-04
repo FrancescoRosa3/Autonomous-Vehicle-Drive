@@ -265,7 +265,7 @@ class Controller2D(object):
             # in this controller, we use pure pursuit method to design lateral controller
             # the dynamic model is not used here, just pure tuning of the gains.
 
-            L = 1
+            L = 1.5
             kp_lat = 3
             ki_lat = 1.5
             kd_lat = 1
