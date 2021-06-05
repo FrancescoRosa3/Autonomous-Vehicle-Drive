@@ -23,7 +23,6 @@ class Obstacle:
 
     def update_state(self, obstacle):
         if self._update_frequency == 0:
-            print("Updated previous obstacle state")
             self._prev_state = self._obstacle
             self._update_frequency = UPDATE_FREQUENCY
         else:

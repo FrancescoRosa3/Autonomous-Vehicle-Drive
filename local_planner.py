@@ -6,11 +6,14 @@ import collision_checker
 import velocity_planner
 from math import sin, cos, pi, sqrt
 
+PATHS_TO_EXCLUDE = 2
+
 class LocalPlanner:
     def __init__(self, num_paths, path_offset, circle_offsets, circle_radii, 
                  path_select_weight, time_gap, a_max, slow_speed, 
                  stop_line_buffer):
-        self._num_paths = num_paths
+        self._num_paths_base = num_paths
+        self._num_paths = self._num_paths_base
         self._path_offset = path_offset
         self._path_optimizer = path_optimizer.PathOptimizer()
         self._collision_checker = \
@@ -21,6 +24,9 @@ class LocalPlanner:
             velocity_planner.VelocityPlanner(time_gap, a_max, slow_speed, 
                                              stop_line_buffer)
         self._prev_best_path = None
+
+    def get_num_path(self):
+        return self._num_paths
 
     ######################################################
     ######################################################
@@ -73,6 +79,10 @@ class LocalPlanner:
                   v is the goal speed at the goal point.
                   all units are in m, m/s and radians
         """
+        
+        ### Compute number of paths to create ...
+        self._num_paths = self._num_paths_base if self._check_for_turn(ego_state, goal_state) else self._num_paths_base - PATHS_TO_EXCLUDE
+
         # Compute the final heading based on the next index.
         # If the goal index is the last in the set of waypoints, use
         # the previous index instead.
@@ -125,6 +135,7 @@ class LocalPlanner:
         # all of the paths have the same heading of the goal state,
         # but are laterally offset with respect to the goal heading.
         goal_state_set = []
+
         for i in range(self._num_paths):
             # Compute offsets that span the number of paths set for the local
             # planner. Each offset goal will be used to generate a potential
@@ -198,6 +209,17 @@ class LocalPlanner:
                 path_validity.append(True)
 
         return paths, path_validity
+
+    def _check_for_turn(self, ego_state, goal_wp):
+        dx = ego_state[0] - goal_wp[0]
+        dy = ego_state[1] - goal_wp[1]
+        
+        offset = 1
+
+        if abs(dx) < offset or abs(dy) < offset:
+            return False
+        else:
+            return True
 
 def transform_paths(paths, ego_state):
     """ Converts the to the global coordinate frame.

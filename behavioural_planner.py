@@ -109,7 +109,6 @@ class BehaviouralPlanner:
         """
         speed_km_h = (ego_state[3]*3600)/1000
         secure_distance_brake = (speed_km_h/10)*3
-        print(secure_distance_brake)
         # In this state, continue tracking the lane by finding the
         # goal index in the waypoint list that is within the lookahead
         # distance. Then, check to see if the waypoint path intersects
@@ -276,22 +275,9 @@ class BehaviouralPlanner:
 
         return wp_index % len(waypoints)
 
-    def _check_for_turn(self, ego_state, closest_waypoint):
-        dx = ego_state[0] - closest_waypoint[0]
-        dy = ego_state[1] - closest_waypoint[1]
-        
-        offset = 1
-
-        if abs(dx) < offset or abs(dy) < offset:
-            return False
-        else:
-            return True
-
     def _update_goal_index(self, waypoints, ego_state):
         # First, find the closest index to the ego vehicle.
         closest_len, closest_index = get_closest_index(waypoints, ego_state, self._goal_index)
-        print(f"closest index {closest_index}")
-        print(f"Closest waypoint {waypoints[closest_index]}")
         # Next, find the goal index that lies within the lookahead distance
         # along the waypoints.
         goal_index = self.get_goal_index(waypoints, ego_state, closest_len, closest_index)

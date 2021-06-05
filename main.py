@@ -90,7 +90,7 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-
+'''
 ######################### RED TRAFFIC LIGHT - NO OBSTACLES ###############################
 PLAYER_START_INDEX = 8        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
@@ -98,7 +98,7 @@ NUM_PEDESTRIANS        = 50      # total number of pedestrians to spawn
 NUM_VEHICLES           = 50   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-
+'''
 
 '''
 ######################### TESTS ON PEDESTRIANS ###############################
@@ -141,14 +141,24 @@ SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
 '''
-######################### TESTS ON PEDESTRIANS 4 ###############################
-PLAYER_START_INDEX = 0        #  spawn index for player
+######################### TESTS ON PEDESTRIANS 4 LUNGO ###############################
+PLAYER_START_INDEX = 2        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
-NUM_VEHICLES           = 0   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
+NUM_VEHICLES           = 100   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
+
+#'''
+######### SLOW DOWN BEHIND LEAD VEHICLE THAT STOPPED FOR A PEDESTRIAN ################
+PLAYER_START_INDEX = 126        #  spawn index for player
+DESTINATION_INDEX = 20         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
+NUM_VEHICLES           = 100   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+#'''
 
 '''
 ######################### lead vehicle seen as obstacle on turn ###############################
@@ -160,7 +170,7 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-#'''
+'''
 ######################### lead vehicle seen as obstacle on turn ###############################
 PLAYER_START_INDEX = 17       #  spawn index for player
 DESTINATION_INDEX = 90         # Setting a Destination HERE
@@ -168,7 +178,8 @@ NUM_PEDESTRIANS        = 1     # total number of pedestrians to spawn
 NUM_VEHICLES           = 0   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-#'''
+'''
+
 ###############################################################################
 
 ITER_FOR_SIM_TIMESTEP  = 10         # no. iterations to compute approx sim timestep
@@ -1022,7 +1033,7 @@ def exec_waypoint_nav_demo(args):
         #############################################
         wp_goal_index   = 0
         local_waypoints = None
-        path_validity   = np.zeros((NUM_PATHS, 1), dtype=bool)
+        # path_validity   = np.zeros((NUM_PATHS, 1), dtype=bool)
         lp = local_planner.LocalPlanner(NUM_PATHS,
                                         PATH_OFFSET,
                                         CIRCLE_OFFSETS,
@@ -1166,7 +1177,6 @@ def exec_waypoint_nav_demo(args):
                 
                 # Compute open loop speed estimate.
                 open_loop_speed = lp._velocity_planner.get_open_loop_speed(current_timestamp - prev_timestamp)
-                print(open_loop_speed)
                 # Calculate the goal state set in the local frame for the local planner.
                 # Current speed should be open loop for the velocity profile generation.
                 ego_state = [current_x, current_y, current_yaw, open_loop_speed]
@@ -1337,7 +1347,7 @@ def exec_waypoint_nav_demo(args):
                 # Local path plotter update
                 if frame % LP_FREQUENCY_DIVISOR == 0:
                     path_counter = 0
-                    for i in range(NUM_PATHS):
+                    for i in range(lp.get_num_path()):
                         # If a path was invalid in the set, there is no path to plot.
                         if path_validity[i]:
                             # Colour paths according to collision checking.
