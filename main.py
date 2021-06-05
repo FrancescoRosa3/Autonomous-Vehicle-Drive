@@ -150,7 +150,7 @@ SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-#'''
+'''
 ######### SLOW DOWN BEHIND LEAD VEHICLE THAT STOPPED FOR A PEDESTRIAN ################
 PLAYER_START_INDEX = 126        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
@@ -158,7 +158,7 @@ NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
 NUM_VEHICLES           = 100   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-#'''
+'''
 
 '''
 ######################### lead vehicle seen as obstacle on turn ###############################
@@ -172,13 +172,19 @@ SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 
 '''
 ######################### lead vehicle seen as obstacle on turn ###############################
-PLAYER_START_INDEX = 17       #  spawn index for player
-DESTINATION_INDEX = 90         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1     # total number of pedestrians to spawn
-NUM_VEHICLES           = 0   # total number of vehicles to spawn
+PLAYER_START_INDEX = 8       #  spawn index for player
+DESTINATION_INDEX = 27         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 30     # total number of pedestrians to spawn
+NUM_VEHICLES           = 30   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
+PLAYER_START_INDEX = 8        #  spawn index for player
+DESTINATION_INDEX = 124         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 100   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 
 ###############################################################################
 
@@ -223,7 +229,7 @@ DIST_THRESHOLD_TO_LAST_WAYPOINT = 2.0  # some distance from last position before
 
 # Planning Constants
 NUM_PATHS = 5
-BP_LOOKAHEAD_BASE      = 8.0             # m
+BP_LOOKAHEAD_BASE      = 16.0             # m
 BP_LOOKAHEAD_TIME      = 1.0              # s
 PATH_OFFSET            = 1                # m
 CIRCLE_OFFSETS         = [-1.0, 1.0, 3.0] # m
@@ -268,6 +274,9 @@ camera_parameters['z'] = 1.3
 camera_parameters['width'] = 416
 camera_parameters['height'] = 416
 camera_parameters['fov'] = 90
+camera_parameters['yaw'] = 0 
+camera_parameters['pitch'] = 0
+camera_parameters['roll'] = 0
 
 frame_counter = 0
 
@@ -1045,7 +1054,7 @@ def exec_waypoint_nav_demo(args):
                                         STOP_LINE_BUFFER)
         bp = behavioural_planner.BehaviouralPlanner(BP_LOOKAHEAD_BASE)
 
-        traffic_lights_manager = trafficLightsManager()
+        traffic_lights_manager = trafficLightsManager(camera_parameters)
 
         obstacles_manager = ObstaclesManager(LEAD_VEHICLE_LOOKAHEAD_BASE, VEHICLE_OBSTACLE_LOOKAHEAD_BASE, PEDESTRIAN_OBSTACLE_LOOKAHEAD, bp)
 
@@ -1168,12 +1177,14 @@ def exec_waypoint_nav_demo(args):
                     semantic_image = labels_to_array(sensor_data["CameraSegmentation"])
                     
                 # Traffic-light detector
-                tl_state, tl_distance = traffic_lights_manager.get_tl_state(image_BGRA, depth_image, semantic_image)
+                tl_state, tl_distance, traffic_light_vehicle_frame = traffic_lights_manager.get_tl_state(image_BGRA, depth_image, semantic_image)
                 print(F"STATE TRAFFIC LIGHT: {tl_state}")
                 print(F"DISTANCE FROM TRAFFIC LIGHT: {tl_distance}")
-
+                #print(F"Traffic light vehicle frame: {traffic_light_vehicle_frame}")
+                
                 bp.set_traffic_light_state(tl_state)
                 bp.set_traffic_light_distance(tl_distance)
+                bp.set_traffic_light_vehicle_frame(traffic_light_vehicle_frame)
                 
                 # Compute open loop speed estimate.
                 open_loop_speed = lp._velocity_planner.get_open_loop_speed(current_timestamp - prev_timestamp)
@@ -1195,7 +1206,6 @@ def exec_waypoint_nav_demo(args):
                 
                 # Perform a state transition in the behavioural planner.
                 bp.transition_state(waypoints, ego_state, current_speed)
-                
                 # Compute the goal state set from the behavioural planner's computed goal state.
                 goal_state_set = lp.get_goal_state_set(bp._goal_index, bp._goal_state, waypoints, ego_state)
                 
