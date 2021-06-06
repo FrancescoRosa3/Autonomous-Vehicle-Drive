@@ -2,6 +2,8 @@
 from os import close
 import numpy as np
 import math
+from numpy import ma
+from numpy.core.defchararray import index
 
 from numpy.core.numeric import ones
 
@@ -22,6 +24,7 @@ STOP_COUNTS = 10
 # Stop traffic light threshold
 STOP_TRAFFIC_LIGHT = 3
 SLOW_DOWN_TRAFFIC_LIGHT = 15
+TRAFFIC_LIGHT_SECURE_DISTANCE = 2
 
 # 
 TURN_LOOKAHEAD = 1 #m
@@ -41,7 +44,10 @@ class BehaviouralPlanner:
         self._traffic_light_state         = UNKNOWN
         ### traffic light distance
         self._traffic_light_distance        = None
-    
+        self._traffic_light_vehicle_frame = []
+        ### closest index
+        self._closest_index = 0
+
     def get_state(self):
         return self._state
 
@@ -60,6 +66,9 @@ class BehaviouralPlanner:
     
     def set_traffic_light_distance(self, distance):
         self._traffic_light_distance = distance
+
+    def set_traffic_light_vehicle_frame(self, traffic_light_vehicle_frame):
+        self._traffic_light_vehicle_frame = traffic_light_vehicle_frame
 
     def set_lookahead(self, lookahead):
         self._lookahead = lookahead
@@ -145,10 +154,8 @@ class BehaviouralPlanner:
         # the traffic light line.
         elif self._state == APPROACHING_RED_TRAFFIC_LIGHT:
             print("FSM STATE: APPROACHING_RED_TRAFFIC_LIGHT")
-
-            self._update_goal_index(waypoints, ego_state)
             
-            self._goal_state[2] = HALF_CRUISE_SPEED
+            self._update_goal_index_with_traffic_light(waypoints, ego_state)
 
             if self._obstacle_on_lane:
                 self._goal_state[2] = 0
@@ -160,7 +167,7 @@ class BehaviouralPlanner:
                             self._state = STOP_AT_TRAFFIC_LIGHT
                 elif self._traffic_light_state == GO:
                     self._state = FOLLOW_LANE
-                    
+                                
             
         # In this state, the car is stopped at traffic light.
         # Transit to the the "follow lane" state if the traffic light becomes green
@@ -199,10 +206,10 @@ class BehaviouralPlanner:
                 else:
                     self._update_goal_index(waypoints, ego_state)
                     self._state = FOLLOW_LANE
-
+           
         else:
             raise ValueError('Invalid state value.')
-
+        
     # Gets the goal index in the list of waypoints, based on the lookahead and
     # the current ego state. In particular, find the earliest waypoint that has accumulated
     # arc length (including closest_len) that is greater than or equal to self._lookahead.
@@ -283,8 +290,40 @@ class BehaviouralPlanner:
         goal_index = self.get_goal_index(waypoints, ego_state, closest_len, closest_index)
         while waypoints[goal_index][2] <= 0.1:
             goal_index += 1
+        self._closest_index = closest_index
         self._goal_index = goal_index
         self._goal_state = list(waypoints[goal_index])
+
+    def _update_goal_index_with_traffic_light(self, waypoints, ego_state):
+        
+        self._update_goal_index(waypoints, ego_state)   
+
+        waypoint_index = 0
+        
+        if self._traffic_light_distance != None:
+            distance_wp_traffic_light = math.inf
+            closest_wp_to_traffic_light = self._closest_index
+            # find the closest waypoint to the traffic light
+            waypoint_index = closest_wp_to_traffic_light
+            while waypoint_index < len(waypoints)-1:
+                distance_traffic_light_wp = 0
+                # compute the average distance from the waypoint and the traffic light in the world frame
+                for traffic_light_wp in self._traffic_light_vehicle_frame:
+                    traffic_light_wp_world_frame = convert_wp_in_world_frame(ego_state, traffic_light_wp)
+                    distance_traffic_light_wp += np.sqrt((waypoints[waypoint_index][0] - traffic_light_wp_world_frame[0])**2 + (waypoints[waypoint_index][1] -traffic_light_wp_world_frame[1])**2)
+                distance_traffic_light_wp = distance_traffic_light_wp/len(self._traffic_light_vehicle_frame)
+
+                if distance_traffic_light_wp < distance_wp_traffic_light:
+                    distance_wp_traffic_light = distance_traffic_light_wp
+                    closest_wp_to_traffic_light =  waypoint_index
+                waypoint_index += 1
+
+            self._goal_index = closest_wp_to_traffic_light
+            self._goal_state = list(waypoints[closest_wp_to_traffic_light])
+            print(f"Goal state {self._goal_state}, Goal index {self._goal_index}")
+
+        self._goal_state[2] = HALF_CRUISE_SPEED
+
         
 # Compute the waypoint index that is closest to the ego vehicle, and return
 # it as well as the distance from the ego vehicle to that waypoint.
@@ -322,17 +361,8 @@ def get_closest_index(waypoints, ego_state, goal_index):
 
     for i in range(len(waypoints)):
         temp = (waypoints[i][0] - ego_state[0])**2 + (waypoints[i][1] - ego_state[1])**2
-        
-        p_wp_world = np.array([waypoints[i][0], waypoints[i][1]]).T
-        o_world_vehicle = np.array([ego_state[0], ego_state[1]]).T
 
-        R_world_vehicle =  np.array([
-                                    [np.cos(ego_state[2]), -np.sin(ego_state[2])],
-                                    [np.sin(ego_state[2]), np.cos(ego_state[2])]])
-        
-        p_wp_vehicle = -np.matmul(R_world_vehicle.T, o_world_vehicle) + np.matmul(R_world_vehicle.T, p_wp_world)
-        #print(f"Ego state {ego_state[:2]},\n Point in world {waypoints[i][:2]}\n, Transformed wp{p_wp_vehicle}")
-        #print(f"Point in world {waypoints[i][:2]}\n, Transformed wp{p_wp_vehicle}")
+        p_wp_vehicle = convert_wp_in_vehicle_frame(ego_state, waypoints[i])
         if(p_wp_vehicle[0] > 0):               
             if temp < closest_len:
                 closest_len = temp
@@ -341,6 +371,46 @@ def get_closest_index(waypoints, ego_state, goal_index):
     closest_len = np.sqrt(closest_len)
 
     return closest_len, closest_index
+
+
+def convert_wp_in_vehicle_frame(ego_state, waypoint):
+    p_wp_world = np.array([waypoint[0], waypoint[1]]).T
+    o_world_vehicle = np.array([ego_state[0], ego_state[1]]).T
+
+    R_world_vehicle =  np.array([
+                                [np.cos(ego_state[2]), -np.sin(ego_state[2])],
+                                [np.sin(ego_state[2]), np.cos(ego_state[2])]])
+    
+    p_wp_vehicle = -np.matmul(R_world_vehicle.T, o_world_vehicle) + np.matmul(R_world_vehicle.T, p_wp_world)
+    #print(f"Ego state {ego_state[:2]},\n Point in world {waypoint[:2]}\n, Transformed wp{p_wp_vehicle}")
+    #print(f"Point in world {waypoint[:2]}\n, Transformed wp{p_wp_vehicle}")
+    return p_wp_vehicle[:2]
+
+def convert_wp_in_world_frame(ego_state, waypoint):
+    p_wp_vehicle = np.array([waypoint[0], waypoint[1]]).T
+    o_world_vehicle = np.array([ego_state[0], ego_state[1]]).T
+
+    R_world_vehicle =  np.array([
+                                [np.cos(ego_state[2]), -np.sin(ego_state[2])],
+                                [np.sin(ego_state[2]), np.cos(ego_state[2])]])
+    
+    p_wp_world = o_world_vehicle + np.matmul(R_world_vehicle, p_wp_vehicle)
+    #print(f"Ego state {ego_state[:2]},\n Point in vehicle frame {p_wp_vehicle}\n, Point in world{p_wp_world}")
+    #print(f"Point in vehicle frame {waypoint}\n, Point in world {p_wp_world}")
+    return p_wp_world
+
+def convert_wp_in_vehicle_frame(ego_state, waypoint):
+    p_wp_world = np.array([waypoint[0], waypoint[1]]).T
+    o_world_vehicle = np.array([ego_state[0], ego_state[1]]).T
+
+    R_world_vehicle =  np.array([
+                                [np.cos(ego_state[2]), -np.sin(ego_state[2])],
+                                [np.sin(ego_state[2]), np.cos(ego_state[2])]])
+    
+    p_wp_vehicle = -np.matmul(R_world_vehicle.T, o_world_vehicle) + np.matmul(R_world_vehicle.T, p_wp_world)
+    #print(f"Ego state {ego_state[:2]},\n Point in world {waypoint[:2]}\n, Transformed wp{p_wp_vehicle}")
+    #print(f"Point in world {waypoint[:2]}\n, Transformed wp{p_wp_vehicle}")
+    return p_wp_vehicle
 
 # Checks if p2 lies on segment p1-p3, if p1, p2, p3 are collinear.
 def pointOnSegment(p1, p2, p3):
