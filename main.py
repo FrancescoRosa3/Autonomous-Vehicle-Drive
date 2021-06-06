@@ -173,10 +173,10 @@ SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 
 #'''
 ######################### TESTS ON PEDESTRIANS 5 ###############################
-PLAYER_START_INDEX = 28       #  spawn index for player
-DESTINATION_INDEX = 9         # Setting a Destination HERE
+PLAYER_START_INDEX = 6       #  spawn index for player
+DESTINATION_INDEX = 20         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
-NUM_VEHICLES           = 1000   # total number of vehicles to spawn
+NUM_VEHICLES           = 1   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 #'''
@@ -263,7 +263,7 @@ CIRCLE_RADII           = [1.5, 1.5, 1.5]  # m
 TIME_GAP               = 1.0              # s
 PATH_SELECT_WEIGHT     = 10
 A_MAX                  = 2.5              # m/s^2
-SLOW_SPEED             = 2                # m/s
+SLOW_SPEED             = 2.5                # m/s
 ###
 SECURITY_DISTANCE      = 2                # m
 LP_FREQUENCY_DIVISOR   = 2                # Frequency divisor to make the 
@@ -289,7 +289,7 @@ VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 20 # m
 PEDESTRIAN_OBSTACLE_LOOKAHEAD = 15 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
-SHOW_LIVE_PLOTTER = True
+SHOW_LIVE_PLOTTER = False
 PRODUCE_VIDEO = False
 SAVE_PATH_REFERENCE = False
 
@@ -1180,6 +1180,8 @@ def exec_waypoint_nav_demo(args):
             stop_to_obstacle = False
 
             if frame % LP_FREQUENCY_DIVISOR == 0:
+
+                print(f"CURRENT SPEED: {current_speed}")
 
                 tl_state = tl_distance = None 
 
