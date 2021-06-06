@@ -135,7 +135,7 @@ class trafficLightsManager:
                 return
 
             # take the traffic light pixels from the depth image
-            depth_sum = 0
+            x_distance = 0
             temp_avg = 0
             i = 0
             self.vehicle_frame_list = []
@@ -143,7 +143,7 @@ class trafficLightsManager:
                 i += 1
                 # convert depth image value in meters
                 depth = 1000 * self.curr_depth_img[pixel[0]][pixel[1]]
-                depth_sum = depth_sum + depth
+                #depth_sum = depth_sum + depth
 
                 ### Compute the pixel position in vehicle frame
                 # From pixel to waypoint
@@ -176,9 +176,10 @@ class trafficLightsManager:
                 vehicle_frame = np.asarray(np.reshape(vehicle_frame, (1,3)))
 
                 self.vehicle_frame_list.append([vehicle_frame[0][0], vehicle_frame[0][1]])
+                
+                x_distance = x_distance + vehicle_frame[0][0]
 
-            self.distance = depth_sum/len(traffic_light_pixels)
-
+            self.distance = x_distance/len(traffic_light_pixels)
         else:
             self.distance = None
 
