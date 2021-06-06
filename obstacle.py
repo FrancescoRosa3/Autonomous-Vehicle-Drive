@@ -3,17 +3,18 @@ import numpy as np
 import math
 from math import cos, sin, pi
 
-UPDATE_FREQUENCY = 3
+HISTORY_SIZE = 20
 
 class Obstacle:
 
     def __init__(self, obstacle):
         self._obstacle = obstacle
-        self._prev_state = None
+        self._prev_state = [None] * HISTORY_SIZE
+        self._head = 0
+        self._tail = 0
         self._turn_state = None
         self._future_locations = []
         self._predict_future_location()
-        self._update_frequency = UPDATE_FREQUENCY
     
     def get_current_location(self):
         return self._curr_obs_box_pts 
@@ -22,16 +23,16 @@ class Obstacle:
         return self._future_locations
 
     def update_state(self, obstacle):
-        if self._update_frequency == 0:
-            self._prev_state = self._obstacle
-            self._update_frequency = UPDATE_FREQUENCY
-        else:
-            self._update_frequency -=1
-            
+        
+        #print(f"Head {self._head} Tail {self._tail}")
+        self._prev_state[self._tail] = self._obstacle
+        self._tail = (self._tail + 1) % HISTORY_SIZE
+
+        if(self._prev_state[HISTORY_SIZE - 1] != None):
+            self._head = (self._tail)%HISTORY_SIZE
+
         self._obstacle = obstacle
         self._predict_future_location()
-
-    import math
 
     def rotate(self, origin, point, angle):
         """
@@ -49,6 +50,26 @@ class Obstacle:
         qy = math.sin(angle) * (dx) + math.cos(angle) * (dy) + oy
         return qx,  qy
 
+    def _compute_rotation(self, obstacle_yaw_angle):
+
+        # Rotation of the obstacle
+        prev_yaw_angle = self._prev_state[self._head].transform.rotation.yaw * pi / 180
+        # compute the angle difference between the current state and the oldest one
+        yaw_diff_head = round((obstacle_yaw_angle - prev_yaw_angle), 2)
+
+        # compute the yaw difference with respect to the last frame
+        yaw_tail = self._prev_state[self._tail-1].transform.rotation.yaw * pi / 180
+        yaw_diff_tail = round((obstacle_yaw_angle - yaw_tail),2)
+
+        obstacle_forwarding = (abs(obstacle_yaw_angle) < 1e-2 or abs(obstacle_yaw_angle) < math.pi/2 - 1e-2 or abs(obstacle_yaw_angle) < math.pi - 1e-2)
+        
+        if abs(yaw_diff_head) > abs(yaw_diff_tail):
+            print("Turning")
+            return yaw_diff_head
+        else:
+            print("Forward")
+            return yaw_diff_tail
+        
 
     def _predict_future_location(self):
 
@@ -84,10 +105,8 @@ class Obstacle:
             temp_cpos_shift = cpos_shift * step 
             cpos_trans = np.add(cpos, temp_cpos_shift)
             
-            if self._prev_state != None:
-                # Rotation of the obstacle
-                prev_yaw_angle = self._prev_state.transform.rotation.yaw * pi / 180
-                yaw_diff = (obstacle_yaw_angle - prev_yaw_angle)
+            if self._prev_state[self._head] != None:
+                yaw_diff = self._compute_rotation(obstacle_yaw_angle)
                 #print(f"Prev yaw {prev_yaw_angle} Current yaw {obstacle_yaw_angle}")
                 for i in range(0, cpos.shape[1]):
                     x_rot, y_rot = self.rotate( [-cpos[0][i],  cpos[1][i]], [-cpos_trans[0][i], cpos_trans[1][i]], -yaw_diff)
