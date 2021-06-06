@@ -154,32 +154,8 @@ class BehaviouralPlanner:
         # the traffic light line.
         elif self._state == APPROACHING_RED_TRAFFIC_LIGHT:
             print("FSM STATE: APPROACHING_RED_TRAFFIC_LIGHT")
-
-            self._update_goal_index(waypoints, ego_state)   
-            waypoint_index = 0
-            if self._traffic_light_distance != None:
-                distance_wp_traffic_light = math.inf
-                closest_wp_to_traffic_light = self._closest_index
-                # find the closest waypoint to the traffic light
-                waypoint_index = closest_wp_to_traffic_light
-                while waypoint_index < len(waypoints)-1:
-                    distance_traffic_light_wp = 0
-                    # compute the average distance from the waypoint and the traffic light in the world frame
-                    for traffic_light_wp in self._traffic_light_vehicle_frame:
-                        traffic_light_wp_world_frame = convert_wp_in_world_frame(ego_state, traffic_light_wp)
-                        distance_traffic_light_wp += np.sqrt((waypoints[waypoint_index][0] - traffic_light_wp_world_frame[0])**2 + (waypoints[waypoint_index][1] -traffic_light_wp_world_frame[1])**2)
-                    distance_traffic_light_wp = distance_traffic_light_wp/len(self._traffic_light_vehicle_frame)
-
-                    if distance_traffic_light_wp < distance_wp_traffic_light:
-                        distance_wp_traffic_light = distance_traffic_light_wp
-                        closest_wp_to_traffic_light =  waypoint_index
-                    waypoint_index += 1
-
-                self._goal_index = closest_wp_to_traffic_light
-                self._goal_state = list(waypoints[closest_wp_to_traffic_light])
-                print(f"Goal state {self._goal_state}, Goal index {self._goal_index}")
-
-            self._goal_state[2] = HALF_CRUISE_SPEED
+            
+            self._update_goal_index_with_traffic_light(waypoints, ego_state)
 
             if self._obstacle_on_lane:
                 self._goal_state[2] = 0
@@ -191,7 +167,7 @@ class BehaviouralPlanner:
                             self._state = STOP_AT_TRAFFIC_LIGHT
                 elif self._traffic_light_state == GO:
                     self._state = FOLLOW_LANE
-                    
+                                
             
         # In this state, the car is stopped at traffic light.
         # Transit to the the "follow lane" state if the traffic light becomes green
@@ -200,8 +176,8 @@ class BehaviouralPlanner:
         # enforcing the car to stay stopped.
         elif self._state == STOP_AT_TRAFFIC_LIGHT:
             print("FSM STATE: STOP_AT_TRAFFIC_LIGHT")
-            #if closed_loop_speed > STOP_THRESHOLD:
-            #    self._update_goal_index(waypoints, ego_state)
+            if closed_loop_speed > STOP_THRESHOLD:
+                self._update_goal_index(waypoints, ego_state)
             self._goal_state[2] = 0
             if self._obstacle_on_lane:
                 self._state = STOP_AT_OBSTACLE
@@ -317,6 +293,37 @@ class BehaviouralPlanner:
         self._closest_index = closest_index
         self._goal_index = goal_index
         self._goal_state = list(waypoints[goal_index])
+
+    def _update_goal_index_with_traffic_light(self, waypoints, ego_state):
+        
+        self._update_goal_index(waypoints, ego_state)   
+
+        waypoint_index = 0
+        
+        if self._traffic_light_distance != None:
+            distance_wp_traffic_light = math.inf
+            closest_wp_to_traffic_light = self._closest_index
+            # find the closest waypoint to the traffic light
+            waypoint_index = closest_wp_to_traffic_light
+            while waypoint_index < len(waypoints)-1:
+                distance_traffic_light_wp = 0
+                # compute the average distance from the waypoint and the traffic light in the world frame
+                for traffic_light_wp in self._traffic_light_vehicle_frame:
+                    traffic_light_wp_world_frame = convert_wp_in_world_frame(ego_state, traffic_light_wp)
+                    distance_traffic_light_wp += np.sqrt((waypoints[waypoint_index][0] - traffic_light_wp_world_frame[0])**2 + (waypoints[waypoint_index][1] -traffic_light_wp_world_frame[1])**2)
+                distance_traffic_light_wp = distance_traffic_light_wp/len(self._traffic_light_vehicle_frame)
+
+                if distance_traffic_light_wp < distance_wp_traffic_light:
+                    distance_wp_traffic_light = distance_traffic_light_wp
+                    closest_wp_to_traffic_light =  waypoint_index
+                waypoint_index += 1
+
+            self._goal_index = closest_wp_to_traffic_light
+            self._goal_state = list(waypoints[closest_wp_to_traffic_light])
+            print(f"Goal state {self._goal_state}, Goal index {self._goal_index}")
+
+        self._goal_state[2] = HALF_CRUISE_SPEED
+
         
 # Compute the waypoint index that is closest to the ego vehicle, and return
 # it as well as the distance from the ego vehicle to that waypoint.

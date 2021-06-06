@@ -127,7 +127,7 @@ class trafficLightsManager:
             ymax = int(self.curr_bb.ymax * image_h)
 
             # take the pixel coordinates for the traffic light
-            traffic_light_pixels = self.get_traffic_light_slice_from_semantic_segmentation(xmin, xmax, ymin, ymax)
+            traffic_light_pixels = self._get_traffic_light_slice_from_semantic_segmentation(xmin, xmax, ymin, ymax)
 
             # false positive bounding box
             if len(traffic_light_pixels) == 0:
@@ -146,8 +146,9 @@ class trafficLightsManager:
                 #depth_sum = depth_sum + depth
 
                 ### Compute the pixel position in vehicle frame
+                
                 # From pixel to waypoint
-                pixel = [pixel[0] , pixel[1], 1]
+                pixel = [pixel[1] , pixel[0], 1]
                 pixel = np.reshape(pixel, (3,1))
 
                 # Projection Pixel to Image Frame
@@ -175,9 +176,9 @@ class trafficLightsManager:
                 vehicle_frame = vehicle_frame[:3]
                 vehicle_frame = np.asarray(np.reshape(vehicle_frame, (1,3)))
 
-                self.vehicle_frame_list.append([vehicle_frame[0][0], vehicle_frame[0][1]])
+                self.vehicle_frame_list.append([vehicle_frame[0][0], -vehicle_frame[0][1]])
                 
-                x_distance = x_distance + vehicle_frame[0][0]
+                x_distance += vehicle_frame[0][0]
 
             self.distance = x_distance/len(traffic_light_pixels)
         else:
@@ -202,7 +203,7 @@ class trafficLightsManager:
             self.new_state_counter = 0
             self.curr_state = bb_state
 
-    def get_traffic_light_slice_from_semantic_segmentation(self, x_min, x_max, y_min, y_max):
+    def _get_traffic_light_slice_from_semantic_segmentation(self, x_min, x_max, y_min, y_max):
         
         # neighborhood of the bounding box
         width = x_max - x_min
