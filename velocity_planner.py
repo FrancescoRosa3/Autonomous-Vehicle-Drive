@@ -140,7 +140,8 @@ class VelocityPlanner:
         # print(f"stop_line_distance: {stop_line_distance}")
         if stop_to_obstacle:
             self.set_stop_line_distance(stop_line_distance)
-            profile = self.emergency_stop_profile(path, start_speed)
+            profile = self.decelerate_profile(path, start_speed)
+            print(f"profile: {profile}")
         elif (lead_car_state is not None and follow_lead_vehicle and consider_lead):
             profile = self.follow_profile(path, start_speed, desired_speed, lead_car_state)
         elif stop_to_red_traffic_light:
@@ -205,6 +206,8 @@ class VelocityPlanner:
         profile          = []
         slow_speed       = self._slow_speed
         security_distance = self._security_distance
+        stop_line_distance = self._stop_line_distance
+
         # Using d = (v_f^2 - v_i^2) / (2 * a), compute the two distances
         # used in the trapezoidal stop behaviour. decel_distance goes from
         #  start_speed to some coasting speed (slow_speed), then brake_distance
@@ -218,7 +221,16 @@ class VelocityPlanner:
             path_length += np.linalg.norm([path[0][i+1] - path[0][i], 
                                            path[1][i+1] - path[1][i]])
 
-        stop_index = len(path[0]) - 1
+        print(f"path_length: {path_length}") 
+
+        obs_index = 0
+        temp_dist = 0.0
+        while (obs_index < len(path[0]) - 2) and temp_dist < stop_line_distance:
+            temp_dist += np.linalg.norm([path[0][obs_index+1] - path[0][obs_index], 
+                                         path[1][obs_index+1] - path[1][obs_index]])
+            obs_index += 1
+
+        stop_index = obs_index
         temp_dist = 0.0
         # Compute the index at which we should stop.
         while (stop_index > 0) and (temp_dist < security_distance):
@@ -316,78 +328,6 @@ class VelocityPlanner:
                 profile.append([path[0][i], path[1][i], 0.0])
 
         return profile
-
-    # Computes a trapezoidal profile for decelerating to stop.
-    def emergency_stop_profile(self, path, start_speed): 
-        """Computes the velocity profile for the local path to decelerate to a
-        stop.
-        
-        args:
-            path: Path (global frame) that the vehicle will follow.
-                Format: [x_points, y_points, t_points]
-                        x_points: List of x values (m)
-                        y_points: List of y values (m)
-                        t_points: List of yaw values (rad)
-                    Example of accessing the ith point's y value:
-                        paths[1][i]
-                It is assumed that the stop line is at the end of the path.
-            start_speed: speed which the vehicle starts with (m/s)
-        internal parameters of interest:
-            self._slow_speed: coasting speed (m/s) of the vehicle before it 
-                comes to a stop
-            self._stop_line_buffer: buffer distance to stop line (m) for vehicle
-                to stop at
-            self._a_max: maximum acceleration/deceleration of the vehicle (m/s^2)
-        returns:
-            profile: deceleration profile which contains the local path as well
-                as the speed to be tracked by the controller (global frame).
-                Length and speed in m and m/s.
-                Format: [[x0, y0, v0],
-                         [x1, y1, v1],
-                         ...,
-                         [xm, ym, vm]]
-                example:
-                    profile[2][1]: 
-                    returns the 3rd point's y position in the local path
-
-                    profile[5]:
-                    returns [x5, y5, v5] (6th point in the local path)
-        """
-        profile          = []
-        security_distance = self._security_distance
-
-        # compute total path length
-        path_length = 0.0
-        for i in range(len(path[0])-1):
-            path_length += np.linalg.norm([path[0][i+1] - path[0][i], 
-                                           path[1][i+1] - path[1][i]])
-
-        stop_index = len(path[0]) - 1
-        temp_dist = 0.0
-        # Compute the index at which we should stop.
-        while (stop_index > 0) and (temp_dist < security_distance):
-            temp_dist += np.linalg.norm([path[0][stop_index] - path[0][stop_index-1], 
-                                         path[1][stop_index] - path[1][stop_index-1]])
-            stop_index -= 1
-
-        speeds = []
-        
-        vi = start_speed
-        for i in range(stop_index):
-            dist = np.linalg.norm([path[0][i+1] - path[0][i], 
-                                    path[1][i+1] - path[1][i]])
-            vf = calc_final_speed(vi, -self._a_max, dist)
-            speeds.append(vf)
-            vi = vf
-
-        for i in range(stop_index, len(path[0])):
-            speeds.append(0)
-        
-        # Generate the profile, given the computed speeds.
-        for i in range(len(speeds)):
-            profile.append([path[0][i], path[1][i], speeds[i]])
-        return profile
-
 
     # Computes a profile for following a lead vehicle..
     def follow_profile(self, path, start_speed, desired_speed, lead_car_state):
@@ -514,6 +454,14 @@ class VelocityPlanner:
                     profile[5]:
                     returns [x5, y5, v5] (6th point in the local path)
         """
+        # compute total path length
+        path_length = 0.0
+        for i in range(len(path[0])-1):
+            path_length += np.linalg.norm([path[0][i+1] - path[0][i], 
+                                           path[1][i+1] - path[1][i]])
+
+        print(f"path_length: {path_length}") 
+
         profile = []
         # Compute distance travelled from start speed to desired speed using
         # a constant acceleration.

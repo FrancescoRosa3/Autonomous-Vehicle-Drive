@@ -2,13 +2,15 @@ import main
 import numpy as np
 import math
 from math import cos, sin, pi
+VEHICLE = 0
 
 HISTORY_SIZE = 20
 
 class Obstacle:
 
-    def __init__(self, obstacle):
+    def __init__(self, obstacle, agent_type):
         self._obstacle = obstacle
+        self._agent_type = agent_type
         self._prev_state = [None] * HISTORY_SIZE
         self._head = 0
         self._tail = 0
@@ -62,12 +64,10 @@ class Obstacle:
         yaw_diff_tail = round((obstacle_yaw_angle - yaw_tail),2)
 
         obstacle_forwarding = (abs(obstacle_yaw_angle) < 1e-2 or abs(obstacle_yaw_angle) < math.pi/2 - 1e-2 or abs(obstacle_yaw_angle) < math.pi - 1e-2)
-        
-        if abs(yaw_diff_head) > abs(yaw_diff_tail):
-            print("Turning")
+        print(f"yaw_diff_head: {math.degrees(yaw_diff_head):.2f} - yaw_diff_tail: {math.degrees(yaw_diff_tail):.2f}")
+        if abs(yaw_diff_head) > abs(yaw_diff_tail) + math.radians(10):
             return yaw_diff_head
         else:
-            print("Forward")
             return yaw_diff_tail
         
 
@@ -79,7 +79,9 @@ class Obstacle:
         self._curr_obs_box_pts = main.obstacle_to_world(location, dimension, rotation)
 
         obstacle_speed = self._obstacle.forward_speed
-        future_frames_to_check = 45
+        
+        future_frames_to_check = 45 if self._agent_type == VEHICLE else 75
+        
         frames_update_frequency = 0.033
         # frames_update_frequency = 1
 
@@ -105,13 +107,15 @@ class Obstacle:
             temp_cpos_shift = cpos_shift * step 
             cpos_trans = np.add(cpos, temp_cpos_shift)
             
-            if self._prev_state[self._head] != None:
+            if self._prev_state[self._head] != None and self._agent_type == VEHICLE:
                 yaw_diff = self._compute_rotation(obstacle_yaw_angle)
                 #print(f"Prev yaw {prev_yaw_angle} Current yaw {obstacle_yaw_angle}")
                 for i in range(0, cpos.shape[1]):
                     x_rot, y_rot = self.rotate( [-cpos[0][i],  cpos[1][i]], [-cpos_trans[0][i], cpos_trans[1][i]], -yaw_diff)
                     cpos[0][i] = -x_rot  
                     cpos[1][i] = y_rot
+            else:
+                cpos = cpos_trans
 
             for j in range(cpos.shape[1]):
                 future_box_pts.append([cpos[0,j], cpos[1,j]])

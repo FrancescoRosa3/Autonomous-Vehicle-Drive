@@ -70,6 +70,15 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 10     # seed for vehicle spawn randomizer
 '''
 
+'''
+######################### RETTILINEO LIBERO ###############################
+PLAYER_START_INDEX = 13        #  spawn index for player
+DESTINATION_INDEX = 20         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 0   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
 
 '''
 ######################### TURN PROBLEMS ###############################
@@ -142,7 +151,7 @@ SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
 '''
-######################### TESTS ON PEDESTRIANS 4 ###############################
+######################### TESTS ON PEDESTRIANS THAT COULD BE AVOIDED ###############################
 PLAYER_START_INDEX = 139        #  spawn index for player
 DESTINATION_INDEX = 148         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
@@ -151,7 +160,7 @@ SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-'''
+#'''
 ######################### TESTS ON PEDESTRIANS 4 ###############################
 PLAYER_START_INDEX = 2        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
@@ -159,7 +168,7 @@ NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
 NUM_VEHICLES           = 0   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
+#'''
 
 '''
 ######################### TESTS ON PEDESTRIANS 4 LUNGO ###############################
@@ -181,6 +190,15 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
+'''
+################## TEST CURVA CON FURGONCINO CHE PASSA CON ROSSO #############
+PLAYER_START_INDEX = 16        #  spawn index for player
+DESTINATION_INDEX = 29         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
+NUM_VEHICLES           = 50   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
 
 '''
 ######### SLOW DOWN BEHIND LEAD VEHICLE THAT STOPPED FOR A PEDESTRIAN ################
@@ -212,12 +230,15 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-PLAYER_START_INDEX = 13       #  spawn index for player
-DESTINATION_INDEX = 124         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 100   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
+'''
+################################## --- #################################################
+PLAYER_START_INDEX = 11       # spawn index for player
+DESTINATION_INDEX = 20         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
+NUM_VEHICLES           = 1000   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
 
 ###############################################################################
 
@@ -262,7 +283,7 @@ DIST_THRESHOLD_TO_LAST_WAYPOINT = 2.0  # some distance from last position before
 
 # Planning Constants
 NUM_PATHS = 5
-BP_LOOKAHEAD_BASE      = 16.0             # m
+BP_LOOKAHEAD_BASE      = 10.0             # m
 BP_LOOKAHEAD_TIME      = 1.0              # s
 PATH_OFFSET            = 1                # m
 CIRCLE_OFFSETS         = [-1.0, 1.0, 3.0] # m
@@ -296,7 +317,7 @@ VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 20 # m
 PEDESTRIAN_OBSTACLE_LOOKAHEAD = 15 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
-SHOW_LIVE_PLOTTER = False
+SHOW_LIVE_PLOTTER = True
 PRODUCE_VIDEO = False
 SAVE_PATH_REFERENCE = False
 
@@ -1134,7 +1155,7 @@ def exec_waypoint_nav_demo(args):
         for frame in range(TOTAL_EPISODE_FRAMES):
             # Gather current data from the CARLA server
             measurement_data, sensor_data = client.read_data()
-
+            
             # Update pose and timestamp
             prev_timestamp = current_timestamp
             current_x, current_y, current_z, current_pitch, current_roll, current_yaw = \
@@ -1308,6 +1329,7 @@ def exec_waypoint_nav_demo(args):
                         stop_line_distance = bp._traffic_light_distance
                     else:
                         stop_line_distance = None
+
                     local_waypoints = lp._velocity_planner.compute_velocity_profile(best_path, desired_speed, 
                                                                                     ego_state, current_speed, 
                                                                                     stop_to_obstacle, stop_to_red_traffic_light, 

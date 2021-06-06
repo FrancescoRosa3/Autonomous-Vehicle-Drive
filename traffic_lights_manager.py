@@ -88,7 +88,7 @@ class trafficLightsManager:
                 image_frame_vect_extended = np.zeros((4,1))
                 image_frame_vect_extended[:3] = image_frame_vect 
                 image_frame_vect_extended[-1] = 1
-                
+
                 # Projection Camera to Vehicle Frame
                 camera_frame = self.image_to_camera_frame(image_frame_vect_extended)
                 camera_frame = camera_frame[:3]
@@ -107,7 +107,7 @@ class trafficLightsManager:
                 vehicle_frame = np.asarray(np.reshape(vehicle_frame, (1,3)))
 
                 self.vehicle_frame_list.append([vehicle_frame[0][0], -vehicle_frame[0][1]])
-                
+
                 x_distance += vehicle_frame[0][0]
 
             self.distance = x_distance/len(traffic_light_pixels)
@@ -157,6 +157,14 @@ class trafficLightsManager:
 
     def create_intrinsic_matrix(self, camera_parameters):
         ### Compute the transformation matrices from image to camera frame
+        self.cam_height = camera_parameters['z']
+        self.cam_x_pos = camera_parameters['x']
+        self.cam_y_pos = camera_parameters['y']
+
+        self.cam_yaw = camera_parameters['yaw'] 
+        self.cam_pitch = camera_parameters['pitch'] 
+        self.cam_roll = camera_parameters['roll']
+        
         camera_width = camera_parameters['width']
         camera_height = camera_parameters['height']
 

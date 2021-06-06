@@ -6,6 +6,10 @@ from obstacle import Obstacle
 import main
 
 LEAD_VEHILCE_LOOKAHEAD_OFFSET_FOR_RELEASE = 5
+
+VEHICLE = 0
+PEDESTRIAN = 1
+
 # CAR_LONG_SIDE = 2
 #VEHICLE_LABEL = 10
 #PEDESTRIAN_LABEL = 4
@@ -87,7 +91,7 @@ class ObstaclesManager:
                                 lead_vehicle_dist = distance
                                 lead_vehicle = agent.vehicle
                     else:
-                        self._add_obstacle(agent.vehicle, agent.id)
+                        self._add_obstacle(agent.vehicle, agent.id, VEHICLE)
                 else:   
                     try:
                         self._obstacles.pop(agent.id)
@@ -105,7 +109,7 @@ class ObstaclesManager:
                 location = agent.pedestrian.transform.location
                 dist = sqrt((self._ego_pose[0] - location.x)**2 + (self._ego_pose[1] - location.y)**2) 
                 if dist < self._pedestrian_obstacle_lookahead:
-                    self._add_obstacle(agent.pedestrian, agent.id)
+                    self._add_obstacle(agent.pedestrian, agent.id, PEDESTRIAN)
                 else:
                     try:
                         self._obstacles.pop(agent.id)
@@ -149,11 +153,11 @@ class ObstaclesManager:
         return (car_distance < distance_from_lead) and (dot_product > 1/sqrt(2))
     
 
-    def _add_obstacle(self, obstacle, id):
+    def _add_obstacle(self, obstacle, id, agent_type):
         if id in self._obstacles:
             self._obstacles[id].update_state(obstacle)
         else:
-            self._obstacles[id] = Obstacle(obstacle)
+            self._obstacles[id] = Obstacle(obstacle, agent_type)
 
     def _get_obstacles(self):
         obstacles = []

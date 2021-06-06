@@ -47,7 +47,7 @@ def produce_video():
             clip4 = VideoFileClip(fsm_out_path)
             clip2 = clip2.resize(0.45)
             clip3 = clip3.resize(0.70)
-            clip4 = clip4.resize(0.40)
+            clip4 = clip4.resize(0.33)
             final_clip = CompositeVideoClip([clip1, clip2.set_position(("left", "bottom")), clip3.set_position(("right", "top")), clip4.set_position(("right", "center"))])#.set_duration(clip1)
             final_clip.write_videofile(result_out_path)
 
