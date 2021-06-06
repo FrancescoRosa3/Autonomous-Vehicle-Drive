@@ -222,8 +222,8 @@ SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 
 '''
 ######################### lead vehicle seen as obstacle on turn ###############################
-PLAYER_START_INDEX = 8       #  spawn index for player
-DESTINATION_INDEX = 27         # Setting a Destination HERE
+PLAYER_START_INDEX = 136       #  spawn index for player
+DESTINATION_INDEX = 92         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 30     # total number of pedestrians to spawn
 NUM_VEHICLES           = 30   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
@@ -240,6 +240,14 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
+'''
+PLAYER_START_INDEX = 17       #  spawn index for player
+DESTINATION_INDEX = 51         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 100   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
 ###############################################################################
 
 ITER_FOR_SIM_TIMESTEP  = 10         # no. iterations to compute approx sim timestep
@@ -761,6 +769,10 @@ def exec_waypoint_nav_demo(args):
         # send a command back to the CARLA server because synchronous mode
         # is enabled.
         measurement_data, sensor_data = client.read_data()
+        for agent in measurement_data.non_player_agents:
+            agent.id # unique id of the agent
+            if agent.HasField('traffic_light'):
+                print(agent.traffic_light.transform.location)
         sim_start_stamp = measurement_data.game_timestamp / 1000.0
         # Send a control command to proceed to next iteration.
         # This mainly applies for simulations that are in synchronous mode.

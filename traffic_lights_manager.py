@@ -66,6 +66,7 @@ class trafficLightsManager:
 
             # take the traffic light pixels from the depth image
             x_distance = 0
+            depth_sum = 0
             temp_avg = 0
             i = 0
             self.vehicle_frame_list = []
@@ -73,17 +74,14 @@ class trafficLightsManager:
                 i += 1
                 # convert depth image value in meters
                 depth = 1000 * self.curr_depth_img[pixel[0]][pixel[1]]
-                #depth_sum = depth_sum + depth
 
                 ### Compute the pixel position in vehicle frame
                 
                 # From pixel to waypoint
                 pixel = [pixel[1] , pixel[0], 1]
                 pixel = np.reshape(pixel, (3,1))
-
                 # Projection Pixel to Image Frame
                 image_frame_vect = np.dot(self.inv_intrinsic_matrix, pixel) * depth
-
                 # Create extended vector
                 image_frame_vect_extended = np.zeros((4,1))
                 image_frame_vect_extended[:3] = image_frame_vect 
@@ -105,11 +103,10 @@ class trafficLightsManager:
                 vehicle_frame = np.dot(camera_to_vehicle_frame,camera_frame_extended )
                 vehicle_frame = vehicle_frame[:3]
                 vehicle_frame = np.asarray(np.reshape(vehicle_frame, (1,3)))
-
-                self.vehicle_frame_list.append([vehicle_frame[0][0], -vehicle_frame[0][1]])
-
+                self.vehicle_frame_list.append([vehicle_frame[0][0], vehicle_frame[0][1]])
+            
                 x_distance += vehicle_frame[0][0]
-
+                
             self.distance = x_distance/len(traffic_light_pixels)
         else:
             self.distance = None
@@ -148,10 +145,10 @@ class trafficLightsManager:
 
         # get the pixels belonging to traffic sign
         traffic_light_pixels = []
-        for i in range(start_y, end_y):
-            for j in range(start_x, end_x):
-                if self.curr_semantic_img[i][j] == TRAFFIC_SIGN_LABEL:
-                    traffic_light_pixels.append((i, j))
+        for v in range(start_y, end_y):
+            for u in range(start_x, end_x):
+                if self.curr_semantic_img[v][u] == TRAFFIC_SIGN_LABEL:
+                    traffic_light_pixels.append((v, u))
 
         return traffic_light_pixels
 

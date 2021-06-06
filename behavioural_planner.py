@@ -312,7 +312,6 @@ class BehaviouralPlanner:
                     traffic_light_wp_world_frame = convert_wp_in_world_frame(ego_state, traffic_light_wp)
                     distance_traffic_light_wp += np.sqrt((waypoints[waypoint_index][0] - traffic_light_wp_world_frame[0])**2 + (waypoints[waypoint_index][1] -traffic_light_wp_world_frame[1])**2)
                 distance_traffic_light_wp = distance_traffic_light_wp/len(self._traffic_light_vehicle_frame)
-
                 if distance_traffic_light_wp < distance_wp_traffic_light:
                     distance_wp_traffic_light = distance_traffic_light_wp
                     closest_wp_to_traffic_light =  waypoint_index
