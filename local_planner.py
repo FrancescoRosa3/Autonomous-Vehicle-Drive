@@ -11,7 +11,7 @@ PATHS_TO_EXCLUDE = 2
 class LocalPlanner:
     def __init__(self, num_paths, path_offset, circle_offsets, circle_radii, 
                  path_select_weight, time_gap, a_max, slow_speed, 
-                 stop_line_buffer):
+                 security_distance):
         self._num_paths_base = num_paths
         self._num_paths = self._num_paths_base
         self._path_offset = path_offset
@@ -22,7 +22,7 @@ class LocalPlanner:
                                                path_select_weight)
         self._velocity_planner = \
             velocity_planner.VelocityPlanner(time_gap, a_max, slow_speed, 
-                                             stop_line_buffer)
+                                             security_distance)
         self._prev_best_path = None
 
     def get_num_path(self):

@@ -70,6 +70,17 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 10     # seed for vehicle spawn randomizer
 '''
 
+
+'''
+######################### TURN PROBLEMS ###############################
+PLAYER_START_INDEX = 13        #  spawn index for player
+DESTINATION_INDEX = 124         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 1500   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 30    # seed for vehicle spawn randomizer
+'''
+
 '''
 ######################### SUV ###############################
 PLAYER_START_INDEX = 51        #  spawn index for player
@@ -141,16 +152,37 @@ SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
 '''
+######################### TESTS ON PEDESTRIANS 4 ###############################
+PLAYER_START_INDEX = 2        #  spawn index for player
+DESTINATION_INDEX = 20         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
+NUM_VEHICLES           = 0   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
+
+'''
 ######################### TESTS ON PEDESTRIANS 4 LUNGO ###############################
 PLAYER_START_INDEX = 2        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
-NUM_VEHICLES           = 100   # total number of vehicles to spawn
+NUM_VEHICLES           = 50   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
 #'''
+######################### TESTS ON PEDESTRIANS 5 ###############################
+PLAYER_START_INDEX = 28       #  spawn index for player
+DESTINATION_INDEX = 9         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
+NUM_VEHICLES           = 1000   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+#'''
+
+
+'''
 ######### SLOW DOWN BEHIND LEAD VEHICLE THAT STOPPED FOR A PEDESTRIAN ################
 PLAYER_START_INDEX = 126        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
@@ -158,7 +190,7 @@ NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
 NUM_VEHICLES           = 100   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-#'''
+'''
 
 '''
 ######################### lead vehicle seen as obstacle on turn ###############################
@@ -223,7 +255,7 @@ DIST_THRESHOLD_TO_LAST_WAYPOINT = 2.0  # some distance from last position before
 
 # Planning Constants
 NUM_PATHS = 5
-BP_LOOKAHEAD_BASE      = 8.0             # m
+BP_LOOKAHEAD_BASE      = 12.0              # m
 BP_LOOKAHEAD_TIME      = 1.0              # s
 PATH_OFFSET            = 1                # m
 CIRCLE_OFFSETS         = [-1.0, 1.0, 3.0] # m
@@ -231,8 +263,9 @@ CIRCLE_RADII           = [1.5, 1.5, 1.5]  # m
 TIME_GAP               = 1.0              # s
 PATH_SELECT_WEIGHT     = 10
 A_MAX                  = 2.5              # m/s^2
-SLOW_SPEED             = 2              # m/s
-STOP_LINE_BUFFER       = 3.5              # m
+SLOW_SPEED             = 2                # m/s
+###
+SECURITY_DISTANCE      = 2                # m
 LP_FREQUENCY_DIVISOR   = 2                # Frequency divisor to make the 
                                           # local planner operate at a lower
                                           # frequency than the controller
@@ -1042,7 +1075,7 @@ def exec_waypoint_nav_demo(args):
                                         TIME_GAP,
                                         A_MAX,
                                         SLOW_SPEED,
-                                        STOP_LINE_BUFFER)
+                                        SECURITY_DISTANCE)
         bp = behavioural_planner.BehaviouralPlanner(BP_LOOKAHEAD_BASE)
 
         traffic_lights_manager = trafficLightsManager()
@@ -1208,7 +1241,9 @@ def exec_waypoint_nav_demo(args):
                 ### Perform collision checking.
                 # collision_check_array = lp._collision_checker.collision_check(paths, box_pts_obstacles)
                 all_obs = box_pts_obstacles + box_pts_future_obstacles
-                collision_check_array = lp._collision_checker.collision_check(paths, all_obs, current_speed)
+                
+                ### added array of distances
+                collision_check_array, collision_dist_array = lp._collision_checker.collision_check(paths, all_obs, current_speed)
 
                 bp.set_obstacle_on_lane(collision_check_array)
 
@@ -1237,11 +1272,18 @@ def exec_waypoint_nav_demo(args):
                         consider_lead = False
                     consider_lead = True
                     
+                    ### compute the distance of the point you want to stop to  
+                    if stop_to_obstacle:
+                        stop_line_distance = min(collision_dist_array)
+                    elif stop_to_red_traffic_light:
+                        stop_line_distance = bp._traffic_light_distance
+                    else:
+                        stop_line_distance = None
                     local_waypoints = lp._velocity_planner.compute_velocity_profile(best_path, desired_speed, 
                                                                                     ego_state, current_speed, 
                                                                                     stop_to_obstacle, stop_to_red_traffic_light, 
                                                                                     lead_car_state, bp._follow_lead_vehicle, 
-                                                                                    consider_lead, bp._traffic_light_distance)
+                                                                                    consider_lead, stop_line_distance)
                     if local_waypoints != None:
                         # Update the controller waypoint path with the best local path.
                         # This controller is similar to that developed in Course 1 of this

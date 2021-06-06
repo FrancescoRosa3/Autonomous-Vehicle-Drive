@@ -3,13 +3,22 @@ from behavioural_planner import STOP_TRAFFIC_LIGHT
 import numpy as np
 from math import sin, cos, pi, sqrt
 
+###
+
 class VelocityPlanner:
-    def __init__(self, time_gap, a_max, slow_speed, stop_line_buffer):
-        self._time_gap         = time_gap
-        self._a_max            = a_max
-        self._slow_speed       = slow_speed
-        self._stop_line_buffer = stop_line_buffer
-        self._prev_trajectory  = [[0.0, 0.0, 0.0]]
+    def __init__(self, time_gap, a_max, slow_speed, security_distance):
+        self._time_gap          = time_gap
+        self._a_max             = a_max
+        self._slow_speed        = slow_speed
+        self._security_distance = security_distance
+        self._prev_trajectory   = [[0.0, 0.0, 0.0]]
+
+    def set_stop_line_distance(self, stop_line_distance):
+        if stop_line_distance != None:
+            stop_line_distance = stop_line_distance - self._security_distance
+            self._stop_line_distance = 0 if stop_line_distance < 0 else stop_line_distance
+        else:
+            self._stop_line_distance = self._security_distance
 
     # Computes an open loop speed estimate based on the previously planned
     # trajectory, and the timestep since the last planning cycle.
@@ -62,7 +71,7 @@ class VelocityPlanner:
                                  closed_loop_speed, stop_to_obstacle, stop_to_red_traffic_light,
                                  lead_car_state, follow_lead_vehicle,
                                  consider_lead,
-                                 stop_traffic_light_distance):
+                                 stop_line_distance = None):
         """Computes the velocity profile for the local planner path.
         
         args:
@@ -128,14 +137,19 @@ class VelocityPlanner:
         # 1 1 1 decelerate              -
 
         # Generate a trapezoidal profile to decelerate to stop.
+        # print(f"stop_line_distance: {stop_line_distance}")
         if stop_to_obstacle:
+            self.set_stop_line_distance(stop_line_distance)
             profile = self.emergency_stop_profile(path, start_speed)
         elif (lead_car_state is not None and follow_lead_vehicle and consider_lead):
             profile = self.follow_profile(path, start_speed, desired_speed, lead_car_state)
         elif stop_to_red_traffic_light:
+            self.set_stop_line_distance(stop_line_distance)
             profile = self.decelerate_profile(path, start_speed)
         else:
             profile = self.nominal_profile(path, start_speed, desired_speed)
+
+        # print(f"profile:\n{profile}")
 
         # Interpolate between the zeroth state and the first state.
         # This prevents the myopic controller from getting stuck at the zeroth
@@ -190,7 +204,7 @@ class VelocityPlanner:
         """
         profile          = []
         slow_speed       = self._slow_speed
-        stop_line_buffer = self._stop_line_buffer
+        security_distance = self._security_distance
         # Using d = (v_f^2 - v_i^2) / (2 * a), compute the two distances
         # used in the trapezoidal stop behaviour. decel_distance goes from
         #  start_speed to some coasting speed (slow_speed), then brake_distance
@@ -207,7 +221,7 @@ class VelocityPlanner:
         stop_index = len(path[0]) - 1
         temp_dist = 0.0
         # Compute the index at which we should stop.
-        while (stop_index > 0) and (temp_dist < stop_line_buffer):
+        while (stop_index > 0) and (temp_dist < security_distance):
             temp_dist += np.linalg.norm([path[0][stop_index] - path[0][stop_index-1], 
                                          path[1][stop_index] - path[1][stop_index-1]])
             stop_index -= 1
@@ -216,8 +230,7 @@ class VelocityPlanner:
         # perform a smooth deceleration and require a harder deceleration. Build
         # the path up in reverse to ensure we reach zero speed at the required
         # time.
-        if brake_distance + decel_distance + stop_line_buffer > path_length:
-            print("NO SPACE FOR BRAKING")
+        if brake_distance + decel_distance + security_distance > path_length:
             speeds = []
             vf = 0.0
             # The speeds past the stop line buffer should be zero.
@@ -247,7 +260,6 @@ class VelocityPlanner:
         # decelerating to our slow_speed. These two indices denote the
         # endpoints of the ramps in our trapezoidal profile.
         else:
-            print("SPACE FOR BRAKING")
             brake_index = stop_index 
             temp_dist = 0.0
             # Compute the index at which to start braking down to zero.
@@ -342,7 +354,7 @@ class VelocityPlanner:
                     returns [x5, y5, v5] (6th point in the local path)
         """
         profile          = []
-        stop_line_buffer = self._stop_line_buffer
+        security_distance = self._security_distance
 
         # compute total path length
         path_length = 0.0
@@ -353,7 +365,7 @@ class VelocityPlanner:
         stop_index = len(path[0]) - 1
         temp_dist = 0.0
         # Compute the index at which we should stop.
-        while (stop_index > 0) and (temp_dist < stop_line_buffer):
+        while (stop_index > 0) and (temp_dist < security_distance):
             temp_dist += np.linalg.norm([path[0][stop_index] - path[0][stop_index-1], 
                                          path[1][stop_index] - path[1][stop_index-1]])
             stop_index -= 1

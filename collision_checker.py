@@ -38,6 +38,7 @@ class CollisionChecker:
                 ith path in the paths list.
         """
         collision_check_array = np.zeros(len(paths), dtype=bool)
+        collision_dist_array = np.zeros(len(paths), dtype=float)
         for i in range(len(paths)):
             collision_free = True
             path           = paths[i]
@@ -53,6 +54,7 @@ class CollisionChecker:
             # print(f"distance: {dist:.2f} - path_index: {path_index}")
 
             # Iterate over the points in the path.
+            dist_from_obstacle = dist
             for j in range(path_index, len(path[0])):
                 # Compute the circle locations along this point in the path.
                 # These circle represent an approximate collision
@@ -94,13 +96,25 @@ class CollisionChecker:
                                      not np.any(collision_dists < 0)
 
                     if not collision_free:
+                        ###
+                        dist_from_obstacle += np.sqrt((path[0][j]-path[0][path_index])**2+(path[1][j]-path[1][path_index])**2)
                         break
                 if not collision_free:
+                    ###
+                    dist_from_obstacle += np.sqrt((path[0][j]-path[0][path_index])**2+(path[1][j]-path[1][path_index])**2)
                     break
 
             collision_check_array[i] = collision_free
+            collision_dist_array[i] = dist_from_obstacle
         #print(f"collision_check_array: {collision_check_array}")
-        return collision_check_array
+
+        '''
+        for i in range(len(collision_check_array)):
+            if collision_check_array[i]:
+                collision_dist_array[i] = None
+        '''
+        print(f"collision_dist_array: {collision_dist_array}")
+        return collision_check_array, collision_dist_array
 
     # Selects the best path in the path set, according to how closely
     # it follows the lane centerline, and how far away it is from other
