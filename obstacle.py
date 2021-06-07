@@ -64,7 +64,7 @@ class Obstacle:
         yaw_diff_tail = round((obstacle_yaw_angle - yaw_tail),2)
 
         obstacle_forwarding = (abs(obstacle_yaw_angle) < 1e-2 or abs(obstacle_yaw_angle) < math.pi/2 - 1e-2 or abs(obstacle_yaw_angle) < math.pi - 1e-2)
-        print(f"yaw_diff_head: {math.degrees(yaw_diff_head):.2f} - yaw_diff_tail: {math.degrees(yaw_diff_tail):.2f}")
+        # print(f"yaw_diff_head: {math.degrees(yaw_diff_head):.2f} - yaw_diff_tail: {math.degrees(yaw_diff_tail):.2f}")
         if abs(yaw_diff_head) > abs(yaw_diff_tail) + math.radians(10):
             return yaw_diff_head
         else:

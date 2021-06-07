@@ -141,7 +141,6 @@ class VelocityPlanner:
         if stop_to_obstacle:
             self.set_stop_line_distance(stop_line_distance)
             profile = self.decelerate_profile(path, start_speed)
-            print(f"profile: {profile}")
         elif (lead_car_state is not None and follow_lead_vehicle and consider_lead):
             profile = self.follow_profile(path, start_speed, desired_speed, lead_car_state)
         elif stop_to_red_traffic_light:

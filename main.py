@@ -160,7 +160,7 @@ SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-#'''
+'''
 ######################### TESTS ON PEDESTRIANS 4 ###############################
 PLAYER_START_INDEX = 2        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
@@ -168,9 +168,9 @@ NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
 NUM_VEHICLES           = 0   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-#'''
-
 '''
+
+#'''
 ######################### TESTS ON PEDESTRIANS 4 LUNGO ###############################
 PLAYER_START_INDEX = 2        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
@@ -178,7 +178,7 @@ NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
 NUM_VEHICLES           = 50   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
+#'''
 
 '''
 ######################### TESTS ON PEDESTRIANS 5 ###############################
@@ -294,8 +294,10 @@ NUM_PATHS = 5
 BP_LOOKAHEAD_BASE      = 10.0             # m
 BP_LOOKAHEAD_TIME      = 1.0              # s
 PATH_OFFSET            = 1                # m
-CIRCLE_OFFSETS         = [-1.0, 1.0, 3.0] # m
-CIRCLE_RADII           = [1.5, 1.5, 1.5]  # m
+# CIRCLE_OFFSETS         = [-1.0, 1.0, 3.0] # m
+CIRCLE_OFFSETS         = [1.5, 3.0] # m
+#CIRCLE_RADII           = [1.5, 1.5, 1.5]  # m
+CIRCLE_RADII           = [1.5, 1.5]  # m
 TIME_GAP               = 1.0              # s
 PATH_SELECT_WEIGHT     = 10
 A_MAX                  = 2.5              # m/s^2
@@ -325,8 +327,8 @@ VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 20 # m
 PEDESTRIAN_OBSTACLE_LOOKAHEAD = 15 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
-SHOW_LIVE_PLOTTER = True
-PRODUCE_VIDEO = False
+SHOW_LIVE_PLOTTER = False
+PRODUCE_VIDEO = True
 SAVE_PATH_REFERENCE = False
 
 # Camera parameters
@@ -769,10 +771,6 @@ def exec_waypoint_nav_demo(args):
         # send a command back to the CARLA server because synchronous mode
         # is enabled.
         measurement_data, sensor_data = client.read_data()
-        for agent in measurement_data.non_player_agents:
-            agent.id # unique id of the agent
-            if agent.HasField('traffic_light'):
-                print(agent.traffic_light.transform.location)
         sim_start_stamp = measurement_data.game_timestamp / 1000.0
         # Send a control command to proceed to next iteration.
         # This mainly applies for simulations that are in synchronous mode.
@@ -1318,9 +1316,12 @@ def exec_waypoint_nav_demo(args):
                 if best_index == None:
                     print("NO BEST INDEX")
                     best_path = lp._prev_best_path
+                    collision_dist = lp._prev_best_path_obs_dist
                 else:
                     best_path = paths[best_index]
+                    collision_dist = min(collision_dist_array)
                     lp._prev_best_path = best_path
+                    lp._prev_best_path_obs_dist = collision_dist
 
                 if best_path is not None:
                     # Compute the velocity profile for the path, and compute the waypoints.
@@ -1335,8 +1336,9 @@ def exec_waypoint_nav_demo(args):
                     consider_lead = True
                     
                     ### compute the distance of the point you want to stop to  
+                    print(f"collision_dist_array: {collision_dist_array}")
                     if stop_to_obstacle:
-                        stop_line_distance = min(collision_dist_array)
+                        stop_line_distance = collision_dist
                     elif stop_to_red_traffic_light:
                         stop_line_distance = bp._traffic_light_distance
                     else:

@@ -4,7 +4,7 @@ import scipy.spatial
 import math
 from math import sin, cos, pi, sqrt
 
-CAR_RADII_X_EXTENT = 1.27
+CAR_RADII_X_EXTENT = 2.34
 
 class CollisionChecker:
     def __init__(self, circle_offsets, circle_radii, weight):
@@ -56,7 +56,6 @@ class CollisionChecker:
                 path_index += 1
 
             if path_index != len(path[0])-1:
-                print("CONSIDERO OSTACOLI")
                 # Iterate over the points in the path.
                 dist_from_obstacle = dist
                 for j in range(path_index, len(path[0])):
