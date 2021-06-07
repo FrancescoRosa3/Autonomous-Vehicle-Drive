@@ -23,8 +23,11 @@ class LocalPlanner:
         self._velocity_planner = \
             velocity_planner.VelocityPlanner(time_gap, a_max, slow_speed, 
                                              security_distance)
+        
+        ###
         self._prev_best_path = None
         self._prev_best_path_obs_dist = None
+        self._prev_steer = None
 
     def get_num_path(self):
         return self._num_paths

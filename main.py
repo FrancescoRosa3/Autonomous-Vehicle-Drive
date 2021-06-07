@@ -1402,10 +1402,12 @@ def exec_waypoint_nav_demo(args):
                                          current_timestamp, frame)
                 controller.update_controls()
                 cmd_throttle, cmd_steer, cmd_brake = controller.get_commands()
+                lp._prev_steer = cmd_steer
             else:
+                print("EMERGENCY BREAK")
                 cmd_throttle = 0.0
-                cmd_steer = 0.0
-                cmd_brake = 0.0
+                cmd_steer = lp._prev_steer
+                cmd_brake = 1.0
 
             if SHOW_LIVE_PLOTTER or PRODUCE_VIDEO:
                 # Skip the first frame or if there exists no local paths 
