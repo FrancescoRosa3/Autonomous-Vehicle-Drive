@@ -98,13 +98,13 @@ class trafficLightsManager:
 
                 camera_to_vehicle_frame = np.zeros((4,4))
                 camera_to_vehicle_frame[:3,:3] = main.to_rot([self.cam_pitch, self.cam_yaw, self.cam_roll])
-                camera_to_vehicle_frame[:,-1] = [self.cam_x_pos, self.cam_y_pos, self.cam_height, 1]
-
+                camera_to_vehicle_frame[:,-1] = [self.cam_x_pos, -self.cam_y_pos, self.cam_height, 1]
+                
                 vehicle_frame = np.dot(camera_to_vehicle_frame,camera_frame_extended )
                 vehicle_frame = vehicle_frame[:3]
                 vehicle_frame = np.asarray(np.reshape(vehicle_frame, (1,3)))
-                self.vehicle_frame_list.append([vehicle_frame[0][0], vehicle_frame[0][1]])
-            
+                self.vehicle_frame_list.append([vehicle_frame[0][0], -vehicle_frame[0][1]])
+                                
                 x_distance += vehicle_frame[0][0]
                 
             self.distance = x_distance/len(traffic_light_pixels)
@@ -173,9 +173,9 @@ class trafficLightsManager:
         Center_Y = camera_height / 2.0
 
         intrinsic_matrix = np.array([[f, 0, Center_X],
-                                    [0, f, Center_Y],
-                                    [0, 0, 1]])
-                                    
+                                     [0, f, Center_Y],
+                                     [0, 0, 1]])
+                                      
         self.inv_intrinsic_matrix = np.linalg.inv(intrinsic_matrix)
     
     def image_to_camera_frame_matrix(self):
@@ -185,6 +185,5 @@ class trafficLightsManager:
         image_camera_frame = np.zeros((4,4))
         image_camera_frame[:3,:3] = rotation_image_camera_frame
         image_camera_frame[:, -1] = [0, 0, 0, 1]
-
         # Lambda Function for transformation of image frame in camera frame 
         self.image_to_camera_frame = lambda object_camera_frame: np.dot(image_camera_frame , object_camera_frame)
