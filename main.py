@@ -150,7 +150,7 @@ SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-'''
+#'''
 ######################### TESTS ON PEDESTRIANS THAT COULD BE AVOIDED ###############################
 PLAYER_START_INDEX = 139        #  spawn index for player
 DESTINATION_INDEX = 148         # Setting a Destination HERE
@@ -158,7 +158,7 @@ NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
 NUM_VEHICLES           = 0   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
+#'''
 
 '''
 ######################### TESTS ON PEDESTRIANS 4 ###############################
@@ -170,7 +170,7 @@ SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-#'''
+'''
 ######################### TESTS ON PEDESTRIANS 4 LUNGO ###############################
 PLAYER_START_INDEX = 2        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
@@ -178,7 +178,7 @@ NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
 NUM_VEHICLES           = 50   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-#'''
+'''
 
 '''
 ######################### TESTS ON PEDESTRIANS 5 ###############################
@@ -488,11 +488,11 @@ def make_carla_settings(args):
     settings.add_sensor(camera_depth)
 
     # Semantic Segmentation
-    camera_depth = Camera('CameraSegmentation', PostProcessing='SemanticSegmentation')
-    camera_depth.set_image_size(camera_width, camera_height)
-    camera_depth.set_position(cam_x_pos, cam_y_pos, cam_height)
-    camera_depth.set(FOV=camera_fov)
-    settings.add_sensor(camera_depth)
+    camera_segmentation = Camera('CameraSegmentation', PostProcessing='SemanticSegmentation')
+    camera_segmentation.set_image_size(camera_width, camera_height)
+    camera_segmentation.set_position(cam_x_pos, cam_y_pos, cam_height)
+    camera_segmentation.set(FOV=camera_fov)
+    settings.add_sensor(camera_segmentation)
 
     return settings
 
