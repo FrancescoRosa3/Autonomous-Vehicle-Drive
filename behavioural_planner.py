@@ -7,8 +7,8 @@ from numpy.core.defchararray import index
 
 from numpy.core.numeric import ones
 
-from main import CRUISE_SPEED, HALF_CRUISE_SPEED
 from traffic_lights_manager import GO, STOP, UNKNOWN
+import main
 
 # State machine states
 FOLLOW_LANE = 0
@@ -140,7 +140,7 @@ class BehaviouralPlanner:
                         self._goal_state[2] = 0
                         self._state = STOP_AT_TRAFFIC_LIGHT
                     elif self._traffic_light_distance < (SLOW_DOWN_TRAFFIC_LIGHT + secure_distance_brake) :
-                        self._goal_state[2] = HALF_CRUISE_SPEED
+                        self._goal_state[2] = main.HALF_CRUISE_SPEED
                         self._state = APPROACHING_RED_TRAFFIC_LIGHT
 
         ## New state
@@ -156,6 +156,7 @@ class BehaviouralPlanner:
             print("FSM STATE: APPROACHING_RED_TRAFFIC_LIGHT")
             
             self._update_goal_index_with_traffic_light(waypoints, ego_state)
+            self._goal_state[2] = main.HALF_CRUISE_SPEED
 
             if self._obstacle_on_lane:
                 self._goal_state[2] = 0
@@ -176,8 +177,10 @@ class BehaviouralPlanner:
         # enforcing the car to stay stopped.
         elif self._state == STOP_AT_TRAFFIC_LIGHT:
             print("FSM STATE: STOP_AT_TRAFFIC_LIGHT")
+            '''
             if closed_loop_speed > STOP_THRESHOLD:
                 self._update_goal_index(waypoints, ego_state)
+            '''
             self._goal_state[2] = 0
             if self._obstacle_on_lane:
                 self._state = STOP_AT_OBSTACLE
@@ -193,16 +196,21 @@ class BehaviouralPlanner:
         # enforcing the car to stay stopped.
         elif self._state == STOP_AT_OBSTACLE:
             print("FSM STATE: STOP_AT_OBSTACLE")
-            #if closed_loop_speed > STOP_THRESHOLD:
-            self._update_goal_index(waypoints, ego_state)
+            '''
+            if closed_loop_speed > STOP_THRESHOLD:
+                self._update_goal_index(waypoints, ego_state)
+            '''
             self._goal_state[2] = 0
             if not self._obstacle_on_lane:
                 if self._traffic_light_state == STOP and self._traffic_light_distance != None:
                     if self._traffic_light_distance < (STOP_TRAFFIC_LIGHT + secure_distance_brake):
                        self._state = STOP_AT_TRAFFIC_LIGHT
-                    elif self._traffic_light_distance < (SLOW_DOWN_TRAFFIC_LIGHT + secure_distance_brake) :
-                        self._goal_state[2] = HALF_CRUISE_SPEED
+                    elif self._traffic_light_distance < (SLOW_DOWN_TRAFFIC_LIGHT + secure_distance_brake):
+                        self._goal_state[2] = main.HALF_CRUISE_SPEED
                         self._state = APPROACHING_RED_TRAFFIC_LIGHT
+                    else:
+                        self._update_goal_index(waypoints, ego_state)
+                        self._state = FOLLOW_LANE
                 else:
                     self._update_goal_index(waypoints, ego_state)
                     self._state = FOLLOW_LANE
@@ -319,9 +327,7 @@ class BehaviouralPlanner:
 
             self._goal_index = closest_wp_to_traffic_light
             self._goal_state = list(waypoints[closest_wp_to_traffic_light])
-            print(f"Goal state {self._goal_state}, Goal index {self._goal_index}")
 
-        self._goal_state[2] = HALF_CRUISE_SPEED
 
         
 # Compute the waypoint index that is closest to the ego vehicle, and return
@@ -410,11 +416,3 @@ def convert_wp_in_vehicle_frame(ego_state, waypoint):
     #print(f"Ego state {ego_state[:2]},\n Point in world {waypoint[:2]}\n, Transformed wp{p_wp_vehicle}")
     #print(f"Point in world {waypoint[:2]}\n, Transformed wp{p_wp_vehicle}")
     return p_wp_vehicle
-
-# Checks if p2 lies on segment p1-p3, if p1, p2, p3 are collinear.
-def pointOnSegment(p1, p2, p3):
-    if (p2[0] <= max(p1[0], p3[0]) and (p2[0] >= min(p1[0], p3[0])) and \
-       (p2[1] <= max(p1[1], p3[1])) and (p2[1] >= min(p1[1], p3[1]))):
-        return True
-    else:
-        return False

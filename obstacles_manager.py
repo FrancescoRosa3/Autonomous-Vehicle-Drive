@@ -3,9 +3,9 @@ import math
 from math import pi, sqrt, cos, sin, inf, degrees
 from obstacle import Obstacle
 
-import main
+import main 
 
-LEAD_VEHILCE_LOOKAHEAD_OFFSET_FOR_RELEASE = 5
+LEAD_VEHICLE_LOOKAHEAD_OFFSET_FOR_RELEASE = 5
 
 VEHICLE = 0
 PEDESTRIAN = 1
@@ -52,9 +52,8 @@ class ObstaclesManager:
     def compute_lookahead(self, ego_speed):
         # safe brake space
         speed_km_h = (ego_speed * 3600)/1000
-        self._lead_vehicle_lookahead = self._lead_vehicle_lookahead_base + (speed_km_h/10)*3
-
-        self._vehicle_obstacle_lookahead = self._vehicle_obstacle_lookahead_base + (speed_km_h/10)*3
+        self._lead_vehicle_lookahead = self._lead_vehicle_lookahead_base + main.CAR_RADII_X_EXTENT + (speed_km_h/10)*3
+        self._vehicle_obstacle_lookahead = self._vehicle_obstacle_lookahead_base + main.CAR_RADII_X_EXTENT + (speed_km_h/10)*3
 
         # print(F"New speed for vehicle lead {ego_speed}")
         # print(F"New look ahead for vehicle lead {self._lead_vehicle_lookahead}")
@@ -148,7 +147,7 @@ class ObstaclesManager:
         # compute the angle between the car heading versor and distance versor
         dot_product = np.dot(lead_car_delta_vector, ego_heading_vector)
         #print(F"CAR DISTANCE {car_distance} Orientation: {dot_product}")
-        distance_from_lead = self._lead_vehicle_lookahead if not self._bp._follow_lead_vehicle else  self._lead_vehicle_lookahead + LEAD_VEHILCE_LOOKAHEAD_OFFSET_FOR_RELEASE
+        distance_from_lead = self._lead_vehicle_lookahead if not self._bp._follow_lead_vehicle else  self._lead_vehicle_lookahead + LEAD_VEHICLE_LOOKAHEAD_OFFSET_FOR_RELEASE
 
         return (car_distance < distance_from_lead) and (dot_product > 1/sqrt(2))
     

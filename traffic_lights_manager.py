@@ -1,8 +1,8 @@
 import os
 from traffic_light_detection_module.traffic_light_detector import trafficLightDetector
 import numpy as np
-from math import cos, sin, pi,tan
 import main
+from math import cos, sin, pi,tan
 
 BASE_DIR = os.path.dirname(__file__)
 
@@ -12,11 +12,10 @@ GO = TRAFFIC_LIGHT_CLASSES[0]
 STOP = TRAFFIC_LIGHT_CLASSES[1]
 UNKNOWN = TRAFFIC_LIGHT_CLASSES[2]
 
-X_OFFSET = 30
-Y_OFFSET = 30
 TRAFFIC_SIGN_LABEL = 12
 STOP_COUNTER = 4
 OTHERS_COUNTER = 3
+
 
 class trafficLightsManager:
 
@@ -108,6 +107,7 @@ class trafficLightsManager:
                 x_distance += vehicle_frame[0][0]
                 
             self.distance = x_distance/len(traffic_light_pixels)
+            self.distance = self._correct_perpendicular_distance(self.distance)
         else:
             self.distance = None
 
@@ -187,3 +187,8 @@ class trafficLightsManager:
         image_camera_frame[:, -1] = [0, 0, 0, 1]
         # Lambda Function for transformation of image frame in camera frame 
         self.image_to_camera_frame = lambda object_camera_frame: np.dot(image_camera_frame , object_camera_frame)
+
+    def _correct_perpendicular_distance(self, distance):
+        new_distance = distance - main.CAR_RADII_X_EXTENT
+        new_distance = 0 if new_distance < 0 else new_distance
+        return new_distance

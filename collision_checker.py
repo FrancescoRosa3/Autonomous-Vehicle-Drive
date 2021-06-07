@@ -3,8 +3,7 @@ import numpy as np
 import scipy.spatial
 import math
 from math import sin, cos, pi, sqrt
-
-CAR_RADII_X_EXTENT = 2.34
+from main import CAR_RADII_X_EXTENT
 
 class CollisionChecker:
     def __init__(self, circle_offsets, circle_radii, weight):
@@ -108,6 +107,7 @@ class CollisionChecker:
                         break
 
                 collision_check_array[i] = collision_free
+                dist_from_obstacle = self._correct_distance(dist_from_obstacle)
                 collision_dist_array[i] = dist_from_obstacle
             else:
                 print("N O N CONSIDERO OSTACOLI")
@@ -196,3 +196,8 @@ class CollisionChecker:
                 best_index = i
 
         return best_index#, in_lane_check_array
+
+    def _correct_distance(self, distance):
+        new_distance = distance - CAR_RADII_X_EXTENT
+        new_distance = 0 if new_distance < 0 else new_distance
+        return new_distance

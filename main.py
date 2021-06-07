@@ -150,15 +150,26 @@ SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-#'''
-######################### TESTS ON PEDESTRIANS THAT COULD BE AVOIDED ###############################
+'''
+######################### TEST SU PEDONI SU RETTILINEO SUPERIORE 1 ###############################
 PLAYER_START_INDEX = 139        #  spawn index for player
 DESTINATION_INDEX = 148         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
 NUM_VEHICLES           = 0   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
+
 #'''
+######################### TEST SU PEDONI SU RETTILINEO SUPERIORE 2 INTERESSANTE ##############################
+PLAYER_START_INDEX = 144        #  spawn index for player
+DESTINATION_INDEX = 65         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
+NUM_VEHICLES           = 0   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+#'''
+
 
 '''
 ######################### TESTS ON PEDESTRIANS 4 ###############################
@@ -326,6 +337,7 @@ HALF_CRUISE_SPEED = 2.5 # m/s
 VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 20 # m
 PEDESTRIAN_OBSTACLE_LOOKAHEAD = 15 # m
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
+CAR_RADII_X_EXTENT = 2.34
 
 SHOW_LIVE_PLOTTER = False
 PRODUCE_VIDEO = True
@@ -1275,14 +1287,16 @@ def exec_waypoint_nav_demo(args):
                 # Current speed should be open loop for the velocity profile generation.
                 ego_state = [current_x, current_y, current_yaw, open_loop_speed]
                 # Set lookahead .
+                '''
                 if tl_distance != None:
                     # if there is a traffic ligt
                     # set the loockhead distance to the distance from the traffic light
                     # in order to not take a waypoint over the traffic light
                     bp.set_lookahead(tl_distance)
                 else:
-                    ### based on current speed.
-                    bp.set_lookahead(BP_LOOKAHEAD_BASE + BP_LOOKAHEAD_TIME * open_loop_speed)
+                '''
+                ### based on current speed.
+                bp.set_lookahead(BP_LOOKAHEAD_BASE + BP_LOOKAHEAD_TIME * open_loop_speed)
                 
                 ### set the new lookahead for the lead_vehicle based on the ego_vehicle speed
                 obstacles_manager.compute_lookahead(current_speed)
