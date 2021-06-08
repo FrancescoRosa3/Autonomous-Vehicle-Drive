@@ -1266,7 +1266,6 @@ def exec_waypoint_nav_demo(args):
                     
                 # Traffic-light detector
                 tl_state, tl_distance, traffic_light_vehicle_frame = traffic_lights_manager.get_tl_state(image_BGRA, depth_image, semantic_image)
-                tl_state = "GO"
                 print(F"STATE TRAFFIC LIGHT: {tl_state}")
                 print(F"DISTANCE FROM TRAFFIC LIGHT: {tl_distance}")
                 #print(F"Traffic light vehicle frame: {traffic_light_vehicle_frame}")
@@ -1280,16 +1279,7 @@ def exec_waypoint_nav_demo(args):
                 # Calculate the goal state set in the local frame for the local planner.
                 # Current speed should be open loop for the velocity profile generation.
                 ego_state = [current_x, current_y, current_yaw, open_loop_speed]
-                # Set lookahead .
-                '''
-                if tl_distance != None:
-                    # if there is a traffic ligt
-                    # set the loockhead distance to the distance from the traffic light
-                    # in order to not take a waypoint over the traffic light
-                    bp.set_lookahead(tl_distance)
-                else:
-                '''
-                ### based on current speed.
+                # Set lookahead based on current speed.
                 bp.set_lookahead(BP_LOOKAHEAD_BASE + BP_LOOKAHEAD_TIME * open_loop_speed)
                 
                 ### set the new lookahead for the lead_vehicle based on the ego_vehicle speed
@@ -1308,7 +1298,7 @@ def exec_waypoint_nav_demo(args):
 
                 ###
                 if len(paths) == 0:
-                    print("PATHS NULLI")
+                    print("NO PATHS, restoring the previous one")
                     paths.append(lp._prev_best_path)
                     path_validity = []
                     path_validity.append(True)
@@ -1405,7 +1395,6 @@ def exec_waypoint_nav_demo(args):
                         wp_interp.append(list(local_waypoints_np[-1]))
                                             
                         # Update the other controller values and controls
-                        print(f"wp_interp: {wp_interp}")
                         controller.update_waypoints(wp_interp)
                     else:
                         print("NO VELOCITY PROFILE COMPUTED")
