@@ -72,7 +72,7 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 10     # seed for vehicle spawn randomizer
 '''
 
-'''
+#'''
 ######################### RETTILINEO LIBERO ###############################
 PLAYER_START_INDEX = 13        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
@@ -80,7 +80,7 @@ NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
 NUM_VEHICLES           = 0   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
+#'''
 
 '''
 ######################### TURN PROBLEMS ###############################
@@ -213,7 +213,7 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 123    # seed for vehicle spawn randomizer
 '''
 
-#'''
+'''
 ######################### TEST INCROCIO SENZA SEMAFORO 2 ###############################
 PLAYER_START_INDEX = 140        #  spawn index for player
 DESTINATION_INDEX =19         # Setting a Destination HERE
@@ -221,7 +221,7 @@ NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
 NUM_VEHICLES           = 1000   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 123    # seed for vehicle spawn randomizer
-#'''
+'''
 
 '''
 ################## TEST CURVA CON FURGONCINO CHE PASSA CON ROSSO #############
@@ -324,7 +324,7 @@ DIST_THRESHOLD_TO_LAST_WAYPOINT = 2.0  # some distance from last position before
 
 # Planning Constants
 NUM_PATHS = 5
-BP_LOOKAHEAD_BASE      = 10.0             # m
+BP_LOOKAHEAD_BASE      = 8.0             # m
 BP_LOOKAHEAD_TIME      = 1.0              # s
 PATH_OFFSET            = 1                # m
 # CIRCLE_OFFSETS         = [-1.0, 1.0, 3.0] # m
@@ -1083,21 +1083,21 @@ def exec_waypoint_nav_demo(args):
                 trajectory_fig.add_graph("local_path " + str(i), window_size=200,
                                         x0=None, y0=None, color=[0.0, 0.0, 1.0])
 
+        lp_1d = lv.LivePlotter(tk_title="Controls Feedback")
+
+        forward_speed_fig =\
+                lp_1d.plot_new_dynamic_figure(title="Forward Speed (m/s)")
+        forward_speed_fig.add_graph("forward_speed", 
+                                    label="forward_speed", 
+                                    window_size=TOTAL_EPISODE_FRAMES)
+        forward_speed_fig.add_graph("reference_signal", 
+                                    label="reference_Signal", 
+                                    window_size=TOTAL_EPISODE_FRAMES)
+
         if SHOW_LIVE_PLOTTER:
             ###
             # Add 1D speed profile updater
             ###
-            
-            lp_1d = lv.LivePlotter(tk_title="Controls Feedback")
-
-            forward_speed_fig =\
-                    lp_1d.plot_new_dynamic_figure(title="Forward Speed (m/s)")
-            forward_speed_fig.add_graph("forward_speed", 
-                                        label="forward_speed", 
-                                        window_size=TOTAL_EPISODE_FRAMES)
-            forward_speed_fig.add_graph("reference_signal", 
-                                        label="reference_Signal", 
-                                        window_size=TOTAL_EPISODE_FRAMES)
 
             # Add throttle signals graph
             throttle_fig = lp_1d.plot_new_dynamic_figure(title="Throttle")
@@ -1241,6 +1241,8 @@ def exec_waypoint_nav_demo(args):
 
             if frame % LP_FREQUENCY_DIVISOR == 0:
 
+                print("")
+
                 print(f"CURRENT SPEED: {current_speed}")
 
                 tl_state = tl_distance = None 
@@ -1264,7 +1266,7 @@ def exec_waypoint_nav_demo(args):
                     
                 # Traffic-light detector
                 tl_state, tl_distance, traffic_light_vehicle_frame = traffic_lights_manager.get_tl_state(image_BGRA, depth_image, semantic_image)
-                tl_state = "GO"
+                #tl_state = "GO"
                 print(F"STATE TRAFFIC LIGHT: {tl_state}")
                 print(F"DISTANCE FROM TRAFFIC LIGHT: {tl_distance}")
                 #print(F"Traffic light vehicle frame: {traffic_light_vehicle_frame}")
@@ -1311,6 +1313,8 @@ def exec_waypoint_nav_demo(args):
                 ### added array of distances
                 collision_check_array, collision_dist_array = lp._collision_checker.collision_check(paths, all_obs, current_speed)
 
+                collision_dist = min(collision_dist_array)
+
                 bp.set_obstacle_on_lane(collision_check_array)
 
                 # Compute the best local path.
@@ -1322,12 +1326,11 @@ def exec_waypoint_nav_demo(args):
                 if best_index == None:
                     print("NO BEST INDEX")
                     best_path = lp._prev_best_path
-                    collision_dist = lp._prev_best_path_obs_dist
+                    #collision_dist = lp._prev_best_path_obs_dist
                 else:
                     best_path = paths[best_index]
-                    collision_dist = min(collision_dist_array)
                     lp._prev_best_path = best_path
-                    lp._prev_best_path_obs_dist = collision_dist
+                    #lp._prev_best_path_obs_dist = collision_dist
 
                 if best_path is not None:
                     # Compute the velocity profile for the path, and compute the waypoints.
@@ -1339,16 +1342,16 @@ def exec_waypoint_nav_demo(args):
                     lead_car_state = [lead_car_pos[0], lead_car_pos[1], lead_car_speed] if lead_car_pos != None else None
                     if lead_car_state is not None and ego_state[3] < lead_car_state[2]:
                         consider_lead = False
-                    consider_lead = True
+                    else:
+                        consider_lead = True
                     
                     ### compute the distance of the point you want to stop to  
                     print(f"collision_dist_array: {collision_dist_array}")
+                    stop_line_distance = None
                     if stop_to_obstacle:
                         stop_line_distance = collision_dist
                     elif stop_to_red_traffic_light:
                         stop_line_distance = bp._traffic_light_distance
-                    else:
-                        stop_line_distance = None
 
                     local_waypoints = lp._velocity_planner.compute_velocity_profile(best_path, desired_speed, 
                                                                                     ego_state, current_speed, 
@@ -1448,13 +1451,15 @@ def exec_waypoint_nav_demo(args):
 
                         trajectory_fig.roll("future_obstacles_points", x, y)
                     
+                    forward_speed_fig.roll("forward_speed", 
+                                        current_timestamp, 
+                                        current_speed)
+                    forward_speed_fig.roll("reference_signal", 
+                                        current_timestamp, 
+                                        controller._desired_speed)
+
                     if SHOW_LIVE_PLOTTER:
-                        forward_speed_fig.roll("forward_speed", 
-                                            current_timestamp, 
-                                            current_speed)
-                        forward_speed_fig.roll("reference_signal", 
-                                            current_timestamp, 
-                                            controller._desired_speed)
+                        
                         throttle_fig.roll("throttle", current_timestamp, cmd_throttle)
                         brake_fig.roll("brake", current_timestamp, cmd_brake)
                         steer_fig.roll("steer", current_timestamp, cmd_steer)
@@ -1501,6 +1506,7 @@ def exec_waypoint_nav_demo(args):
                 ### save trajectory png
                 if PRODUCE_VIDEO:
                     save_video_graph(trajectory_fig.fig, "trajectory", frame_counter)
+                    save_video_graph(forward_speed_fig.fig, "forward_speed", frame_counter)
             
             if frame % LP_FREQUENCY_DIVISOR == 0:
                 frame_counter += 1

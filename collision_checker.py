@@ -102,8 +102,6 @@ class CollisionChecker:
                             dist_from_obstacle += np.sqrt((path[0][j]-path[0][path_index])**2+(path[1][j]-path[1][path_index])**2)
                             break
                     if not collision_free:
-                        ###
-                        dist_from_obstacle += np.sqrt((path[0][j]-path[0][path_index])**2+(path[1][j]-path[1][path_index])**2)
                         break
 
                 collision_check_array[i] = collision_free
@@ -115,12 +113,11 @@ class CollisionChecker:
                 collision_dist_array = [math.inf] * len(paths)
                 
         #print(f"collision_check_array: {collision_check_array}")
-
-        '''
+        
         for i in range(len(collision_check_array)):
             if collision_check_array[i]:
-                collision_dist_array[i] = None
-        '''
+                collision_dist_array[i] = math.inf
+        
         #print(f"collision_dist_array: {collision_dist_array}")
         return collision_check_array, collision_dist_array
 

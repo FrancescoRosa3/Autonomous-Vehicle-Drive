@@ -220,8 +220,6 @@ class VelocityPlanner:
             path_length += np.linalg.norm([path[0][i+1] - path[0][i], 
                                            path[1][i+1] - path[1][i]])
 
-        print(f"path_length: {path_length}") 
-
         obs_index = 0
         temp_dist = 0.0
         while (obs_index < len(path[0]) - 2) and temp_dist < stop_line_distance:

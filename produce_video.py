@@ -28,6 +28,7 @@ def produce_video():
 
             camera_out_path = os.path.join(ep_dir_path, "Reports", "camera" + parameters_string + ".mp4")
             trajectory_out_path = os.path.join(ep_dir_path, "Reports", "trajectory" + parameters_string + ".mp4")
+            forward_speed_out_path = os.path.join(ep_dir_path, "Reports", "forward_speed" + parameters_string + ".mp4")
             tl_out_path = os.path.join(ep_dir_path, "Reports", "tl_camera" + parameters_string + ".mp4")
             fsm_out_path = os.path.join(ep_dir_path, "Reports", "fsm" + parameters_string + ".mp4")
 
@@ -36,7 +37,7 @@ def produce_video():
             os.system("echo y | ffmpeg -r 15 -pattern_type sequence -i " + in_path + "\\trajectory_%d" + parameters_string + ".png -c:v libx264 -pix_fmt yuv420p -b 10000k -r 15 " + trajectory_out_path)
             os.system("echo y | ffmpeg -r 15 -pattern_type sequence -i " + in_path + "\\tl_camera_%d" + parameters_string + ".jpeg -c:v libx264 -pix_fmt yuv420p -b 10000k -r 15 " + tl_out_path)
             os.system("echo y | ffmpeg -r 15 -pattern_type sequence -i " + in_path + "\\fsm_%d" + parameters_string + ".png -vf \"scale=420:420\" -c:v libx264 -pix_fmt yuv420p -b 10000k -r 15 " + fsm_out_path)
-
+            os.system("echo y | ffmpeg -r 15 -pattern_type sequence -i " + in_path + "\\forward_speed_%d" + parameters_string + ".png -c:v libx264 -pix_fmt yuv420p -b 10000k -r 15 " + forward_speed_out_path)
 
             ### editing video
             result_out_path = os.path.join(ep_dir_path, "Reports", "result.mp4")
@@ -45,10 +46,12 @@ def produce_video():
             clip2 = VideoFileClip(trajectory_out_path)
             clip3 = VideoFileClip(tl_out_path)
             clip4 = VideoFileClip(fsm_out_path)
+            clip5 = VideoFileClip(forward_speed_out_path)
             clip2 = clip2.resize(0.45)
             clip3 = clip3.resize(0.70)
             clip4 = clip4.resize(0.33)
-            final_clip = CompositeVideoClip([clip1, clip2.set_position(("left", "bottom")), clip3.set_position(("right", "top")), clip4.set_position(("right", "center"))])#.set_duration(clip1)
+            clip5 = clip5.resize(0.60)
+            final_clip = CompositeVideoClip([clip1, clip2.set_position(("left", "bottom")), clip3.set_position(("right", "top")), clip4.set_position(("right", "center")), clip5.set_position(("left", "top"))])#.set_duration(clip1)
             final_clip.write_videofile(result_out_path)
 
 
