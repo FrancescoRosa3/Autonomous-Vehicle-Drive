@@ -25,6 +25,7 @@ from video_utils import copy_state_image, create_video_output_dir, save_video_gr
 from traffic_lights_manager import trafficLightsManager
 from obstacles_manager import ObstaclesManager
 import shutil
+from PIL import Image
 
 # Script level imports
 sys.path.append(os.path.abspath(sys.path[0] + '/..'))
@@ -37,7 +38,7 @@ from carla.controller import utils
 from carla.sensor import Camera, Lidar
 from carla.image_converter import labels_to_array, depth_to_array, to_bgra_array, to_rgb_array, labels_to_cityscapes_palette
 from carla.planner.city_track import CityTrack
-from PIL import Image
+
 
 
 
@@ -1490,7 +1491,7 @@ def exec_waypoint_nav_demo(args):
 
                 ### save trajectory png
                 if PRODUCE_VIDEO:
-                    save_video_graph(trajectory_fig.fig, "trajectory")
+                    save_video_graph(trajectory_fig.fig, "trajectory", frame_counter)
             
             if frame % LP_FREQUENCY_DIVISOR == 0:
                 frame_counter += 1
