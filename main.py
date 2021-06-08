@@ -362,7 +362,7 @@ LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 CAR_RADII_X_EXTENT = 2.34
 
 SHOW_LIVE_PLOTTER = False
-PRODUCE_VIDEO = True
+PRODUCE_VIDEO = False
 SAVE_PATH_REFERENCE = False
 
 # Camera parameters
@@ -1266,7 +1266,7 @@ def exec_waypoint_nav_demo(args):
                     
                 # Traffic-light detector
                 tl_state, tl_distance, traffic_light_vehicle_frame = traffic_lights_manager.get_tl_state(image_BGRA, depth_image, semantic_image)
-                #tl_state = "GO"
+                tl_state = "GO"
                 print(F"STATE TRAFFIC LIGHT: {tl_state}")
                 print(F"DISTANCE FROM TRAFFIC LIGHT: {tl_distance}")
                 #print(F"Traffic light vehicle frame: {traffic_light_vehicle_frame}")
@@ -1305,6 +1305,14 @@ def exec_waypoint_nav_demo(args):
 
                 # Transform those paths back to the global frame.
                 paths = local_planner.transform_paths(paths, ego_state)
+
+                ###
+                if len(paths) == 0:
+                    print("PATHS NULLI")
+                    paths.append(lp._prev_best_path)
+                    path_validity = []
+                    path_validity.append(True)
+                    lp._num_paths = 1
                 
                 ### Perform collision checking.
                 # collision_check_array = lp._collision_checker.collision_check(paths, box_pts_obstacles)
@@ -1358,6 +1366,7 @@ def exec_waypoint_nav_demo(args):
                                                                                     stop_to_obstacle, stop_to_red_traffic_light, 
                                                                                     lead_car_state, bp._follow_lead_vehicle, 
                                                                                     consider_lead, stop_line_distance)
+
                     if local_waypoints != None:
                         # Update the controller waypoint path with the best local path.
                         # This controller is similar to that developed in Course 1 of this
@@ -1396,6 +1405,7 @@ def exec_waypoint_nav_demo(args):
                         wp_interp.append(list(local_waypoints_np[-1]))
                                             
                         # Update the other controller values and controls
+                        print(f"wp_interp: {wp_interp}")
                         controller.update_waypoints(wp_interp)
                     else:
                         print("NO VELOCITY PROFILE COMPUTED")

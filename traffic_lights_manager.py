@@ -6,13 +6,22 @@ from math import cos, sin, pi,tan
 
 BASE_DIR = os.path.dirname(__file__)
 
+# The following enumeration represent the possibile states of the traffic light.
+# In particular, an additional UNKNOWN class is provided to classify the lack
+# of traffic light detection. 
 TRAFFIC_LIGHT_CLASSES = ["go", "stop", "UNKNOWN"]
-
 GO = TRAFFIC_LIGHT_CLASSES[0]
 STOP = TRAFFIC_LIGHT_CLASSES[1]
 UNKNOWN = TRAFFIC_LIGHT_CLASSES[2]
 
+# Numeric label of the traffic light provided by Carla documentation
 TRAFFIC_SIGN_LABEL = 12
+
+# The following constants are used to represent the consecutive number of frames
+# needed to define the transition between the different traffic light states.
+# In particular, if the current state is GO or UNKOWN, 3 consecutive RED classified frames
+# are needed to set the traffic light state to RED. Otherwise, 4 consective frames
+# are needed for the transition.
 STOP_COUNTER = 4
 OTHERS_COUNTER = 3
 
@@ -32,7 +41,15 @@ class trafficLightsManager:
         self.image_to_camera_frame_matrix()
 
     def get_tl_state(self, image, depth_img = None, semantic_img = None):
+        """Updates the current frames and use them to compute the current traffic light state
+           and the its distance from the vehicle.
         
+        args:
+            image: the current RGB image. 
+            depth_img: the current depth image.
+            semantic_img: the semantic image.
+        """
+
         self._set_current_frame(image, depth_img, semantic_img)
         self._update_state()
         self._update_distance()

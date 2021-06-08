@@ -100,7 +100,6 @@ class ObstaclesManager:
         return all_vehicles_on_sight, lead_vehicle
 
     def _update_pedestrian(self):
-        obstacles_pedestrian = []
         #if self._check_instance_pedestrian():
         #print("Update pedestrian")
         for agent in self.measurement_data.non_player_agents:
