@@ -5,6 +5,8 @@ from math import cos, sin, pi
 VEHICLE = 0
 
 HISTORY_SIZE = 20
+PEDESTRIANS_FRAMES_TO_CHECK = 75
+VEHICLES_FRAMES_TO_CHECK = 75
 
 class Obstacle:
 
@@ -80,7 +82,7 @@ class Obstacle:
 
         obstacle_speed = self._obstacle.forward_speed
         
-        future_frames_to_check = 45 if self._agent_type == VEHICLE else 75
+        future_frames_to_check = VEHICLES_FRAMES_TO_CHECK if self._agent_type == VEHICLE else PEDESTRIANS_FRAMES_TO_CHECK
         
         frames_update_frequency = 0.033
         # frames_update_frequency = 1
