@@ -193,17 +193,6 @@ SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-#'''
-######################### TESTS ON PEDESTRIANS 4 ###############################
-PLAYER_START_INDEX = 2        #  spawn index for player
-DESTINATION_INDEX = 20         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
-NUM_VEHICLES           = 1000   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 123    # seed for vehicle spawn randomizer
-#'''
-
-
 '''
 ######################### TESTS ON PEDESTRIANS 5 ###############################
 PLAYER_START_INDEX = 6       #  spawn index for player
@@ -213,6 +202,26 @@ NUM_VEHICLES           = 1   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
+
+'''
+######################### TEST INCROCIO SENZA SEMAFORO 1 ###############################
+PLAYER_START_INDEX = 2        #  spawn index for player
+DESTINATION_INDEX = 20         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
+NUM_VEHICLES           = 1000   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 123    # seed for vehicle spawn randomizer
+'''
+
+#'''
+######################### TEST INCROCIO SENZA SEMAFORO 2 ###############################
+PLAYER_START_INDEX = 140        #  spawn index for player
+DESTINATION_INDEX =19         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
+NUM_VEHICLES           = 1000   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 123    # seed for vehicle spawn randomizer
+#'''
 
 '''
 ################## TEST CURVA CON FURGONCINO CHE PASSA CON ROSSO #############
