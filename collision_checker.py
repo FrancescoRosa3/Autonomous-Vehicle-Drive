@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from behavioural_planner import STOP_AT_OBSTACLE
 import numpy as np
 import scipy.spatial
 import math
@@ -128,7 +129,7 @@ class CollisionChecker:
     # process.
     # collision_check_array contains True at index i if paths[i] is
     # collision-free, otherwise it contains False.
-    def select_best_path_index(self, paths, collision_check_array, goal_state):
+    def select_best_path_index(self, paths, collision_check_array, goal_state, behavioural_planner_state):
         """Returns the path index which is best suited for the vehicle to
         traverse.
 
@@ -158,43 +159,25 @@ class CollisionChecker:
         """
         best_index = None
         best_score = float('Inf')
-        # in_lane_check_array = np.zeros(len(paths), dtype=bool)
         for i in range(len(paths)):
-            # Handle the case of collision-free paths.
+            # Handle the case of colliding paths.
+            if behavioural_planner_state != STOP_AT_OBSTACLE and not collision_check_array[i]:
+                score = float('Inf')
             
-            #if collision_check_array[i]:
-            if True:
+            # Handle the case of collision-free paths.
+            else:
                 # Compute the "distance from centerline" score.
                 # The centerline goal is given by goal_state.
                 # The exact choice of objective function is up to you.
                 # A lower score implies a more suitable path.
                 score = np.sqrt((paths[i][0][-1]-goal_state[0])**2+(paths[i][1][-1]-goal_state[1])**2)
-                #in_lane_check_array[i] = True
-                '''
-                if score > 1.75:
-                    score = float('Inf')
-                    in_lane_check_array[i] = False
-                '''
-                # Compute the "proximity to other colliding paths" score and
-                # add it to the "distance from centerline" score.
-                # The exact choice of objective function is up to you.
-                for j in range(len(paths)):
-                    if j == i:
-                        continue
-                    else:
-                        if not collision_check_array[j]:
-                            pass
-
-            # Handle the case of colliding paths.
-            else:
-                score = float('Inf')
-                
+    
             # Set the best index to be the path index with the lowest score
             if score < best_score:
                 best_score = score
                 best_index = i
 
-        return best_index#, in_lane_check_array
+        return best_index
 
     def _correct_distance(self, distance):
         new_distance = distance - CAR_RADII_X_EXTENT

@@ -162,7 +162,7 @@ SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-'''
+#'''
 ######################### TEST SU PEDONI SU RETTILINEO SUPERIORE 2 INTERESSANTE ##############################
 PLAYER_START_INDEX = 144        #  spawn index for player
 DESTINATION_INDEX = 65         # Setting a Destination HERE
@@ -170,7 +170,7 @@ NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
 NUM_VEHICLES           = 0   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
+#'''
 
 
 '''
@@ -263,7 +263,7 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-#'''
+'''
 ######################### traiettoria persa in curva ###############################
 PLAYER_START_INDEX = 15       #  spawn index for player
 DESTINATION_INDEX = 148         # Setting a Destination HERE
@@ -271,7 +271,7 @@ NUM_PEDESTRIANS        = 200     # total number of pedestrians to spawn
 NUM_VEHICLES           = 100   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-#'''
+'''
 
 '''
 ################################## --- #################################################
