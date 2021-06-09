@@ -172,17 +172,15 @@ SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 #'''
 
-
 '''
-######################### TESTS ON PEDESTRIANS 4 ###############################
+########################## TESTS ON PEDESTRIANS 4 ###############################
 PLAYER_START_INDEX = 2        #  spawn index for player
-DESTINATION_INDEX = 20         # Setting a Destination HERE
+DESTINATION_INDEX = 139        # Setting a Destination HERE
 NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
 NUM_VEHICLES           = 0   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
+SEED_PEDESTRIANS       = 159      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
-
 '''
 ######################### TESTS ON PEDESTRIANS 4 LUNGO ###############################
 PLAYER_START_INDEX = 2        #  spawn index for player
@@ -268,8 +266,60 @@ SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 PLAYER_START_INDEX = 15       #  spawn index for player
 DESTINATION_INDEX = 148         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 200     # total number of pedestrians to spawn
-NUM_VEHICLES           = 100   # total number of vehicles to spawn
+################################## --- #################################################
+PLAYER_START_INDEX = 11       # spawn index for player
+DESTINATION_INDEX = 20         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
+NUM_VEHICLES           = 1000   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
+
+'''
+PLAYER_START_INDEX = 17       #  spawn index for player
+DESTINATION_INDEX = 51         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 100   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
+
+'''
+################################## Veicoli all'incrocio semaforo disabilitato. #################################################
+
+PLAYER_START_INDEX = 2       #  spawn index for player
+DESTINATION_INDEX = 23         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 300   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
+'''
+################################## Merge tra veicoli. #################################################
+
+PLAYER_START_INDEX = 2       #  spawn index for player
+DESTINATION_INDEX = 23         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 300   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+
+################################## Veicoli all'incrocio semaforo abilitato. #################################################
+
+PLAYER_START_INDEX = 2       #  spawn index for player
+DESTINATION_INDEX = 23         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 300   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+
+'''
+'''
+PLAYER_START_INDEX = 24       #  spawn index for player
+DESTINATION_INDEX = 15         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 200      # total number of pedestrians to spawn
+NUM_VEHICLES           = 100   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0     # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
@@ -1282,6 +1332,7 @@ def exec_waypoint_nav_demo(args):
                     
                 # Traffic-light detector
                 tl_state, tl_distance, traffic_light_vehicle_frame = traffic_lights_manager.get_tl_state(image_BGRA, depth_image, semantic_image)
+                #tl_state = "go"
                 print(F"STATE TRAFFIC LIGHT: {tl_state}")
                 print(F"DISTANCE FROM TRAFFIC LIGHT: {tl_distance}")
                 #print(F"Traffic light vehicle frame: {traffic_light_vehicle_frame}")
