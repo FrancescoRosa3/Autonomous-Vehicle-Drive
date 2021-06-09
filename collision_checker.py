@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-from behavioural_planner import STOP_AT_OBSTACLE
 import numpy as np
 import scipy.spatial
 import math
 from math import sin, cos, pi, sqrt
 from main import CAR_RADII_X_EXTENT
+from behavioural_planner import STOP_AT_OBSTACLE
 
 class CollisionChecker:
     def __init__(self, circle_offsets, circle_radii, weight):
@@ -109,7 +109,6 @@ class CollisionChecker:
                 dist_from_obstacle = self._correct_distance(dist_from_obstacle)
                 collision_dist_array[i] = dist_from_obstacle
             else:
-                print("N O N CONSIDERO OSTACOLI")
                 collision_check_array = [True] * len(paths)
                 collision_dist_array = [math.inf] * len(paths)
                 

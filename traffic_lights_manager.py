@@ -79,48 +79,46 @@ class trafficLightsManager:
             Compute the traffic light distance from the ego vehicle.
         """
         
-        # compute the distance from the traffic light if its state is red
+        # compute the distance from the traffic light if its state is red and a bounding box exists
         if self.true_state == STOP and self.curr_bb != None:
             
             image_h, image_w = self.curr_depth_img.shape
-            # compute the bb coordinates
+            # compute the bounding box coordinates
             xmin = int(self.curr_bb.xmin * image_w)
             ymin = int(self.curr_bb.ymin * image_h)
             xmax = int(self.curr_bb.xmax * image_w)
             ymax = int(self.curr_bb.ymax * image_h)
 
-            # take the pixel coordinates for the traffic light
+            # get the pixel coordinates corresponding to the traffic light position in the image
             traffic_light_pixels = self._get_traffic_light_slice_from_semantic_segmentation(xmin, xmax, ymin, ymax)
 
-            # false positive bounding box
+            # check for false positive bounding box
             if len(traffic_light_pixels) == 0:
                 self.distance = None
                 return
 
-            # take the traffic light pixels from the depth image
+            # get the traffic light pixels from the depth image
             x_distance = 0
-            depth_sum = 0
-            temp_avg = 0
-            i = 0
             self.vehicle_frame_list = []
             for pixel in traffic_light_pixels:
-                i += 1
+                
                 # convert depth image value in meters
                 depth = 1000 * self.curr_depth_img[pixel[0]][pixel[1]]
 
-                ### Compute the pixel position in vehicle frame
-                
-                # From pixel to waypoint
+                ###
+                # Compute the pixel position in vehicle frame
+                ###
+
                 pixel = [pixel[1] , pixel[0], 1]
                 pixel = np.reshape(pixel, (3,1))
-                # Projection Pixel to Image Frame
+                # Projection "Pixel to Image Frame"
                 image_frame_vect = np.dot(self.inv_intrinsic_matrix, pixel) * depth
-                # Create extended vector
+                # Creation of the extended vector
                 image_frame_vect_extended = np.zeros((4,1))
                 image_frame_vect_extended[:3] = image_frame_vect 
                 image_frame_vect_extended[-1] = 1
 
-                # Projection Camera to Vehicle Frame
+                # Projection "Image to Camera Frame"
                 camera_frame = self.image_to_camera_frame(image_frame_vect_extended)
                 camera_frame = camera_frame[:3]
                 camera_frame = np.asarray(np.reshape(camera_frame, (1,3)))
@@ -129,6 +127,7 @@ class trafficLightsManager:
                 camera_frame_extended[:3] = camera_frame.T 
                 camera_frame_extended[-1] = 1
 
+                # Projection "Camera to Vehicle Frame"
                 camera_to_vehicle_frame = np.zeros((4,4))
                 camera_to_vehicle_frame[:3,:3] = main.to_rot([self.cam_pitch, self.cam_yaw, self.cam_roll])
                 camera_to_vehicle_frame[:,-1] = [self.cam_x_pos, -self.cam_y_pos, self.cam_height, 1]
@@ -136,12 +135,20 @@ class trafficLightsManager:
                 vehicle_frame = np.dot(camera_to_vehicle_frame,camera_frame_extended )
                 vehicle_frame = vehicle_frame[:3]
                 vehicle_frame = np.asarray(np.reshape(vehicle_frame, (1,3)))
+                
+                # Add the computed pixel position with respect to vehicle frame to the pixel positions list
                 self.vehicle_frame_list.append([vehicle_frame[0][0], -vehicle_frame[0][1]])
                                 
+                # Update the distance between the traffic light and the vehicle by takin into account
+                # only the x axis contribute.   
                 x_distance += vehicle_frame[0][0]
                 
+            # compute the avarage distance
             self.distance = x_distance/len(traffic_light_pixels)
+            # correct the distance by taking into account the ego vehicle extension on the long side.
             self.distance = self._correct_perpendicular_distance(self.distance)
+        
+        # if the traffic light state is not red or its bounding box doesn't exists set the distance to None
         else:
             self.distance = None
 
@@ -189,18 +196,20 @@ class trafficLightsManager:
             traffic_light_pixels: set of pixels coordinates corresponding to the traffic light. 
         """
 
-        # neighborhood of the bounding box
+        # Since the bounding box returned by the detector is not always actually centered on
+        # the traffic light, you need to check it's neighborhood to find the actual traffic light pixels.
+        # The neighborhood is defined by the x_offset and y_offset variables.
         width = x_max - x_min
         x_offset = int(width + ((width*30)/100))
         y_offset = 0
 
-        # prevent indices from going out of image borders
+        # Prevent indices from going out of image borders
         start_y = 0 if y_min - y_offset < 0 else y_min-y_offset
         end_y = self.curr_semantic_img.shape[0] if (y_max + y_offset) > self.curr_semantic_img.shape[0] else y_max + y_offset
         start_x = 0 if x_min - x_offset < 0 else x_min-x_offset
         end_x = self.curr_semantic_img.shape[1] if (x_max + x_offset) > self.curr_semantic_img.shape[1] else x_max + x_offset
 
-        # get the pixels belonging to traffic sign
+        # get the pixels belonging to traffic sign using the semantic image and the corresponding class. 
         traffic_light_pixels = []
         for v in range(start_y, end_y):
             for u in range(start_x, end_x):

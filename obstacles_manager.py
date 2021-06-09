@@ -36,12 +36,12 @@ class ObstaclesManager:
 
         obstacles = []
         #if self.semantic_img is not None:
-        all_vehicles_on_sight, lead_vehicle = self._update_vehicles()
+        on_same_lane_vehicles, lead_vehicle = self._update_vehicles()
         self._update_pedestrian()
         # obstacles = obstacles_vehicles + obstacles_pedestrian
         obstacles, future_obstacles = self._get_obstacles()
         
-        return all_vehicles_on_sight, obstacles, future_obstacles, lead_vehicle
+        return obstacles, future_obstacles, on_same_lane_vehicles, lead_vehicle
 
     def _set_measurement_data_frame(self, measurement_data):
         self.measurement_data = measurement_data
@@ -59,7 +59,7 @@ class ObstaclesManager:
         # print(F"New look ahead for vehicle lead {self._lead_vehicle_lookahead}")
 
     def _update_vehicles(self):
-        all_vehicles_on_sight = []
+        on_same_lane_vehicles = []
         lead_vehicle_dist = inf
         lead_vehicle = None
         
@@ -72,13 +72,12 @@ class ObstaclesManager:
                 distance, orientation = self._compute_distance_orientation_from_vehicle(location, rotation)
                 # the vehicle is inside the obstacle range
                 if distance < self._vehicle_obstacle_lookahead:
-                    
                     # print(f"VEHICLE ID: {agent.id} - VEHICLE SPEED: {agent.vehicle.forward_speed}")
                     # compute the bb with respect to the world frame
                     box_pts = main.obstacle_to_world(location, dimension, rotation)
-                    all_vehicles_on_sight.append(box_pts)
                     # check for vehicle on the same lane
                     if self._check_for_vehicle_on_same_lane(orientation):
+                        on_same_lane_vehicles.append(box_pts)
                         try:
                             self._obstacles.pop(agent.id)
                         except KeyError:
@@ -97,7 +96,7 @@ class ObstaclesManager:
                     except KeyError:
                         pass
         
-        return all_vehicles_on_sight, lead_vehicle
+        return on_same_lane_vehicles, lead_vehicle
 
     def _update_pedestrian(self):
         #if self._check_instance_pedestrian():

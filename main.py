@@ -339,7 +339,7 @@ BP_LOOKAHEAD_BASE      = 8.0             # m
 BP_LOOKAHEAD_TIME      = 1.0              # s
 PATH_OFFSET            = 1                # m
 # CIRCLE_OFFSETS         = [-1.0, 1.0, 3.0] # m
-CIRCLE_OFFSETS         = [1.5, 3.0] # m
+CIRCLE_OFFSETS         = [1.0, 3.0] # m
 #CIRCLE_RADII           = [1.5, 1.5, 1.5]  # m
 CIRCLE_RADII           = [1.5, 1.5]  # m
 TIME_GAP               = 1.0              # s
@@ -1065,6 +1065,12 @@ def exec_waypoint_nav_demo(args):
                                     y0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)),
                                         linestyle="", marker="+", color='m')
 
+            trajectory_fig.add_graph("on_same_lane_vehicles",
+                                    window_size=8 * (NUM_PEDESTRIANS + NUM_VEHICLES) ,
+                                    x0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)), 
+                                    y0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)),
+                                        linestyle="", marker="+", color='g')
+
             # Add end position marker
             trajectory_fig.add_graph("end_pos", window_size=1, 
                                     x0=[waypoints[-1, 0]], 
@@ -1190,9 +1196,8 @@ def exec_waypoint_nav_demo(args):
             
             ### UPDATE HERE the obstacles list and check to see if we need to follow the lead vehicle. 
             ego_pose = [current_x, current_y, current_yaw]
-            box_pts_all_agents, box_pts_obstacles, box_pts_future_obstacles, lead_vehicle = obstacles_manager.get_om_state(measurement_data, ego_pose)
-            obstacles = np.array(box_pts_all_agents)
-            future_obstacles = np.array(box_pts_future_obstacles)
+            obstacles, future_obstacles, on_same_lane_vehicles, lead_vehicle = obstacles_manager.get_om_state(measurement_data, ego_pose)
+            
 
             # Wait for some initial time before starting the demo
             if current_timestamp <= WAIT_TIME_BEFORE_START:
@@ -1327,8 +1332,7 @@ def exec_waypoint_nav_demo(args):
                     '''
                 ### Perform collision checking.
                 # collision_check_array = lp._collision_checker.collision_check(paths, box_pts_obstacles)
-                all_obs = box_pts_obstacles + box_pts_future_obstacles
-                
+                all_obs = obstacles + future_obstacles
                 ### added array of distances
                 collision_check_array, collision_dist_array = lp._collision_checker.collision_check(paths, all_obs, current_speed)
 
@@ -1337,7 +1341,7 @@ def exec_waypoint_nav_demo(args):
                 bp.set_obstacle_on_lane(collision_check_array)
 
                 # Compute the best local path.
-                best_index = lp._collision_checker.select_best_path_index(paths, collision_check_array, bp._goal_state)
+                best_index = lp._collision_checker.select_best_path_index(paths, collision_check_array, bp._goal_state, bp.get_state())
                 # best_index, out_lane_check_array = lp._collision_checker.select_best_path_index(paths, collision_check_array, bp._goal_state)
 
                 #collision_check_array = collision_check_array & out_lane_check_array
@@ -1453,7 +1457,11 @@ def exec_waypoint_nav_demo(args):
                         trajectory_fig.roll("leadcar", lead_car_pos[0],
                                             lead_car_pos[1])
                     
-                    # Load parked car points
+                    obstacles = np.array(obstacles)
+                    future_obstacles = np.array(future_obstacles)
+                    on_same_lane_vehicles = np.array(on_same_lane_vehicles)
+
+                    # Load obstacles points
                     if len(obstacles) > 0:
                         x = obstacles[:, :, 0]
                         y = obstacles[:, :, 1]
@@ -1462,7 +1470,7 @@ def exec_waypoint_nav_demo(args):
 
                         trajectory_fig.roll("obstacles_points", x, y)
 
-                        # Load parked car points
+                    # Load future obstacles points
                     if len(future_obstacles) > 0:
                         x = future_obstacles[:, :, 0]
                         y = future_obstacles[:, :, 1]
@@ -1471,6 +1479,17 @@ def exec_waypoint_nav_demo(args):
 
                         trajectory_fig.roll("future_obstacles_points", x, y)
                     
+                    
+                    # Load future obstacles points
+                    if len(on_same_lane_vehicles) > 0:
+                        x = on_same_lane_vehicles[:, :, 0]
+                        y = on_same_lane_vehicles[:, :, 1]
+                        x = np.reshape(x, x.shape[0] * x.shape[1])
+                        y = np.reshape(y, y.shape[0] * y.shape[1])
+
+                        trajectory_fig.roll("on_same_lane_vehicles", x, y)
+                    
+
                     forward_speed_fig.roll("forward_speed", 
                                         current_timestamp, 
                                         current_speed)
