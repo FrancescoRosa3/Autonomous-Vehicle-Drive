@@ -27,7 +27,9 @@ class LocalPlanner:
         ###
         self._prev_best_path = None
         self._prev_best_path_obs_dist = None
-        self._prev_steer = None
+        self._prev_goal_state = None
+        self._prev_goal_index = None
+
 
     def get_num_path(self):
         return self._num_paths

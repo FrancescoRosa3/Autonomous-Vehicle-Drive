@@ -161,7 +161,9 @@ class CollisionChecker:
         # in_lane_check_array = np.zeros(len(paths), dtype=bool)
         for i in range(len(paths)):
             # Handle the case of collision-free paths.
-            if collision_check_array[i]:
+            
+            #if collision_check_array[i]:
+            if True:
                 # Compute the "distance from centerline" score.
                 # The centerline goal is given by goal_state.
                 # The exact choice of objective function is up to you.

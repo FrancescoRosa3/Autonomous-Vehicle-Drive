@@ -72,7 +72,7 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 10     # seed for vehicle spawn randomizer
 '''
 
-#'''
+'''
 ######################### RETTILINEO LIBERO ###############################
 PLAYER_START_INDEX = 13        #  spawn index for player
 DESTINATION_INDEX = 20         # Setting a Destination HERE
@@ -80,7 +80,7 @@ NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
 NUM_VEHICLES           = 0   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-#'''
+'''
 
 '''
 ######################### TURN PROBLEMS ###############################
@@ -263,6 +263,16 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
+#'''
+######################### traiettoria persa in curva ###############################
+PLAYER_START_INDEX = 15       #  spawn index for player
+DESTINATION_INDEX = 148         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 200     # total number of pedestrians to spawn
+NUM_VEHICLES           = 100   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+#'''
+
 '''
 ################################## --- #################################################
 PLAYER_START_INDEX = 11       # spawn index for player
@@ -281,6 +291,7 @@ NUM_VEHICLES           = 100   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
+
 ###############################################################################
 
 ITER_FOR_SIM_TIMESTEP  = 10         # no. iterations to compute approx sim timestep
@@ -362,7 +373,7 @@ LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 CAR_RADII_X_EXTENT = 2.34
 
 SHOW_LIVE_PLOTTER = False
-PRODUCE_VIDEO = False
+PRODUCE_VIDEO = True
 SAVE_PATH_REFERENCE = False
 
 # Camera parameters
@@ -1288,10 +1299,19 @@ def exec_waypoint_nav_demo(args):
                 # Perform a state transition in the behavioural planner.
                 bp.transition_state(waypoints, ego_state, current_speed)
                 # Compute the goal state set from the behavioural planner's computed goal state.
+                
                 goal_state_set = lp.get_goal_state_set(bp._goal_index, bp._goal_state, waypoints, ego_state)
                 
                 # Calculate planned paths in the local frame.
                 paths, path_validity = lp.plan_paths(goal_state_set)
+                
+                ###
+                if len(paths) != 0:
+                    lp._prev_goal_state = bp._goal_state
+                    lp._prev_goal_index = bp._goal_index
+                else:
+                    goal_state_set = lp.get_goal_state_set(lp._prev_goal_index, lp._prev_goal_state, waypoints, ego_state)
+                    paths, path_validity = lp.plan_paths(goal_state_set)
 
                 # Transform those paths back to the global frame.
                 paths = local_planner.transform_paths(paths, ego_state)
@@ -1300,10 +1320,11 @@ def exec_waypoint_nav_demo(args):
                 if len(paths) == 0:
                     print("NO PATHS, restoring the previous one")
                     paths.append(lp._prev_best_path)
+                    '''
                     path_validity = []
                     path_validity.append(True)
                     lp._num_paths = 1
-                
+                    '''
                 ### Perform collision checking.
                 # collision_check_array = lp._collision_checker.collision_check(paths, box_pts_obstacles)
                 all_obs = box_pts_obstacles + box_pts_future_obstacles

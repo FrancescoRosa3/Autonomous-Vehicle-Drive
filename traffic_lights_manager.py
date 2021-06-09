@@ -37,17 +37,22 @@ class trafficLightsManager:
         self.curr_state = UNKNOWN
         self.distance = None
         self.vehicle_frame_list = []
-        self.create_intrinsic_matrix(camera_parameters)
-        self.image_to_camera_frame_matrix()
+        self._create_intrinsic_matrix(camera_parameters)
+        self._image_to_camera_frame_matrix()
 
     def get_tl_state(self, image, depth_img = None, semantic_img = None):
-        """Updates the current frames and use them to compute the current traffic light state
-           and the its distance from the vehicle.
+        """Updates the current frames and use them to compute the true traffic light state
+           and the its distance from the ego vehicle.
         
         args:
             image: the current RGB image. 
             depth_img: the current depth image.
-            semantic_img: the semantic image.
+            semantic_img: the current semantic image.
+        returns:
+            self.true_state: True state of the detected traffic light.
+            self.distance: Computed distance of the traffic light from the ego vehicle.
+            self.vehicle_frame_list: Set of traffic light point's position with respect 
+                to vehicle frame.
         """
 
         self._set_current_frame(image, depth_img, semantic_img)
@@ -57,11 +62,23 @@ class trafficLightsManager:
         return self.true_state, self.distance, self.vehicle_frame_list
 
     def _set_current_frame(self, image, depth_img, semantic_img):
+        """Updates the current frames.
+        
+        args:
+            image: the current RGB image. 
+            depth_img: the current depth image.
+            semantic_img: the current semantic image.
+        """
+
         self.curr_img = image
         self.curr_depth_img = depth_img
         self.curr_semantic_img = semantic_img
 
     def _update_distance(self):
+        """
+            Compute the traffic light distance from the ego vehicle.
+        """
+        
         # compute the distance from the traffic light if its state is red
         if self.true_state == STOP and self.curr_bb != None:
             
@@ -129,26 +146,49 @@ class trafficLightsManager:
             self.distance = None
 
     def _update_state(self):
+        """
+            Updates the true traffic light state.
+        """
+
+        # Get the traffic light bounding box from the detector given the current RGB image.
         self.curr_bb = self.tl_det.detect_on_image(self.curr_img)
 
+        # If the bounding box doesn't exist, the current state is set to UNKNOWN.
+        # Otherwise it is set to the detected state.  
         if self.curr_bb == None:
             bb_state = UNKNOWN
         else:
             bb_state = TRAFFIC_LIGHT_CLASSES[self.curr_bb.get_label()]
-        # print(bb_state)
+        
+        # If the detected state is equal to the previous current state, increment a counter that
+        # keeps track of the consecutive frames classified with the same state. (?) 
         if bb_state == self.curr_state:
             self.new_state_counter += 1
             
-            # set the threshold to a different value based on the detected traffic light state
+            # Given the true state, set a different threshold, for the consecutive number of frames
+            # classified in the same state, to change the true state.
             threshold = STOP_COUNTER if self.true_state == "stop" else OTHERS_COUNTER
+            
+            # If the counter is equal or greater than the threshold, set the true state to the current state.
             if self.new_state_counter >= threshold:
                     self.true_state = self.curr_state
+        
+        # If the current detected state is different from the previous detected state, set the
+        # counter to 0 and update the current state.
         else:
             self.new_state_counter = 0
             self.curr_state = bb_state
 
     def _get_traffic_light_slice_from_semantic_segmentation(self, x_min, x_max, y_min, y_max):
-        
+        """Get the pixels coordinates corresponding to the traffic light from the semantic image,
+        given the detected traffic light bounding box.
+
+        args:
+            x_min, x_max, y_min, y_max: bounding box coordinates.
+        returns:
+            traffic_light_pixels: set of pixels coordinates corresponding to the traffic light. 
+        """
+
         # neighborhood of the bounding box
         width = x_max - x_min
         x_offset = int(width + ((width*30)/100))
@@ -169,7 +209,13 @@ class trafficLightsManager:
 
         return traffic_light_pixels
 
-    def create_intrinsic_matrix(self, camera_parameters):
+    def _create_intrinsic_matrix(self, camera_parameters):
+        """Computes the intrinsic matrix given the camera parameters.
+
+        args:
+            camera_parameters: parameters of the used camera (position, orientation, dimensions, fov). 
+        """
+
         ### Compute the transformation matrices from image to camera frame
         self.cam_height = camera_parameters['z']
         self.cam_x_pos = camera_parameters['x']
@@ -195,7 +241,11 @@ class trafficLightsManager:
                                       
         self.inv_intrinsic_matrix = np.linalg.inv(intrinsic_matrix)
     
-    def image_to_camera_frame_matrix(self):
+    def _image_to_camera_frame_matrix(self):
+        """
+            Define the function that, given as input the homogenous transformation matrix of a
+            point in the image frame, produce the point defined with respect to the camera frame.
+        """
         # Rotation matrix to align image frame to camera frame
         rotation_image_camera_frame = np.dot(main.rotate_z(-90 * pi /180), main.rotate_x(-90 * pi /180))
 
@@ -206,6 +256,17 @@ class trafficLightsManager:
         self.image_to_camera_frame = lambda object_camera_frame: np.dot(image_camera_frame , object_camera_frame)
 
     def _correct_perpendicular_distance(self, distance):
+        """Corrects the distance from the traffic light by taking into account the
+        ego vehicle extension on the long side.
+
+        args:
+            distance: distance parallel to the lane between the traffic light and the ego vehicle.
+        returns:
+            new_distance: the corrected distance.
+        """
+
+        # Computes the new distance by subtracting half of the extension of the ego
+        # vehicle on the long side. 
         new_distance = distance - main.CAR_RADII_X_EXTENT
         new_distance = 0 if new_distance < 0 else new_distance
         return new_distance
