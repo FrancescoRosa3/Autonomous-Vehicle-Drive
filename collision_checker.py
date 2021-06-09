@@ -170,7 +170,7 @@ class CollisionChecker:
                 # The exact choice of objective function is up to you.
                 # A lower score implies a more suitable path.
                 score = np.sqrt((paths[i][0][-1]-goal_state[0])**2+(paths[i][1][-1]-goal_state[1])**2)
-    
+
             # Set the best index to be the path index with the lowest score
             if score < best_score:
                 best_score = score
