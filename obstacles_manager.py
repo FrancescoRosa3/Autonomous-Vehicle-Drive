@@ -5,18 +5,34 @@ from obstacle import Obstacle
 
 import main 
 
+# Usefull for avoiding lead vehicle hooking and unhooking
 LEAD_VEHICLE_LOOKAHEAD_OFFSET_FOR_RELEASE = 5
 
+# Constant
 VEHICLE = 0
 PEDESTRIAN = 1
 
-# CAR_LONG_SIDE = 2
+#CAR_LONG_SIDE = 2
 #VEHICLE_LABEL = 10
 #PEDESTRIAN_LABEL = 4
 
 class ObstaclesManager:
 
+
     def __init__(self, lead_vehicle_lookahead_base, vehicle_obstacle_lookahead_base, pedestrian_obstacle_lookahead, behavioral_planner):
+        """
+        The constructor takes in input some distance measurements and the behavioural planner instance.
+        An empty dictionary is created for obstacles.   
+        
+        args:
+            lead_vehicle_lookahead_base: base distance within which to find lead vehicles
+            vehicle_obstacle_lookahead_base: base distance within which to find vehicles considered as obstacles
+            pedestrian_obstacle_lookahead: distance within which to find pedestrian as obstacles
+            behavioral_planner: useful to check if _follow_lead_vehicle in the bp is activated
+
+        variables to set:
+            self._obstacles: an empty dictionary for store obstacles, both pedestrians and vehicles
+        """      
         self._lead_vehicle_lookahead_base = lead_vehicle_lookahead_base
         self._lead_vehicle_lookahead = self._lead_vehicle_lookahead_base
 
@@ -29,13 +45,31 @@ class ObstaclesManager:
 
         self._obstacles = {}
 
-    def get_om_state(self, measurement_data, ego_pose, semantic_img=None):        
-        #self._set_current_frame(semantic_img)
+    def get_om_state(self, measurement_data, ego_pose):
+        """
+        Set measurement data and ego pose, updates the information of pedestrians and vehicles in the obstacles
+        dictionary; finally return obstacles as bounding box and their projections in the future.
+        
+        args:
+            measurement_data: information read from the server about all agents in the simulation and so 
+                also information for pedestrians and vehicles
+            ego_pose: ego state vector for the vehicle. (global frame)
+                format: [ego_x, ego_y, ego_yaw]
+                    ego_x and ego_y     : position (m)
+                    ego_yaw             : top-down orientation [-pi to pi]
+        
+        returns:
+            all_vehicles_on_sight: list containing all vehicle within the _vehicle_obstacle_lookahead distance  
+            obstacles: list containing all vehicles and pedestrians that fall within the distances provided for them,
+                but only vehicles that aren't on the same lane of the ego vehicle
+            future_obstacles: list containing the future projection for all obstacles mentioned above
+            lead_vehicle: if exists, it contains the lead vehicle agent (which will be eliminated from the list of 
+                obstacles mentioned above).
+        """        
         self._set_measurement_data_frame(measurement_data)
         self._set_ego_location(ego_pose)
 
         obstacles = []
-        #if self.semantic_img is not None:
         all_vehicles_on_sight, lead_vehicle = self._update_vehicles()
         self._update_pedestrian()
         # obstacles = obstacles_vehicles + obstacles_pedestrian
