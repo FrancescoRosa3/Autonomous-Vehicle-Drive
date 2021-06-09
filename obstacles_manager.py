@@ -5,18 +5,34 @@ from obstacle import Obstacle
 
 import main 
 
+# Usefull for avoiding lead vehicle hooking and unhooking
 LEAD_VEHICLE_LOOKAHEAD_OFFSET_FOR_RELEASE = 5
 
+# Constant
 VEHICLE = 0
 PEDESTRIAN = 1
 
-# CAR_LONG_SIDE = 2
+#CAR_LONG_SIDE = 2
 #VEHICLE_LABEL = 10
 #PEDESTRIAN_LABEL = 4
 
 class ObstaclesManager:
 
+
     def __init__(self, lead_vehicle_lookahead_base, vehicle_obstacle_lookahead_base, pedestrian_obstacle_lookahead, behavioral_planner):
+        """
+        The constructor takes in input some distance measurements and the behavioural planner instance.
+        An empty dictionary is created for obstacles.   
+        
+        args:
+            lead_vehicle_lookahead_base: base distance within which to find lead vehicles
+            vehicle_obstacle_lookahead_base: base distance within which to find vehicles considered as obstacles
+            pedestrian_obstacle_lookahead: distance within which to find pedestrian as obstacles
+            behavioral_planner: useful to check if _follow_lead_vehicle in the bp is activated
+
+        variables to set:
+            self._obstacles: an empty dictionary for store obstacles, both pedestrians and vehicles
+        """      
         self._lead_vehicle_lookahead_base = lead_vehicle_lookahead_base
         self._lead_vehicle_lookahead = self._lead_vehicle_lookahead_base
 
@@ -29,8 +45,28 @@ class ObstaclesManager:
 
         self._obstacles = {}
 
-    def get_om_state(self, measurement_data, ego_pose, semantic_img=None):        
-        #self._set_current_frame(semantic_img)
+    def get_om_state(self, measurement_data, ego_pose):
+        """
+        Set measurement data and ego pose, updates the information of pedestrians and vehicles in the obstacles
+        dictionary; finally return obstacles as bounding box and their projections in the future.
+        
+        args:
+            measurement_data: information read from the server about all agents in the simulation and so 
+                also information for pedestrians and vehicles
+            ego_pose: ego state vector for the vehicle. (global frame)
+                format: [ego_x, ego_y, ego_yaw]
+                    ego_x and ego_y     : position (m)
+                    ego_yaw             : top-down orientation [-pi to pi]
+        
+        returns:
+            on_same_lane_vehicles: list containing all vehicle within the _vehicle_obstacle_lookahead distance
+                and on the same lane of the ego vehicle.  
+            obstacles: list containing all vehicles and pedestrians that fall within the distances provided for them,
+                but only vehicles that aren't on the same lane of the ego vehicle
+            future_obstacles: list containing the future projection for all obstacles mentioned above
+            lead_vehicle: if exists, it contains the lead vehicle agent (which will be eliminated from the list of 
+                obstacles mentioned above).
+        """        
         self._set_measurement_data_frame(measurement_data)
         self._set_ego_location(ego_pose)
 
@@ -44,12 +80,40 @@ class ObstaclesManager:
         return obstacles, future_obstacles, on_same_lane_vehicles, lead_vehicle
 
     def _set_measurement_data_frame(self, measurement_data):
+        """
+        Set measurement data for the current frame.
+        
+        args:
+            measurement_data: information read from the server about all agents in the simulation and so 
+                also information for pedestrians and vehicles
+        """
         self.measurement_data = measurement_data
 
     def _set_ego_location(self, ego_pose):
+        """
+        Set ego pose for the current frame.
+        
+        args:
+            ego_pose: ego state vector for the vehicle. (global frame)
+                format: [ego_x, ego_y, ego_yaw]
+                    ego_x and ego_y     : position (m)
+                    ego_yaw             : top-down orientation [-pi to pi]
+        """   
         self._ego_pose = ego_pose
        
     def compute_lookahead(self, ego_speed):
+        """
+        Using the current speed of the ego vehicle, converts it from m/s in km/h format and determines the
+        _lead_vehicle_lookahead and _vehicle_obstacle_lookahead adding to the base the x extension of the car
+        and a dynamic value depending on braking distance heuristic (computed starting from speed).
+        
+        args:
+            ego_speed: the current speed of the ego vehicle (m/s)
+        
+        variables to set:
+            self._lead_vehicle_lookahead: distance within which to find lead vehicles
+            self._vehicle_obstacle_lookahead: distance within which to find vehicles as obstacle
+        """   
         # safe brake space
         speed_km_h = (ego_speed * 3600)/1000
         self._lead_vehicle_lookahead = self._lead_vehicle_lookahead_base + main.CAR_RADII_X_EXTENT + (speed_km_h/10)*3
@@ -59,6 +123,18 @@ class ObstaclesManager:
         # print(F"New look ahead for vehicle lead {self._lead_vehicle_lookahead}")
 
     def _update_vehicles(self):
+        """
+        Iterates on the list of non_player_agents finding vehicles and check if a vehicle can be
+        considered as an obstacle, if it falls in the range of the _vehicle_obstacle_lookahead distance;
+        furthermore, if a vehicle has the same orientation of the ego vehicle, it is added to the list of the vehicles on the same lane.
+        Finally, the nearest vehicle on the same lane in front of the ego vehicle is considered as the lead vehicle.
+        
+        returns:
+            on_same_lane_vehicles: list containing all vehicle within the _vehicle_obstacle_lookahead distance
+                and on the same lane of the ego vehicle.  
+            lead_vehicle: if exists, it contains the lead vehicle agent (which will be eliminated from the list of 
+                obstacles mentioned above). 
+        """   
         on_same_lane_vehicles = []
         lead_vehicle_dist = inf
         lead_vehicle = None
@@ -99,6 +175,10 @@ class ObstaclesManager:
         return on_same_lane_vehicles, lead_vehicle
 
     def _update_pedestrian(self):
+        """
+        Iterates on the list of non_player_agents finding pedestrians and check if a pedestrian can be
+        considered as an obstacle, if it falls in the range of the _pedestrian_obstacle_lookahead distance.
+        """   
         #if self._check_instance_pedestrian():
         #print("Update pedestrian")
         for agent in self.measurement_data.non_player_agents:
@@ -115,6 +195,17 @@ class ObstaclesManager:
 
 
     def _compute_distance_orientation_from_vehicle(self, car_location, car_rotation):
+        """
+        Compute the distance and the cosine of the angle between the player agent and the obstacle
+        
+        args:
+            car_location: the position (x,y,z) of the vehicle respect to world frame
+            car_rotation: the orientation (yaw, pitch, roll) of the vehicle respect to the world frame
+        
+        returns:
+            car_distance: distance between the player agent and the obstacle
+            dot_product: cosine of the angle between the player agent and the obstacle
+        """
         # compute the distance between the player agent and the obstacle
         car_delta_vector = [car_location.x - self._ego_pose[0], car_location.y - self._ego_pose[1]]
         car_distance = np.linalg.norm(car_delta_vector)
@@ -129,11 +220,29 @@ class ObstaclesManager:
         return car_distance, dot_product
 
     def _check_for_vehicle_on_same_lane(self, orientation):
+        """
+        Check if the cosine of the angle between the player agent and the obstacle is greater than the cosine of 45°.
+        
+        args:
+            orientation: cosine of the angle between the player agent and the obstacle
+        
+        returns:
+            True: if orientation is greater than the cosine of 45°; else False. 
+        """
         return orientation > cos(math.radians(45))
 
-    # Checks to see if we need to modify our velocity profile to accomodate the
-    # lead vehicle.
     def _check_for_lead_vehicle(self, car_location):
+        """
+        Compute the distance from the vehicle, compute the versor of the vector distance, compute the angle 
+        between the car heading versor and distance versor and return True if is a really lead vehicle. 
+        This for to see if we need to modify our velocity profile to accomodate the lead vehicle.
+
+        args:
+            car_location: the position (x,y,z) of the vehicle respect to world frame
+        
+        returns:
+            True: if is a lead vehicle.
+        """
         # compute the distance from the vehicle
         car_delta_vector = [car_location.x - self._ego_pose[0], car_location.y - self._ego_pose[1]]
         car_distance = np.linalg.norm(car_delta_vector)
@@ -151,12 +260,31 @@ class ObstaclesManager:
     
 
     def _add_obstacle(self, obstacle, id, agent_type):
+        """
+        Create a new instance of Obstacle if it is not already present inside the obstacles dictionary;
+        otherwise updates the informations of instance already existing.
+
+        args:
+            obstacle: the instance of the non_player_agents that must be entered or updated inside the obstacles dictionary.
+            id: unique identifier of the non_player_agents
+            agent_type: VEHICLE (0) or PEDESTRIAN (1)
+        """
         if id in self._obstacles:
             self._obstacles[id].update_state(obstacle)
         else:
             self._obstacles[id] = Obstacle(obstacle, agent_type)
 
     def _get_obstacles(self):
+        """
+        Iterates on obstacles' dictionary adding their bounding box location inside a list; 
+        furthermore, for each obstacle add the projections of bounding box inside an another list.
+
+        Return  and 
+
+        return:
+            obstacles: a list containing the obstacles
+            future_obstacles: a list containg the future_obstacles (projections of bounding box)
+        """
         obstacles = []
         future_obstacles = []
         for id, obs in self._obstacles.items():
