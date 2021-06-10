@@ -69,7 +69,7 @@ class Obstacle:
 
     def update_state(self, obstacle):
         """
-        Updates the queue filling the tail index of the list with the non player agent stored 
+        Updates the previous states queue, filling the tail index of the list with the non player agent stored 
         in the previuos call of the method, updates this index and, eventually, the head index. 
         Finally, the prediction for the future bounding boxes is started.
 
@@ -78,7 +78,7 @@ class Obstacle:
 
         """
 
-        # fill the tail index of queue with a non playe agent
+        # fill the tail index of the queue with a non player agent
         self._prev_state[self._tail] = self._obstacle
         # update the tail index
         self._tail = (self._tail + 1) % HISTORY_SIZE
@@ -121,14 +121,13 @@ class Obstacle:
 
     def _compute_rotation(self, obstacle_yaw_angle):
         """
-        Compute the rotation for the future prediction of the obstacle. The rotation is given froma a
+        Compute the rotation for the future prediction of the obstacle. The rotation is given from a
         difference of angles between the current obstacle yaw angle and the oldest or last one. The 
         largest difference in absolute value is returned. An angular offset is considered. 
 
         args:
-            obstacle_yaw_angle: the yaw angle of the current non playe agent. 
+            obstacle_yaw_angle: the yaw angle of the current non player agent. 
             
-        
         returns:
             yaw_diff_head: is returned if larger than yaw_diff_tail plus an angular offset 
             yaw_diff_tail: is returned if yaw_diff_head is smaller than yaw_diff_tail plus an offset
@@ -150,18 +149,9 @@ class Obstacle:
 
     def _predict_future_location(self):
         """
-        Compute the rotation for the future prediction of the obstacle. The rotation is given froma a
-        difference of angles between the current obstacle yaw angle and the oldest or latest one. The 
-        largest difference in absolute value is returned. An angular offset is considered. 
-
-        args:
-            obstacle_yaw_angle: the yaw angle of the current non playe agent. 
-            
-        
-        returns:
-            yaw_diff_head: is returned if larger than yaw_diff_tail plus an angular offset 
-            yaw_diff_tail: is returned if yaw_diff_head is smaller than yaw_diff_tail plus an offset
-
+        Compute the projected bounding box of the obstacle in a given number of future frames. 
+        If the obstacle is a pedestrian just compute the rectilinear translation. If the obstacle
+        is a vehicle compute the rotation of the projected bounding box too.
         """
         # obtain some useful information from the current non player agent
         location = self._obstacle.transform.location
@@ -174,15 +164,19 @@ class Obstacle:
         # obtain the forward speed of the obstacle 
         obstacle_speed = self._obstacle.forward_speed
         
-        # select the number of  future frames to check, determined by the type of agent 
+        # select the number of future frames to check, determined by the type of agent 
         future_frames_to_check = VEHICLES_FRAMES_TO_CHECK if self._agent_type == VEHICLE else PEDESTRIANS_FRAMES_TO_CHECK
         
         # time used to make prediction between frames 
         frames_update_frequency = 0.033
+        
+        # number of frames that represent the update frequency of the prediction
+        prediction_update_frequency = 15
 
+        # obstacle yaw angle with respect to world frame
         obstacle_yaw_angle = self._obstacle.transform.rotation.yaw * pi / 180
         
-        # Compute space shift to get future location in the world frame starting from speed
+        # Compute space shift to get future location in the world frame starting from current obstacle speed
         v_x = obstacle_speed * cos(obstacle_yaw_angle)
         v_y = obstacle_speed * sin(obstacle_yaw_angle)
         shift_x = v_x * frames_update_frequency
@@ -192,41 +186,42 @@ class Obstacle:
         cpos_shift = np.array([
             [shift_x, shift_x, shift_x, shift_x, shift_x, shift_x, shift_x, shift_x],
             [shift_y, shift_y, shift_y, shift_y, shift_y, shift_y, shift_y, shift_y]])
+
+        # multiply the shift for the number of frames after which the prediction will be updated
+        cpos_shift = cpos_shift * prediction_update_frequency 
         
         self._future_locations = []
         cpos = self._box_pts_to_cpos(self._curr_obs_box_pts)
-
-        # predictions are made after step frames
-        step = 15
-
-        for k in range(1, future_frames_to_check+1, step):
+        
+        for k in range(1, future_frames_to_check+1, prediction_update_frequency):
             future_box_pts = []
 
-            # shift for step frames
-            temp_cpos_shift = cpos_shift * step 
-            cpos_trans = np.add(cpos, temp_cpos_shift)
+            # compute the rectilinear displacement of the obstacle to obtain the prediction 
+            cpos_trans = np.add(cpos, cpos_shift)
             
-            # only for vehicle compute the rotation 
+            # If the obstacle is vehicle, compute the rotation of the projection  
             if self._prev_state[self._head] != None and self._agent_type == VEHICLE:
 
-                # difference between the current non player agent yaw angle and the oldest or latest one
+                # difference between the current non player agent yaw angle and the previos one (which is 
+                # dinamically chosen from the previous state queue)
                 yaw_diff = self._compute_rotation(obstacle_yaw_angle)
                 
+                # rotate the obstacle bounding box given the previously computed angle 
                 for i in range(0, cpos.shape[1]):
-                    # realize a rotation around the current bounding box point (origin) of the translated one (poin to rotate) of -yaw angle
                     x_rot, y_rot = self._rotate( [-cpos[0][i],  cpos[1][i]], [-cpos_trans[0][i], cpos_trans[1][i]], -yaw_diff)
-                    cpos[0][i] = -x_rot  
+                    cpos[0][i] = -x_rot
                     cpos[1][i] = y_rot
             
-            # only for pedestrian
+            # If the obstacle is a pedestrian, don't rotate its projection
             else:
                 cpos = cpos_trans
 
-            # append the bounding points in the list
+            
+            # add each of the translated and rotated bounding box points to the projected bounding box points list
             for j in range(cpos.shape[1]):
                 future_box_pts.append([cpos[0,j], cpos[1,j]])
             
-            # update the list of predicted bounding boxex
+            # add the computed projected bounding box to the list of projections
             self._future_locations.append(future_box_pts)
 
 
@@ -238,7 +233,7 @@ class Obstacle:
             box_pts: bounding box points of non player agent in the world frame 
         
         returns:
-            cpos: matric containig the x and y coordinates of points of the non player agent in the world frame
+            cpos: matric containing the x and y coordinates of points of the non player agent in the world frame
         """
 
         cpos = [[], []]
