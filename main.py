@@ -162,7 +162,7 @@ SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-'''
+#'''
 ######################### TEST SU PEDONI SU RETTILINEO SUPERIORE 2 INTERESSANTE ##############################
 PLAYER_START_INDEX = 144        #  spawn index for player
 DESTINATION_INDEX = 65         # Setting a Destination HERE
@@ -170,7 +170,7 @@ NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
 NUM_VEHICLES           = 0   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
+#'''
 
 '''
 ########################## TESTS ON PEDESTRIANS 4 ###############################
@@ -212,7 +212,7 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 123    # seed for vehicle spawn randomizer
 '''
 
-#'''
+'''
 ######################### TEST INCROCIO SENZA SEMAFORO 2 ###############################
 PLAYER_START_INDEX = 140        #  spawn index for player
 DESTINATION_INDEX =19         # Setting a Destination HERE
@@ -220,7 +220,7 @@ NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
 NUM_VEHICLES           = 1000   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 123    # seed for vehicle spawn randomizer
-#'''
+'''
 
 '''
 ################## TEST CURVA CON FURGONCINO CHE PASSA CON ROSSO #############
@@ -382,25 +382,23 @@ DIST_THRESHOLD_TO_LAST_WAYPOINT = 2.0  # some distance from last position before
 
 # Planning Constants
 NUM_PATHS = 5
-BP_LOOKAHEAD_BASE      = 8.0             # m
-BP_LOOKAHEAD_TIME      = 1.0              # s
-PATH_OFFSET            = 1                # m
-# CIRCLE_OFFSETS         = [-1.0, 1.0, 3.0] # m
-CIRCLE_OFFSETS         = [1.0, 3.0] # m
-#CIRCLE_RADII           = [1.5, 1.5, 1.5]  # m
-CIRCLE_RADII           = [1.5, 1.5]  # m
-TIME_GAP               = 1.0              # s
+BP_LOOKAHEAD_BASE      = 8.0                # m
+BP_LOOKAHEAD_TIME      = 1.0                # s
+PATH_OFFSET            = 1                  # m
+CIRCLE_OFFSETS         = [-1.0, 1.0, 3.0] # m
+# CIRCLE_OFFSETS         = [1.5, 3.0]         # m
+CIRCLE_RADII           = [1.5, 1.5, 1.5]   # m
+# CIRCLE_RADII           = [1.5, 1.5]         # m
+TIME_GAP               = 1.0                # s
 PATH_SELECT_WEIGHT     = 10
-A_MAX                  = 2.5              # m/s^2
+A_MAX                  = 2.5                # m/s^2
 SLOW_SPEED             = 2.5                # m/s
-###
-SECURITY_DISTANCE      = 2                # m
-LP_FREQUENCY_DIVISOR   = 2                # Frequency divisor to make the 
-                                          # local planner operate at a lower
-                                          # frequency than the controller
-                                          # (which operates at the simulation
-                                          # frequency). Must be a natural
-                                          # number.
+LP_FREQUENCY_DIVISOR   = 2                  # Frequency divisor to make the 
+                                            # local planner operate at a lower
+                                            # frequency than the controller
+                                            # (which operates at the simulation
+                                            # frequency). Must be a natural
+                                            # number.
 
 # Path interpolation parameters
 INTERP_MAX_POINTS_PLOT    = 10   # number of points used for displaying
@@ -411,15 +409,28 @@ INTERP_DISTANCE_RES       = 0.01 # distance between interpolated points
 CONTROLLER_OUTPUT_FOLDER = os.path.dirname(os.path.realpath(__file__)) +\
                            '/controller_output/'
 
-### NEW CONSTANT
+### NEW CONSTANTS [ADDITION]
 CRUISE_SPEED = 5 # m/s
 HALF_CRUISE_SPEED = 2.5 # m/s
+
+# safety distance to keep from obstacles and traffic lights
+SAFETY_DISTANCE      = 2                # m
+
+# range of vision within which to look for obstacle vehicles
 VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 20 # m
+
+# range of vision within which to look for obstacle pedestrians
 PEDESTRIAN_OBSTACLE_LOOKAHEAD = 15 # m
+
+# range of vision within which to look for lead vehicles
 LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
+
+# half of the ego vehicle's extension on the long side
 CAR_RADII_X_EXTENT = 2.34
 
 SHOW_LIVE_PLOTTER = False
+
+### TO BE DELETED 
 PRODUCE_VIDEO = True
 SAVE_PATH_REFERENCE = False
 
@@ -434,9 +445,6 @@ camera_parameters['fov'] = 90
 camera_parameters['yaw'] = 0 
 camera_parameters['pitch'] = 0
 camera_parameters['roll'] = 0
-
-frame_counter = 0
-
 
 def rotate_x(angle):
     R = np.mat([[ 1,         0,           0],
@@ -554,6 +562,8 @@ def make_carla_settings(args):
     # Adding camera to configuration 
     settings.add_sensor(camera)
 
+
+    ### TO BE DELETED
     if PRODUCE_VIDEO:
         # Video Camera
         video_width = 1280
@@ -572,14 +582,14 @@ def make_carla_settings(args):
         settings.add_sensor(video_camera)
 
 
-    # Camera Depth
+    # Depth Camera
     camera_depth = Camera('CameraDepth', PostProcessing='Depth')
     camera_depth.set_image_size(camera_width, camera_height)
     camera_depth.set_position(cam_x_pos, cam_y_pos, cam_height)
     camera_depth.set(FOV=camera_fov)
     settings.add_sensor(camera_depth)
 
-    # Semantic Segmentation
+    # Semantic Segmentation Camera
     camera_segmentation = Camera('CameraSegmentation', PostProcessing='SemanticSegmentation')
     camera_segmentation.set_image_size(camera_width, camera_height)
     camera_segmentation.set_position(cam_x_pos, cam_y_pos, cam_height)
@@ -747,22 +757,36 @@ def write_collisioncount_file(collided_list):
     with open(file_name, 'w') as collision_file: 
         collision_file.write(str(sum(collided_list)))
 
-def make_correction(waypoint,previuos_waypoint,desired_speed):
+def make_correction(waypoint, previuos_waypoint, desired_speed):
+    """Corrects the path generated by moving each of the waypoints that compose
+    it to the right, given a certain offset.
+
+    args:
+        waypoint: Waypoint to be moved.
+        previuos_waypoint: Waypoint preceding the current.
+        desired_speed: Desired speed to be associated with the waypoint.    
+        
+    returns:
+        waypoint_on_lane: the corrected waypoint.
+    """
+    ### [ADDITION]
+    # offset to be applied on the waypoint
     offset = 1.75
+
+    # offset from the previous waypoint on x and y axis.     
     dx = waypoint[0] - previuos_waypoint[0]
     dy = waypoint[1] - previuos_waypoint[1]
 
+    # angle between the two vectors.
     angle = np.arctan2(dy, dx)
 
-    moveX = 0
-    moveY = 0
-    
+    # contributes to be added to the x and y waypoint's components.
     x_contribute = cos(angle) * offset
     y_contribute = sin(angle) * offset
-
     moveY = x_contribute
     moveX = -y_contribute
 
+    # new corrected waypoint
     waypoint_on_lane = waypoint
     waypoint_on_lane[0] += moveX
     waypoint_on_lane[1] += moveY
@@ -891,6 +915,8 @@ def exec_waypoint_nav_demo(args):
 
         waypoints = []
         waypoints_route = mission_planner.compute_route(source, source_ori, destination, destination_ori)
+        
+        # Initialize variables related with speed.
         desired_speed = CRUISE_SPEED
         turn_speed    = HALF_CRUISE_SPEED
 
@@ -1007,6 +1033,7 @@ def exec_waypoint_nav_demo(args):
 
         waypoints = np.array(waypoints)
         
+        ### [ADDITION]
         if SAVE_PATH_REFERENCE:
             waypoints_np = np.array(waypoints)    
             # Linear interpolation computations
@@ -1055,6 +1082,7 @@ def exec_waypoint_nav_demo(args):
                 for wp in wp_interp:
                     reference_file.write('%3.3f, %3.3f, %6.3f \n' %\
                                             (wp[0], wp[1], wp[2]))
+        
         #############################################
         # Controller 2D Class Declaration
         #############################################
@@ -1062,6 +1090,8 @@ def exec_waypoint_nav_demo(args):
         # and apply it to the simulator
         controller = controller2d_test.Controller2D(waypoints)
 
+
+        ### TO BE DELETED (parte di produce video)
         if SHOW_LIVE_PLOTTER or PRODUCE_VIDEO:
             #############################################
             # Vehicle Trajectory Live Plotting Setup
@@ -1100,18 +1130,21 @@ def exec_waypoint_nav_demo(args):
                                     marker=11, color=[1, 0.5, 0], 
                                     markertext="Start", marker_text_offset=1)
 
+            # Add obstacles markers
             trajectory_fig.add_graph("obstacles_points",
                                     window_size=8 * (NUM_PEDESTRIANS + NUM_VEHICLES) ,
                                     x0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)), 
                                     y0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)),
                                         linestyle="", marker="+", color='b')
 
-            trajectory_fig.add_graph("future_obstacles_points",
+            # Add obstacles projections markers
+            trajectory_fig.add_graph("obstacles_projections_points",
                                     window_size=8 * (NUM_PEDESTRIANS + NUM_VEHICLES) ,
                                     x0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)), 
                                     y0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)),
                                         linestyle="", marker="+", color='m')
 
+            # Add vehicles on same lane markers
             trajectory_fig.add_graph("on_same_lane_vehicles",
                                     window_size=8 * (NUM_PEDESTRIANS + NUM_VEHICLES) ,
                                     x0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)), 
@@ -1199,11 +1232,13 @@ def exec_waypoint_nav_demo(args):
                                         TIME_GAP,
                                         A_MAX,
                                         SLOW_SPEED,
-                                        SECURITY_DISTANCE)
+                                        SAFETY_DISTANCE)
+        
         bp = behavioural_planner.BehaviouralPlanner(BP_LOOKAHEAD_BASE)
 
+        ### [ADDITION]
+        # Initialize traffic light manager and obstacle manager
         traffic_lights_manager = trafficLightsManager(camera_parameters)
-
         obstacles_manager = ObstaclesManager(LEAD_VEHICLE_LOOKAHEAD_BASE, VEHICLE_OBSTACLE_LOOKAHEAD_BASE, PEDESTRIAN_OBSTACLE_LOOKAHEAD, bp)
 
         #############################################
@@ -1224,9 +1259,9 @@ def exec_waypoint_nav_demo(args):
         prev_collision_pedestrians = 0
         prev_collision_other       = 0
 
-        
-        ### frame counter
-        global frame_counter
+        ### [ADDITION]
+        # Initialize frame counter
+        ### TO BE DELETED (maybe)
         frame_counter = 0
 
         for frame in range(TOTAL_EPISODE_FRAMES):
@@ -1239,12 +1274,6 @@ def exec_waypoint_nav_demo(args):
                 get_current_pose(measurement_data)
             current_speed = measurement_data.player_measurements.forward_speed
             current_timestamp = float(measurement_data.game_timestamp) / 1000.0
-
-            
-            ### UPDATE HERE the obstacles list and check to see if we need to follow the lead vehicle. 
-            ego_pose = [current_x, current_y, current_yaw]
-            obstacles, future_obstacles, on_same_lane_vehicles, lead_vehicle = obstacles_manager.get_om_state(measurement_data, ego_pose)
-            
 
             # Wait for some initial time before starting the demo
             if current_timestamp <= WAIT_TIME_BEFORE_START:
@@ -1270,26 +1299,15 @@ def exec_waypoint_nav_demo(args):
                                                  prev_collision_other)
             collided_flag_history.append(collided_flag)
 
-
-            ### Obtain Lead Vehicle information.
-            lead_car_pos = None
-            lead_car_speed = None
-            if lead_vehicle != None:
-                bp.set_follow_lead_vehicle(True)
-                lead_car_pos = (lead_vehicle.transform.location.x, lead_vehicle.transform.location.y)
-                lead_car_speed = lead_vehicle.forward_speed
-                #print(f"LEAD VEHICLE\n Position: {lead_car_pos[0]}-{lead_car_pos[1]}") 
-                #print(f"LEAD VEHICLE\n VELOCITY: {lead_car_speed}") 
-            else:
-                bp.set_follow_lead_vehicle(False)
-
+            ### TO BE DELETED
             if PRODUCE_VIDEO:
                 if sensor_data.get("video_camera", None) is not None:
                     video_frame = to_rgb_array(sensor_data["video_camera"])
                     save_video_image(video_frame, "camera", frame_counter)
                     copy_state_image(bp.get_state(), frame_counter)
-                    #cv2.imshow('demo2', video_frame)
-                    #cv2.waitKey(1)
+            
+            ### TO BE DELETED (maybe)
+            stop_to_obstacle = False
 
             # Execute the behaviour and local planning in the current instance
             # Note that updating the local path during every controller update
@@ -1299,41 +1317,66 @@ def exec_waypoint_nav_demo(args):
             # stored in the variable LP_FREQUENCY_DIVISOR, as it is analogous
             # to be operating at a frequency that is a division to the 
             # simulation frequency.
-
-            stop_to_obstacle = False
-
             if frame % LP_FREQUENCY_DIVISOR == 0:
 
+                ### TO BE DELETED (prints)
                 print("")
-
                 print(f"CURRENT SPEED: {current_speed}")
 
+                ### [ADDITION]
+                # Get the obstacles, obstacles projections, vehicles on same lane and lead vehicle from the obstacle manager.
+                # These lists will be used later for collision checking and printing in the live plotter.
+                ego_pose = [current_x, current_y, current_yaw]
+                obstacles, obstacles_projections, on_same_lane_vehicles, lead_vehicle = obstacles_manager.get_om_state(measurement_data, ego_pose)
+                
+                ### Obtain Lead Vehicle information.
+                lead_car_pos = None
+                lead_car_speed = None
+                # If a lead vehicle exists, notify it to the behavioraul planner and save the related information
+                # in the following variables.
+                if lead_vehicle != None:
+                    bp.set_follow_lead_vehicle(True)
+                    lead_car_pos = (lead_vehicle.transform.location.x, lead_vehicle.transform.location.y)
+                    lead_car_speed = lead_vehicle.forward_speed
+                    print(f"lead_car_speed: {lead_car_speed}")
+                # Otherwise, notify to the behavioraul planner that no lead vehicles are present.
+                else:
+                    bp.set_follow_lead_vehicle(False)
+
+
+                ### [ADDITION]
+                # Initialization of traffic light state and distance from ego vehicle.
                 tl_state = tl_distance = None 
 
                 # Camera image and depth image acquiring
                 if sensor_data.get("CameraRGB", None) is not None:
                     image_BGRA = to_bgra_array(sensor_data["CameraRGB"])
                     
-                depth_image = None
                 # Camera depth image acquiring
+                depth_image = None
                 if sensor_data.get("CameraDepth",None) is not None:
                     depth_image = depth_to_array(sensor_data["CameraDepth"])
                     
-                semantic_segmentation = None
                 # Semantic Segmentation image acquiring
+                semantic_image = None
                 if sensor_data.get("CameraSegmentation",None) is not None:
                     semantic_image = labels_to_cityscapes_palette(sensor_data["CameraSegmentation"])
                     semantic_image = np.array(semantic_image,dtype=np.uint8)
                     # cv2.imshow("Semantic Image", semantic_image)
                     semantic_image = labels_to_array(sensor_data["CameraSegmentation"])
                     
-                # Traffic-light detector
+                # Get the traffic light state, the distance from ego vehicle, and 
+                # the set of traffic light pixels position set in the vehicle frame from the traffic light manager.
                 tl_state, tl_distance, traffic_light_vehicle_frame = traffic_lights_manager.get_tl_state(image_BGRA, depth_image, semantic_image)
-                tl_state = "go"
+                
+                ### TO BE DELETED
+                #tl_state = "go"
+                
+                ### TO BE DELETED (prints)
                 print(F"STATE TRAFFIC LIGHT: {tl_state}")
                 print(F"DISTANCE FROM TRAFFIC LIGHT: {tl_distance}")
-                #print(F"Traffic light vehicle frame: {traffic_light_vehicle_frame}")
                 
+                # Notify to the behavioraul planner the information acquired from the traffic light manager.
                 bp.set_traffic_light_state(tl_state)
                 bp.set_traffic_light_distance(tl_distance)
                 bp.set_traffic_light_vehicle_frame(traffic_light_vehicle_frame)
@@ -1346,22 +1389,27 @@ def exec_waypoint_nav_demo(args):
                 # Set lookahead based on current speed.
                 bp.set_lookahead(BP_LOOKAHEAD_BASE + BP_LOOKAHEAD_TIME * open_loop_speed)
                 
-                ### set the new lookahead for the lead_vehicle based on the ego_vehicle speed
+                ### [ADDITION]
+                # Using the current speed of the ego vehicle, dinamically update the lookahead for lead
+                # vehicle and vehicle obstacles.
                 obstacles_manager.compute_lookahead(current_speed)
                 
                 # Perform a state transition in the behavioural planner.
                 bp.transition_state(waypoints, ego_state, current_speed)
-                # Compute the goal state set from the behavioural planner's computed goal state.
                 
+                # Compute the goal state set from the behavioural planner's computed goal state.
                 goal_state_set = lp.get_goal_state_set(bp._goal_index, bp._goal_state, waypoints, ego_state)
                 
                 # Calculate planned paths in the local frame.
                 paths, path_validity = lp.plan_paths(goal_state_set)
                 
-                ###
+                ### [ADDITION]
+                # If the local planner returned at least one path, save the goal state info
                 if len(paths) != 0:
                     lp._prev_goal_state = bp._goal_state
-                    lp._prev_goal_index = bp._goal_index
+                    lp._prev_goal_index = bp._goal_index    
+                # Otherwise, the the current goal state cannot be used to generate valid paths, so
+                # the previous one must be restored and the paths must be computed again.
                 else:
                     goal_state_set = lp.get_goal_state_set(lp._prev_goal_index, lp._prev_goal_state, waypoints, ego_state)
                     paths, path_validity = lp.plan_paths(goal_state_set)
@@ -1369,61 +1417,77 @@ def exec_waypoint_nav_demo(args):
                 # Transform those paths back to the global frame.
                 paths = local_planner.transform_paths(paths, ego_state)
 
-                ###
+                # If no paths have been produced, restore the last best path.
                 if len(paths) == 0:
+                    ### TO BE DELETED (print)
                     print("NO PATHS, restoring the previous one")
                     paths.append(lp._prev_best_path)
-                    '''
                     path_validity = []
                     path_validity.append(True)
                     lp._num_paths = 1
-                    '''
-                ### Perform collision checking.
-                # collision_check_array = lp._collision_checker.collision_check(paths, box_pts_obstacles)
-                all_obs = obstacles + future_obstacles
-                ### added array of distances
-                collision_check_array, collision_dist_array = lp._collision_checker.collision_check(paths, all_obs, current_speed)
 
+                ### [ADDITION] [MODIFIED]
+                # Perform collision checking and get the collision_check_array and collision_dist_array.
+                # The former is the list of obstructed or free paths, and will be used below in the
+                # choice of the best path.
+                # The latter is the list of possible obstacles distance from the ego vehicle and will
+                # be used below in the velocity panner to compute the velocity profile.
+                all_obs = obstacles + obstacles_projections
+                collision_check_array, collision_dist_array = lp._collision_checker.collision_check(paths, all_obs)
+
+                # Get the shortest distance from the obstacles on path between the previously computed
+                # distances.
                 collision_dist = min(collision_dist_array)
 
+                # Notify to the behavioraul planner the obstructed or free paths.
                 bp.set_obstacle_on_lane(collision_check_array)
 
                 # Compute the best local path.
                 best_index = lp._collision_checker.select_best_path_index(paths, collision_check_array, bp._goal_state, bp.get_state())
-                # best_index, out_lane_check_array = lp._collision_checker.select_best_path_index(paths, collision_check_array, bp._goal_state)
-
-                #collision_check_array = collision_check_array & out_lane_check_array
+                
                 # If no path was feasible, continue to follow the previous best path.
                 if best_index == None:
+                    ### TO BE DELETED (prints)
                     print("NO BEST INDEX")
                     best_path = lp._prev_best_path
-                    #collision_dist = lp._prev_best_path_obs_dist
                 else:
                     best_path = paths[best_index]
                     lp._prev_best_path = best_path
-                    #lp._prev_best_path_obs_dist = collision_dist
 
+                wp_interp = []
+                # If a best path have been found, compute the velocity profile for the path, and compute the waypoints.                 
                 if best_path is not None:
-                    # Compute the velocity profile for the path, and compute the waypoints.
+                    
                     desired_speed = bp._goal_state[2]
+                    
+                    ### [ADDITION]
                     stop_to_obstacle = bp._state == behavioural_planner.STOP_AT_OBSTACLE
                     stop_to_red_traffic_light = bp._state == behavioural_planner.STOP_AT_TRAFFIC_LIGHT 
 
-                    ###
-                    lead_car_state = [lead_car_pos[0], lead_car_pos[1], lead_car_speed] if lead_car_pos != None else None
+                    # If a lead vechile exists and the ego vechile speed is not smaller than the lead vehicle speed
+                    # consider it in the velocity profile computation. Otherwise, ignore it.
+                    lead_car_state = [lead_car_pos[0], lead_car_pos[1], lead_car_speed] if lead_car_pos != None else None 
                     if lead_car_state is not None and ego_state[3] < lead_car_state[2]:
                         consider_lead = False
                     else:
                         consider_lead = True
-                    
-                    ### compute the distance of the point you want to stop to  
+                      
+                    ### TO BE DELETED (prints)
                     print(f"collision_dist_array: {collision_dist_array}")
+                    
+                    # Based on the current behavioraul planner state, compute the distance you want to stop to along the path.
+                    # If the current state is "STOP_AT_OBSTACLE" the distance will be equal to the nearest obstacle.
+                    # If the current state is "STOP_AT_RED_TRAFFIC_LIGHT" the distance will be equal to the traffic light 
+                    # distance from the ego vehicle.
+                    # Otherwise there will be no distance to stop to.
                     stop_line_distance = None
                     if stop_to_obstacle:
                         stop_line_distance = collision_dist
                     elif stop_to_red_traffic_light:
                         stop_line_distance = bp._traffic_light_distance
 
+                    ### [ADDITION] [MODIFIED]
+                    # Get the velocity profile for the path, and compute the local waypoints.     
                     local_waypoints = lp._velocity_planner.compute_velocity_profile(best_path, desired_speed, 
                                                                                     ego_state, current_speed, 
                                                                                     stop_to_obstacle, stop_to_red_traffic_light, 
@@ -1470,8 +1534,10 @@ def exec_waypoint_nav_demo(args):
                         # Update the other controller values and controls
                         controller.update_waypoints(wp_interp)
                     else:
+                        ### TO BE DELETED (prints)
                         print("NO VELOCITY PROFILE COMPUTED")
                 else:
+                    ### TO BE DELETED (prints)
                     print("NO BEST PATH")
 
             ###
@@ -1483,13 +1549,14 @@ def exec_waypoint_nav_demo(args):
                                          current_timestamp, frame)
                 controller.update_controls()
                 cmd_throttle, cmd_steer, cmd_brake = controller.get_commands()
-                lp._prev_steer = cmd_steer
             else:
+                ### TO BE DELETED (prints)
                 print("EMERGENCY BREAK")
                 cmd_throttle = 0.0
-                cmd_steer = lp._prev_steer
+                cmd_steer = 0.0
                 cmd_brake = 1.0
 
+            ### TO BE DELETED (video)
             if SHOW_LIVE_PLOTTER or PRODUCE_VIDEO:
                 # Skip the first frame or if there exists no local paths 
                 if skip_first_frame and frame == 0:
@@ -1506,7 +1573,7 @@ def exec_waypoint_nav_demo(args):
                                             lead_car_pos[1])
                     
                     obstacles = np.array(obstacles)
-                    future_obstacles = np.array(future_obstacles)
+                    obstacles_projections = np.array(obstacles_projections)
                     on_same_lane_vehicles = np.array(on_same_lane_vehicles)
 
                     # Load obstacles points
@@ -1518,17 +1585,16 @@ def exec_waypoint_nav_demo(args):
 
                         trajectory_fig.roll("obstacles_points", x, y)
 
-                    # Load future obstacles points
-                    if len(future_obstacles) > 0:
-                        x = future_obstacles[:, :, 0]
-                        y = future_obstacles[:, :, 1]
+                    # Load obstacles projection points
+                    if len(obstacles_projections) > 0:
+                        x = obstacles_projections[:, :, 0]
+                        y = obstacles_projections[:, :, 1]
                         x = np.reshape(x, x.shape[0] * x.shape[1])
                         y = np.reshape(y, y.shape[0] * y.shape[1])
 
-                        trajectory_fig.roll("future_obstacles_points", x, y)
+                        trajectory_fig.roll("obstacles_projections_points", x, y)
                     
-                    
-                    # Load future obstacles points
+                    # Load "on same lane" vehicles points
                     if len(on_same_lane_vehicles) > 0:
                         x = on_same_lane_vehicles[:, :, 0]
                         y = on_same_lane_vehicles[:, :, 1]
@@ -1571,14 +1637,16 @@ def exec_waypoint_nav_demo(args):
                 # When plotting lookahead path, only plot a number of points
                 # (INTERP_MAX_POINTS_PLOT amount of points). This is meant
                 # to decrease load when live plotting
-                wp_interp_np = np.array(wp_interp)
-                path_indices = np.floor(np.linspace(0, 
-                                                    wp_interp_np.shape[0]-1,
-                                                    INTERP_MAX_POINTS_PLOT))
-                trajectory_fig.update("selected_path", 
-                        wp_interp_np[path_indices.astype(int), 0],
-                        wp_interp_np[path_indices.astype(int), 1],
-                        new_colour=[1, 0.5, 0.0])
+                
+                if len(wp_interp) > 0:
+                    wp_interp_np = np.array(wp_interp)
+                    path_indices = np.floor(np.linspace(0, 
+                                                        wp_interp_np.shape[0]-1,
+                                                        INTERP_MAX_POINTS_PLOT))
+                    trajectory_fig.update("selected_path", 
+                            wp_interp_np[path_indices.astype(int), 0],
+                            wp_interp_np[path_indices.astype(int), 1],
+                            new_colour=[1, 0.5, 0.0])
 
 
                 if SHOW_LIVE_PLOTTER:

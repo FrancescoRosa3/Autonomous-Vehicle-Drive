@@ -6,6 +6,7 @@ import collision_checker
 import velocity_planner
 from math import sin, cos, pi, sqrt
 
+# Number of paths to be excluded on on straight roads.
 PATHS_TO_EXCLUDE = 2
 
 class LocalPlanner:
@@ -24,14 +25,20 @@ class LocalPlanner:
             velocity_planner.VelocityPlanner(time_gap, a_max, slow_speed, 
                                              security_distance)
         
-        ###
+        ### NEW VARIABLES [ADDITION]
+        # These variable are used to keep information about the last valid path and goal state.
+        # They are used when no valid path can be found. 
         self._prev_best_path = None
-        self._prev_best_path_obs_dist = None
         self._prev_goal_state = None
         self._prev_goal_index = None
 
 
     def get_num_path(self):
+        """Get the numbur of current paths
+
+            returns:
+                self._num_paths: current number of paths
+        """
         return self._num_paths
 
     ######################################################
@@ -86,7 +93,13 @@ class LocalPlanner:
                   all units are in m, m/s and radians
         """
         
-        ### Compute number of paths to create ...
+        ### [ADDITION] [TO CHECK]
+        # Compute number of paths to create given the type of road the ego vehicle is traveling.
+        # If the ego vehicle is on a straight road just three paths needs to be computed.
+        # Otherwise, if the ego vehicle is on a curve, five paths must be computed.
+        # This is due to the fact that, on straight roads, more than three paths will possibly
+        # led the vehicle out of the lane or even on the sidewalk, while on curve three paths
+        # could prevent the vehicle from performing a smooth turn. 
         self._num_paths = self._num_paths_base if self._check_for_turn(ego_state, goal_state) else self._num_paths_base - PATHS_TO_EXCLUDE
 
         # Compute the final heading based on the next index.
@@ -207,16 +220,21 @@ class LocalPlanner:
                                path[1][-1] - goal_state[1], 
                                path[2][-1] - goal_state[2]])
             if path_validity_score > 0.1:
-                # print(f"PATH SCARTATO:\t{path_validity_score}")
                 path_validity.append(False)
             else:
-                # print(f"PATH CREATO:\t{path_validity_score}")
                 paths.append(path)
                 path_validity.append(True)
 
         return paths, path_validity
 
+    ### [ADDITION]
     def _check_for_turn(self, ego_state, goal_wp):
+        """Check if the ego vehicle is cornering.
+
+            returns:
+                True if the vehicle is cornering, False otherwise.
+        """
+
         dx = ego_state[0] - goal_wp[0]
         dy = ego_state[1] - goal_wp[1]
         
