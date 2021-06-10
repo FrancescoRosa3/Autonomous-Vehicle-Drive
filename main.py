@@ -414,7 +414,7 @@ CRUISE_SPEED = 5 # m/s
 HALF_CRUISE_SPEED = 2.5 # m/s
 
 # safety distance to keep from obstacles and traffic lights
-SAFETY_DISTANCE      = 2                # m
+SAFETY_DISTANCE      = 4                # m
 
 # range of vision within which to look for obstacle vehicles
 VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 20 # m

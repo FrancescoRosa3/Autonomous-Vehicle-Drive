@@ -39,7 +39,8 @@ class ObstaclesManager:
         self._vehicle_obstacle_lookahead_base =  vehicle_obstacle_lookahead_base
         self._vehicle_obstacle_lookahead =  self._vehicle_obstacle_lookahead_base
         
-        self._pedestrian_obstacle_lookahead = pedestrian_obstacle_lookahead
+        self._pedestrian_obstacle_lookahead_base = pedestrian_obstacle_lookahead
+        self._pedestrian_obstacle_lookahead = self._pedestrian_obstacle_lookahead_base
         
         self._bp = behavioral_planner
 
@@ -118,9 +119,7 @@ class ObstaclesManager:
         speed_km_h = (ego_speed * 3600)/1000
         self._lead_vehicle_lookahead = self._lead_vehicle_lookahead_base + main.CAR_RADII_X_EXTENT + (speed_km_h/10)*3
         self._vehicle_obstacle_lookahead = self._vehicle_obstacle_lookahead_base + main.CAR_RADII_X_EXTENT + (speed_km_h/10)*3
-
-        # print(F"New speed for vehicle lead {ego_speed}")
-        # print(F"New look ahead for vehicle lead {self._lead_vehicle_lookahead}")
+        self._pedestrian_obstacle_lookahead = self._pedestrian_obstacle_lookahead_base + main.CAR_RADII_X_EXTENT + (speed_km_h/10)*3
 
     def _update_vehicles(self):
         """
