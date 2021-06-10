@@ -13,7 +13,7 @@ import numpy as np
 import csv
 import matplotlib.pyplot as plt
 from numpy.core.defchararray import index
-import controller2d_test
+import controller2d
 import configparser 
 import local_planner
 import behavioural_planner
@@ -1060,7 +1060,7 @@ def exec_waypoint_nav_demo(args):
         #############################################
         # This is where we take the controller2d.py class
         # and apply it to the simulator
-        controller = controller2d_test.Controller2D(waypoints)
+        controller = controller2d.Controller2D(waypoints)
 
         if SHOW_LIVE_PLOTTER or PRODUCE_VIDEO:
             #############################################

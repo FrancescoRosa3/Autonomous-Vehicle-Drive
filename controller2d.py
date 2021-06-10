@@ -91,7 +91,7 @@ class Controller2D(object):
 
         ######################################################
         ######################################################
-        # MODULE 7: DECLARE USAGE VARIABLES HERE
+        # DECLARE USAGE VARIABLES HERE
         ######################################################
         ######################################################
         """
@@ -111,8 +111,9 @@ class Controller2D(object):
         """
         self.vars.create_var('v_previous', 0.0)
         self.vars.create_var('t_previous', 0.0)
-        self.vars.create_var('v_error_integral', 0.0)
         self.vars.create_var('heading_error_integral', 0.0)
+        self.vars.create_var('err_previous', [0.0, 0.0, 0.0]) # t, t-1, t-2
+        self.vars.create_var('u_previous',0.0)
 
         # Skip the first frame to store previous values properly
         if self._start_control_loop:
@@ -148,9 +149,10 @@ class Controller2D(object):
                     brake_output    : Brake output (0 to 1)
             """
 
+
             ######################################################
             ######################################################
-            # MODULE 7: IMPLEMENTATION OF LONGITUDINAL CONTROLLER HERE
+            # IMPLEMENTATION OF LONGITUDINAL CONTROLLER HERE
             ######################################################
             ######################################################
             """
@@ -159,60 +161,59 @@ class Controller2D(object):
                 example, can treat self.vars.v_previous like a "global variable".
             """
 
-            # in this controller, we assume no braking, so brake_output is always 0
-            # We use PID + feedforward method for longitudinal controller
-            # the dynamic model is not used here, just pure tuning of the gains
-            kp = 0.2
-            ki = 0.05
-            kd = 0.01
+            ######################################################
+            # PID CONTROL - PARAMETERS
+            ######################################################
 
-            v_error = v_desired - v
 
-            dt = t - self.vars.t_previous
-            v_error_derivative = v_error/dt
-
-            self.vars.v_error_integral += v_error * dt
-
-            feedback = kp * v_error + ki * self.vars.v_error_integral + kd * v_error_derivative
-
-            # calculate the feedforward(predicted) throttle, the data is collect by
-            # running CARLA simulation at diffferent throttle level and measuring car speed
-            look_ahead = waypoints[len(waypoints)-1]
-            v_desired_forward = look_ahead[2]
-            if v_desired_forward <= 6:
-            	feedforward = 0.15 + v_desired_forward/6*(0.6-0.15)
-            elif v_desired <= 11.5:
-            	feedforward = 0.6 + (v_desired_forward-6)/(11.5-6)*(0.8-0.6)
-            else:
-            	feedforward = 0.8 + (v_desired_forward-11.5)/85
+            Ts = 0.03      # Sample time - 30FPS <-> 1/30
+            kp = 1.0       # Proportional Gain
+            ki = 0.8       # Integral Gain
+            kd = 0.05       # Derivative Gain
+            #kp = 0.2
+            #ki = 0.05
+            #kd = 0.01
             
-            throttle_output = feedforward + feedback
-            throttle_output = min(throttle_output,1)
-            throttle_output = max(throttle_output,0)
-
-            # Change these outputs with the longitudinal controller. Note that
-            # brake_output is optional and is not required to pass the
-            # assignment, as the car will naturally slow down over time.
-            brake_output    = 0
+            # Constants for discrete implementation
+            q0 = kp + (Ts * ki)  + (kd / Ts)
+            q1 = - kp - ((2 * kd) / Ts)
+            q2 = kd / Ts
 
             ######################################################
+            # PID CONTROL - ALGORITHM
             ######################################################
-            # MODULE 7: IMPLEMENTATION OF LATERAL CONTROLLER HERE
-            ######################################################
-            ######################################################
-            """
-                Implement a lateral controller here. Remember that you can
-                access the persistent variables declared above here. For
-                example, can treat self.vars.v_previous like a "global variable".
-            """
 
+            # Errors update
+            self.vars.err_previous = [v_desired - v, self.vars.err_previous[0], self.vars.err_previous[1]]
+
+            # Output update
+            self.vars.u_previous = self.vars.u_previous + (q0 * self.vars.err_previous[0]) \
+                + (q1 * self.vars.err_previous[1]) + (q2 *self.vars.err_previous[2])
+
+            if (self.vars.u_previous > 0):
+                throttle_output = self.vars.u_previous
+                brake_output    = 0
+            else:
+                throttle_output = 0
+                brake_output    = -self.vars.u_previous
+
+
+            ######################################################
+            ######################################################
+            # IMPLEMENTATION OF LATERAL CONTROLLER HERE
+            ######################################################
+            ######################################################
+            
             # in this controller, we use pure pursuit method to design lateral controller
             # the dynamic model is not used here, just pure tuning of the gains.
 
             L = 1.5
-            kp_lat = 1.5
-            ki_lat = 0.2
-            kd_lat = 0.5
+            kp_lat = 3
+            ki_lat = 1.5
+            kd_lat = 1
+
+            dt = t - self.vars.t_previous
+
             # use the middle point in the given waypoints as the look ahead target
             look_ahead_index = len(waypoints)//2
             look_ahead = waypoints[look_ahead_index]
@@ -242,7 +243,7 @@ class Controller2D(object):
             steer_output = min(steer_output,1.22)
             steer_output = max(steer_output,-1.22)
             #print("steer_output: ",steer_output/3.1415926*180)
-
+            
             ######################################################
             # SET CONTROLS OUTPUT
             ######################################################
@@ -250,10 +251,10 @@ class Controller2D(object):
             self.set_steer(steer_output)        # in rad (-1.22 to 1.22)
             self.set_brake(brake_output)        # in percent (0 to 1)
             #print(throttle_output,steer_output)
-
+            
         ######################################################
         ######################################################
-        # MODULE 7: STORE OLD VALUES HERE (ADD MORE IF NECESSARY)
+        # STORE OLD VALUES HERE (ADD MORE IF NECESSARY)
         ######################################################
         ######################################################
         """
