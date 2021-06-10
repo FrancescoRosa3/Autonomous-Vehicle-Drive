@@ -71,18 +71,18 @@ class ObstaclesManager:
         self._set_measurement_data_frame(measurement_data)
         self._set_ego_location(ego_pose)
 
+        # Initializa obstacles list
         obstacles = []
 
-        # We search among non-layer agents for vehicles that can be identified 
-        # as obstacles, as vehicles on the same lane or as lead vehicles 
+        # Look for obstacle vehicles, vehicles on the same lane as the ego vehicle and
+        # the lead vehicles among non-player agents  
         on_same_lane_vehicles, lead_vehicle = self._update_vehicles()
 
-        # We search among non-layer agents for pedestrians that can be identified
-        # as obstacles
+        # Look for obstacle pedestrains among non-player agents  
         self._update_pedestrian()
 
-        # We obtain separately the bounding boxes for the current obstacles and 
-        # the future predictions, in the world frame
+        # Get the obstacles bounding boxes and the obstacle projections bounding boxes
+        # in the world frame
         obstacles, future_obstacles = self._get_obstacles()
         
         return obstacles, future_obstacles, on_same_lane_vehicles, lead_vehicle
@@ -129,10 +129,11 @@ class ObstaclesManager:
         # Converting the speed from m/s to km/h
         speed_km_h = (ego_speed * 3600)/1000
 
-        # Redefinition of the lookahead distances starting from those bases and adding a part that depends on the dimension 
-        # along x of the ego vehicle, and another part that depends on a braking distance heuristic.
+        # Update of the lookahead distances by taking into account the ego vehicle extension on the x axis,
+        # and another part that depends on a braking distance heuristic related with the ego vehicle current speed.
         self._lead_vehicle_lookahead = self._lead_vehicle_lookahead_base + main.CAR_RADII_X_EXTENT + (speed_km_h/10)*3
         self._vehicle_obstacle_lookahead = self._vehicle_obstacle_lookahead_base + main.CAR_RADII_X_EXTENT + (speed_km_h/10)*3
+        self._pedestrian_obstacle_lookahead = self._pedestrian_obstacle_lookahead_base + main.CAR_RADII_X_EXTENT + (speed_km_h/10)*3
 
 
     def _update_vehicles(self):
@@ -149,15 +150,16 @@ class ObstaclesManager:
             lead_vehicle: if exists, it contains the lead vehicle agent (which will be eliminated from the list 
                 of obstacles mentioned above). 
         """   
-        # An empty list for vehicles on the same lane is initialized
+        # Initialize the list of the vehicles on the same lane
         on_same_lane_vehicles = []
 
-        # Let's say there is no vehicle lead and, therefore, the distance is infinite
+        # Initialize the lead vechicle and it's distance
         lead_vehicle_dist = inf
         lead_vehicle = None
         
+        # Iterate over all the non player agents
         for agent in self.measurement_data.non_player_agents:
-            # Only if the agent is a vehicle
+            # Check only for vehicle's agents
             if agent.HasField('vehicle'):
                 # Obtain some useful measurement about the vehicle
                 location = agent.vehicle.transform.location
@@ -167,46 +169,43 @@ class ObstaclesManager:
                 # Compute the distance and the orientation between the player agent and the vehicle
                 distance, orientation = self._compute_distance_orientation_from_vehicle(location, rotation)
 
-                # The vehicle is inside the vehicle obstacle range, determine dinamically from current ego speed
+                # Check if the considered vehicle is inside the vehicle obstacle range, dinamically
+                # modified by taking into account the current ego vehicle speed.
                 if distance < self._vehicle_obstacle_lookahead:
 
-                    # Compute the bb with respect to the world frame
+                    # Compute the bounding box with respect to the world frame
                     box_pts = main.obstacle_to_world(location, dimension, rotation)
                     
-                    # Check for vehicle on the same lane
+                    # If the vehicle is on the same lane of the ego vehicle, it is not considered an obstacle
                     if self._check_for_vehicle_on_same_lane(orientation):
                         
-                        # Adding its bounding box in the worrld frame inside the list 
+                        # Adding the vehicle bounding box to the list of vehicles on the same lane of the ego vehicle. 
                         on_same_lane_vehicles.append(box_pts)
 
+                        # Try to remove the vehicle from the obstacle dictionary. This is needed to consider the vehicles
+                        # that where previously obstacles and then entered the ego vehicle lane.
                         try:
-                            # If a vehicle is in the obstacle range and is on the same lane, removes it from the dictionary of all obstacles
                             self._obstacles.pop(agent.id)
                         except KeyError:
-                            # If the obstacle is not present in the dictionary, an exception is raised trying 
-                            # to eliminate it. We intercept it, and pass
                             pass
 
-                        # Check if the vehicle on the same lane is a lead vehicle, checking if the distance between ego and vehicle
-                        # is within the distance_from_lead range and if the cosine of the angle between the versors of the two agents is
-                        # smaller than 45°
+                        # Check if the vehicle on the same lane is the lead vehicle.
+                        # This is done by checking if it is in front of the vehicle and if it is the nearest one.
                         if self._check_for_lead_vehicle(location):
                             if distance < lead_vehicle_dist:
                                 lead_vehicle_dist = distance
                                 lead_vehicle = agent.vehicle
                     
-                    # If it is not a vehicle on the same lane
+                    # If it is not a vehicle on the same lane of the ego vehicle add it to the obstacle dictionary.
                     else:
-                        # Adding or update the agent inside the obstacle dictionary using its id as key 
                         self._add_obstacle(agent.vehicle, agent.id, VEHICLE)
                 
-                # If the vehicle is outside the obstacle range,, try to eliminate it from the dictionary of all obstacles
+                # If the vehicle is outside the obstacle range, try to eliminate it from the dictionary of all obstacles.
+                # This is needed to take into account previous obstacles which went out of range.
                 else:
                     try:
                         self._obstacles.pop(agent.id)
                     except KeyError:
-                        # If the obstacle is not present in the dictionary, an exception is raised trying 
-                        # to eliminate it. We intercept it, and pass
                         pass
         
         return on_same_lane_vehicles, lead_vehicle
@@ -218,20 +217,21 @@ class ObstaclesManager:
         considered as an obstacle, if it falls in the range of the _pedestrian_obstacle_lookahead distance.
         """   
 
+        # Iterate over all the non player agents
         for agent in self.measurement_data.non_player_agents:
-            # Only if the agent is a pedestrian
+            # Check only for pedestrian's agents
             if agent.HasField('pedestrian'):
 
                 # Obtain the location of the pedestrian in the world frame
                 location = agent.pedestrian.transform.location
 
-                # Compute the Euclidean distace between the ego and the pedestrian
+                # Compute the Euclidean distace between the ego vehicle and the pedestrian
                 dist = sqrt((self._ego_pose[0] - location.x)**2 + (self._ego_pose[1] - location.y)**2) 
                 
-                # The pedestrian is inside the pedestrian obstacle range
+                # If the pedestrian is within the lookahead range add it to obstacle dictionary.
                 if dist < self._pedestrian_obstacle_lookahead:
-
-                    # Adding or update the agent inside the obstacle dictionary using its id as key
+                    
+                    # Add or update the agent inside the obstacle dictionary using its id as key
                     self._add_obstacle(agent.pedestrian, agent.id, PEDESTRIAN)
                 
                 # If the pedestrian is outside the obstacle range, try to eliminate it from the dictionary of all obstacles
@@ -239,34 +239,34 @@ class ObstaclesManager:
                     try:
                         self._obstacles.pop(agent.id)
                     except KeyError:
-                        # If the obstacle is not present in the dictionary, an exception is raised trying 
-                        # to eliminate it. We intercept it, and pass
                         pass
 
 
     def _compute_distance_orientation_from_vehicle(self, car_location, car_rotation):
         """
-        Compute the distance and the cosine of the angle between the player agent and the obstacle
+        Compute the distance and the cosine of the angle between the player agent direction versor
+        and the obstacle direction versor.
         
         args:
             car_location: the position (x,y,z) of the vehicle respect to world frame
             car_rotation: the orientation (yaw, pitch, roll) of the vehicle respect to the world frame
         
         returns:
-            car_distance: distance between the player agent and the obstacle
-            dot_product: cosine of the angle between the player agent and the obstacle
+            car_distance: distance between the player agent and the obstacle.
+            dot_product: cosine of the angle between the player agent direction
+                versor and the obstacle direction versor.
         """
         # Compute the distance between the player agent and the obstacle
         car_delta_vector = [car_location.x - self._ego_pose[0], car_location.y - self._ego_pose[1]]
         car_distance = np.linalg.norm(car_delta_vector)
 
-        # Compute the versor of ego based on its yaw angle
+        # Compute the direction versor of the ego vehicle based on its yaw angle
         ego_heading_vector = [cos(self._ego_pose[2]), sin(self._ego_pose[2])]
 
-        # Compute the versor of vehicle based on its yaw angle
+        # Compute the direction versor of the other vehicle based on its yaw angle
         car_heading_vector = [cos(math.radians(car_rotation.yaw)), sin(math.radians(car_rotation.yaw))]
 
-        # Compute the dot produt for calculate the value of cosine of the angle between the versors
+        # Compute the dot product of the two versors to obtain the cosine of the angle between the versors
         dot_product = np.dot(car_heading_vector, ego_heading_vector)
         
         return car_distance, dot_product
@@ -274,8 +274,8 @@ class ObstaclesManager:
 
     def _check_for_vehicle_on_same_lane(self, orientation):
         """
-        Check if the cosine of the angle between the player agent and the obstacle is greater than the 
-        cosine of 45°.
+        Check if the cosine of the angle between the player agent direction versor and the obstacle direction versor 
+        is greater than the cosine of 45°.
         
         args:
             orientation: cosine of the angle between the player agent and the obstacle
@@ -298,35 +298,34 @@ class ObstaclesManager:
         returns:
             True: if is a lead vehicle.
         """
-        # Compute the distance between the player agent and the obstacle
+        # Compute the distance between the ego vehicle and the obstacle
         car_delta_vector = [car_location.x - self._ego_pose[0], car_location.y - self._ego_pose[1]]
         car_distance = np.linalg.norm(car_delta_vector)
         
-        # Compute the versor of the vector distance
+        # Compute the versor of the distance vector
         lead_car_delta_vector = np.divide(car_delta_vector, car_distance)
 
-        # Compute the versor of ego based on its yaw angle
+        # Compute the direction versor of the ego vehicle based on its yaw angle
         ego_heading_vector = [cos(self._ego_pose[2]), sin(self._ego_pose[2])]
         
-        # Compute the cosine of the angle between the car heading versor and distance versor
+        # Obtain the cosine of the angle between the car heading versor and the versor of the
+        # distance vector from the obstacle
         dot_product = np.dot(lead_car_delta_vector, ego_heading_vector)
 
-        # The distansce used tu check if a vehicle is a lead vehicle, is set to the threshold 
-        # lead_vehicle_lookahead if the follow_lead_vehicle flag of behavioral planner is False, 
-        # otherwise it is set to lead_vehicle_lookahead plus an offset, to prevent the lead 
-        # vehicle hooking and unhooking.
+        # If the ego vehicle is already following a lead vehicle add a buffer to the lookahead
+        # range to prevent oscillations and, therefore lead vehicle hooking and unhooking.
         distance_from_lead = self._lead_vehicle_lookahead if not self._bp._follow_lead_vehicle else  self._lead_vehicle_lookahead + LEAD_VEHICLE_LOOKAHEAD_OFFSET_FOR_RELEASE
 
-        # Perform the two check, if the distance is smaller than distance_from_lead threshold, and 
-        # if the cosine of the angle between the car heading versor and distance versor is greather
-        # than the cosine of 45°
+        # The vehicle is considered a lead vehicle if the distance is within the lead vehicle 
+        # lookahead range and the cosine of the angle between the ego vehicle heading versor and
+        # the distance versor is grater then the cosine of 45 degrees.
         return (car_distance < distance_from_lead) and (dot_product > 1/sqrt(2))
     
 
     def _add_obstacle(self, obstacle, id, agent_type):
         """
         Create a new instance of Obstacle if it is not already present inside the obstacles dictionary;
-        otherwise updates the informations of instance already existing.
+        otherwise updates the information of the already existing instance.
 
         args:
             obstacle: the instance of the non_player_agents that must be entered or updated inside the obstacles dictionary.
@@ -334,11 +333,11 @@ class ObstaclesManager:
             agent_type: VEHICLE (0) or PEDESTRIAN (1)
         """
 
-        # If the id is already used as key inside the dictionary, its state is only updated
+        # If the id is already used as key inside the dictionary, its state is only updated.
         if id in self._obstacles:
             self._obstacles[id].update_state(obstacle)
 
-        # If If the obstacle is not present, it is inserted inside the dictionary
+        # If the obstacle is not present in dthe dictionary, add it.
         else:
             self._obstacles[id] = Obstacle(obstacle, agent_type)
 
@@ -346,21 +345,22 @@ class ObstaclesManager:
     def _get_obstacles(self):
         """
         Iterates on obstacles' dictionary adding their bounding box location inside a list; 
-        furthermore, for each obstacle add the projections of bounding box inside an another list.
+        furthermore, for each obstacle add the bounding box of the projections inside another list.
 
         return:
             obstacles: a list containing the obstacles
             future_obstacles: a list containg the future_obstacles (projections of bounding box)
         """
-        # Creates two lists to fill with the bounding boxes of obstacles, actual and future
+        
+        # Initialize the bounding boxes lists for obstacles and projections
         obstacles = []
         future_obstacles = []
 
         for id, obs in self._obstacles.items():
-            # Adding the bounding box of the selected obstacle inside the list
+            # Add the bounding box of the selected obstacle inside the list
             obstacles.append(obs.get_current_location())
 
-            # For the seleted obstacle, we obtain and add the future bounding boxes inside the list
+            # Given the seleted obstacle, add each of its future projection inside the relative lists
             for loc in obs.get_future_locations():
                 future_obstacles.append(loc)
 

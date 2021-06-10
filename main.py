@@ -162,7 +162,7 @@ SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-#'''
+'''
 ######################### TEST SU PEDONI SU RETTILINEO SUPERIORE 2 INTERESSANTE ##############################
 PLAYER_START_INDEX = 144        #  spawn index for player
 DESTINATION_INDEX = 65         # Setting a Destination HERE
@@ -170,7 +170,7 @@ NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
 NUM_VEHICLES           = 0   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-#'''
+'''
 
 '''
 ########################## TESTS ON PEDESTRIANS 4 ###############################
@@ -191,6 +191,26 @@ NUM_VEHICLES           = 50   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
+
+'''
+######################### TESTS ON PEDESTRIANS 4 LUNGO 2 ###############################
+PLAYER_START_INDEX = 2        #  spawn index for player
+DESTINATION_INDEX = 20         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 500      # total number of pedestrians to spawn
+NUM_VEHICLES           = 50   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
+
+#'''
+######################### TESTS ON PEDESTRIANS 4 LUNGO 3 ###############################
+PLAYER_START_INDEX = 2        #  spawn index for player
+DESTINATION_INDEX = 29         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 500      # total number of pedestrians to spawn
+NUM_VEHICLES           = 50   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+#'''
 
 '''
 ######################### TESTS ON PEDESTRIANS 5 ###############################
@@ -302,11 +322,21 @@ SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
 '''
-################################## Veicoli all'incrocio semaforo abilitato. #################################################
+######################### Veicoli all'incrocio semaforo abilitato. ##################
 PLAYER_START_INDEX = 2       #  spawn index for player
 DESTINATION_INDEX = 23         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
 NUM_VEHICLES           = 300   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
+
+'''
+############ TEST 5 - Veicolo che evita il tamponamento con un veicolo subito dopo una curva. ########
+PLAYER_START_INDEX = 2       #  spawn index for player
+DESTINATION_INDEX = 15         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 1000   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
@@ -432,6 +462,8 @@ SHOW_LIVE_PLOTTER = False
 
 ### TO BE DELETED 
 PRODUCE_VIDEO = True
+HIGH_QUALITY = False
+
 SAVE_PATH_REFERENCE = False
 
 # Camera parameters
@@ -566,8 +598,12 @@ def make_carla_settings(args):
     ### TO BE DELETED
     if PRODUCE_VIDEO:
         # Video Camera
-        video_width = 1280
-        video_height = 720
+        if HIGH_QUALITY:
+            video_width = 2560
+            video_height = 1440
+        else:
+            video_width = 1280
+            video_height = 720
         video_camera = Camera('video_camera')
         # set pixel Resolution: WIDTH * HEIGHT
         video_camera.set_image_size(video_width, video_height)
