@@ -1,10 +1,10 @@
 import os
 from moviepy.editor import VideoFileClip, clips_array, CompositeVideoClip
+import argparse
 
-def produce_video():
+def produce_video(args):
 
-
-    video_directory = os.fsencode("Videos")
+    video_directory = os.fsencode("Videos") if (args.quality == "Low") else os.fsencode("HDVideos")
 
     for ep_dir in os.listdir(video_directory):
         print(f"dir: {ep_dir}")
@@ -47,12 +47,26 @@ def produce_video():
             clip3 = VideoFileClip(tl_out_path)
             clip4 = VideoFileClip(fsm_out_path)
             clip5 = VideoFileClip(forward_speed_out_path)
-            clip2 = clip2.resize(0.45)
-            clip3 = clip3.resize(0.70)
-            clip4 = clip4.resize(0.33)
-            clip5 = clip5.resize(0.60)
+            if args.quality == "Low":
+                clip2 = clip2.resize(0.45)
+                clip3 = clip3.resize(0.70)
+                clip4 = clip4.resize(0.33)
+                clip5 = clip5.resize(0.60)
+            else:
+                clip2 = clip2.resize(height = 648)
+                clip3 = clip3.resize(height = 545)
+                clip4 = clip4.resize(height = 350)
+                clip5 = clip5.resize(height = 250)
             final_clip = CompositeVideoClip([clip1, clip2.set_position(("left", "bottom")), clip3.set_position(("right", "top")), clip4.set_position(("right", "center")), clip5.set_position(("left", "top"))])#.set_duration(clip1)
             final_clip.write_videofile(result_out_path)
 
+argparser = argparse.ArgumentParser(description=__doc__)
+argparser.add_argument(
+    '-q', '--quality',
+    choices=['Low', 'High'],
+    type=lambda s: s.title(),
+    default='Low',
+    help='graphics quality level.')
+args = argparser.parse_args()
 
-produce_video()
+produce_video(args)
