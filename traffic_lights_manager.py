@@ -34,7 +34,7 @@ class trafficLightsManager:
         
         self.new_state_counter = 0
         self.true_state = UNKNOWN
-        self.curr_state = UNKNOWN
+        self.prev_state = self.true_state
         self.distance = None
         self.vehicle_frame_list = []
         self._create_intrinsic_matrix(camera_parameters)
@@ -163,13 +163,13 @@ class trafficLightsManager:
         # If the bounding box doesn't exist, the current state is set to UNKNOWN.
         # Otherwise it is set to the detected state.  
         if self.curr_bb == None:
-            bb_state = UNKNOWN
+            curr_state = UNKNOWN
         else:
-            bb_state = TRAFFIC_LIGHT_CLASSES[self.curr_bb.get_label()]
+            curr_state = TRAFFIC_LIGHT_CLASSES[self.curr_bb.get_label()]
         
         # If the detected state is equal to the previous current state, increment a counter that
         # keeps track of the consecutive frames classified with the same state. (?) 
-        if bb_state == self.curr_state:
+        if curr_state == self.prev_state:
             self.new_state_counter += 1
             
             # Given the true state, set a different threshold, for the consecutive number of frames
@@ -178,13 +178,13 @@ class trafficLightsManager:
             
             # If the counter is equal or greater than the threshold, set the true state to the current state.
             if self.new_state_counter >= threshold:
-                    self.true_state = self.curr_state
+                    self.true_state = self.prev_state
         
         # If the current detected state is different from the previous detected state, set the
         # counter to 0 and update the current state.
         else:
             self.new_state_counter = 0
-            self.curr_state = bb_state
+            self.prev_state = curr_state
 
     def _get_traffic_light_slice_from_semantic_segmentation(self, x_min, x_max, y_min, y_max):
         """Get the pixels coordinates corresponding to the traffic light from the semantic image,

@@ -177,10 +177,9 @@ class BehaviouralPlanner:
         # enforcing the car to stay stopped.
         elif self._state == STOP_AT_TRAFFIC_LIGHT:
             print("FSM STATE: STOP_AT_TRAFFIC_LIGHT")
-            '''
             if closed_loop_speed > STOP_THRESHOLD:
-                self._update_goal_index(waypoints, ego_state)
-            '''
+                self._update_goal_index_with_traffic_light(waypoints, ego_state)
+            
             self._goal_state[2] = 0
             if self._obstacle_on_lane:
                 self._state = STOP_AT_OBSTACLE

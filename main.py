@@ -20,12 +20,12 @@ import behavioural_planner
 import cv2
 import json 
 from math import atan2, sin, cos, pi, tan, sqrt
-from video_utils import copy_state_image, create_video_output_dir, save_video_graph, save_video_image 
 
 from traffic_lights_manager import trafficLightsManager
 from obstacles_manager import ObstaclesManager
 import shutil
 from PIL import Image
+from video_utils import copy_state_image, create_video_output_dir, save_video_graph, save_video_image 
 
 # Script level imports
 sys.path.append(os.path.abspath(sys.path[0] + '/..'))
@@ -202,7 +202,7 @@ SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-#'''
+'''
 ######################### TESTS ON PEDESTRIANS 4 LUNGO 3 ###############################
 PLAYER_START_INDEX = 2        #  spawn index for player
 DESTINATION_INDEX = 29         # Setting a Destination HERE
@@ -210,7 +210,7 @@ NUM_PEDESTRIANS        = 500      # total number of pedestrians to spawn
 NUM_VEHICLES           = 50   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-#'''
+'''
 
 '''
 ######################### TESTS ON PEDESTRIANS 5 ###############################
@@ -341,6 +341,27 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
+#'''
+############ waypoint preso male a semaforo rosso 1 ########
+PLAYER_START_INDEX = 15       #  spawn index for player
+DESTINATION_INDEX = 148         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 50      # total number of pedestrians to spawn
+NUM_VEHICLES           = 100   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+#'''
+
+
+'''
+############ waypoint preso male a semaforo rosso 2 ########
+PLAYER_START_INDEX = 135       #  spawn index for player
+DESTINATION_INDEX = 148         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 0   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+#'''
+
 '''
 PLAYER_START_INDEX = 24       #  spawn index for player
 DESTINATION_INDEX = 15         # Setting a Destination HERE
@@ -462,7 +483,7 @@ SHOW_LIVE_PLOTTER = False
 
 ### TO BE DELETED 
 PRODUCE_VIDEO = True
-HIGH_QUALITY = False
+HIGH_QUALITY = True
 
 SAVE_PATH_REFERENCE = False
 

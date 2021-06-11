@@ -1,10 +1,10 @@
 import os
 import shutil
 from PIL import Image
-import main
 import behavioural_planner
-from main import HIGH_QUALITY
+import main
 
+HIGH_QUALITY = True 
 main_folder = "HDVideos" if HIGH_QUALITY else "Videos"
 
 def create_video_output_dir(output_folder):
