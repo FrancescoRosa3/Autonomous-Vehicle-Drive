@@ -46,7 +46,7 @@ class CollisionChecker:
                 The ith index in the collision_check_array list corresponds to the
                 ith path in the paths list.
         """
-
+ 
         collision_check_array = np.zeros(len(paths), dtype=bool)
         collision_dist_array = np.zeros(len(paths), dtype=float)
 

@@ -54,14 +54,14 @@ from carla.planner.city_track import CityTrack
 ### 133-21
 ### 7-15, stop a semaforo da giallo a rosso
 
-'''
+#'''
 PLAYER_START_INDEX = 13           #  spawn index for player
 DESTINATION_INDEX = 29          # Setting a Destination HERE
-NUM_PEDESTRIANS        = 300      # total number of pedestrians to spawn
-NUM_VEHICLES           = 20    # total number of vehicles to spawn
+NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
+NUM_VEHICLES           = 1000    # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0     # seed for vehicle spawn randomizer
-'''
+#'''
 
 '''
 PLAYER_START_INDEX = 100           #  spawn index for player
@@ -284,7 +284,7 @@ SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 
 '''
 ######################### traiettoria persa in curva ###############################
-PLAYER_START_INDEX = 15       #  spawn index for player
+PLAYER_START_INDEX = 15      #  spawn index for player
 DESTINATION_INDEX = 148         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 200     # total number of pedestrians to spawn
 NUM_VEHICLES           = 100   # total number of vehicles to spawn
@@ -341,7 +341,7 @@ SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 
-#'''
+'''
 ############ waypoint preso male a semaforo rosso 1 ########
 PLAYER_START_INDEX = 15       #  spawn index for player
 DESTINATION_INDEX = 148         # Setting a Destination HERE
@@ -349,7 +349,7 @@ NUM_PEDESTRIANS        = 50      # total number of pedestrians to spawn
 NUM_VEHICLES           = 100   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-#'''
+'''
 
 
 '''
@@ -468,7 +468,7 @@ HALF_CRUISE_SPEED = 2.5 # m/s
 SAFETY_DISTANCE      = 4                # m
 
 # range of vision within which to look for obstacle vehicles
-VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 20 # m
+VEHICLE_OBSTACLE_LOOKAHEAD_BASE = 25 # m
 
 # range of vision within which to look for obstacle pedestrians
 PEDESTRIAN_OBSTACLE_LOOKAHEAD = 15 # m
@@ -479,10 +479,10 @@ LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 # half of the ego vehicle's extension on the long side
 CAR_RADII_X_EXTENT = 2.34
 
-SHOW_LIVE_PLOTTER = False
+SHOW_LIVE_PLOTTER = True
 
 ### TO BE DELETED 
-PRODUCE_VIDEO = True
+PRODUCE_VIDEO = False
 HIGH_QUALITY = True
 
 SAVE_PATH_REFERENCE = False

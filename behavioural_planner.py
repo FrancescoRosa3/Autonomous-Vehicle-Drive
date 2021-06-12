@@ -260,16 +260,8 @@ class BehaviouralPlanner:
         arc_length = closest_len
         wp_index = closest_index
 
-        wp_lookahead = 1
-
-        '''
         # In this case, reaching the closest waypoint is already far enough for
         # the planner.  No need to check additional waypoints.
-        if self._check_for_turn(ego_state, waypoints[wp_index]):
-            final = wp_index + wp_lookahead
-            return wp_index + wp_lookahead
-        '''
-
         if arc_length > self._lookahead:
             return wp_index
 
@@ -278,18 +270,22 @@ class BehaviouralPlanner:
             return wp_index
 
         # Otherwise, find our next waypoint.
-        #print("Check for new waypoint")
-        #print(F"Ego state X:{ego_state[0]} Y:{ego_state[1]}")
         while wp_index < len(waypoints) - 1:
-            #print(F"Waypoints X:{waypoints[wp_index][0]} Y:{waypoints[wp_index][1]}")
             arc_length += np.sqrt((waypoints[wp_index][0] - waypoints[wp_index+1][0])**2 + (waypoints[wp_index][1] - waypoints[wp_index+1][1])**2)
-            
             wp_index += 1
             if arc_length > self._lookahead: break
 
         return wp_index % len(waypoints)
 
     def _update_goal_index(self, waypoints, ego_state):
+        """Update goal index in such a way as to obtain the first waypoint after the
+        lookahead distance
+
+        args:
+            waypoints: current waypoints to track. (global frame)
+            ego_state: ego state vector for the vehicle. (global frame)
+        """
+        
         # First, find the closest index to the ego vehicle.
         closest_len, closest_index = get_closest_index(waypoints, ego_state, self._goal_index)
         # Next, find the goal index that lies within the lookahead distance
@@ -302,28 +298,48 @@ class BehaviouralPlanner:
         self._goal_state = list(waypoints[goal_index])
 
     def _update_goal_index_with_traffic_light(self, waypoints, ego_state):
-        
+        """Update goal index in such a way as to obtain the waypoint closest to the traffic light
+
+        args:
+            waypoints: current waypoints to track. (global frame)
+            ego_state: ego state vector for the vehicle. (global frame)
+        """
+
+        # Update goal index without taking into account the traffic light to both obtain the closest waypoint
+        # to the ego vehicle and also in case the distance between the ego vehicle and the traffic light
+        # would not be available.
         self._update_goal_index(waypoints, ego_state)   
 
-        waypoint_index = 0
-        
+        # if the distance between the ego vehicle and the traffic light is available start the
+        # procedure to compute the waypoint nearest to the latter.
         if self._traffic_light_distance != None:
-            distance_wp_traffic_light = math.inf
+
+            # Initialize the waypoint 
             closest_wp_to_traffic_light = self._closest_index
             # find the closest waypoint to the traffic light
             waypoint_index = closest_wp_to_traffic_light
+            
+            # Initialize the distance between the waypoint and the traffic light in the world frame
+            distance_wp_traffic_light = math.inf
+            
+            # iterate over all the waypoints after the closest one to find the nearest to the traffic light
             while waypoint_index < len(waypoints)-1:
-                distance_traffic_light_wp = 0
-                # compute the average distance from the waypoint and the traffic light in the world frame
+                temp_distance_wp_traffic_light = 0
+                
+                # compute the average distance between the waypoint and the traffic light in the world frame
                 for traffic_light_wp in self._traffic_light_vehicle_frame:
                     traffic_light_wp_world_frame = convert_wp_in_world_frame(ego_state, traffic_light_wp)
-                    distance_traffic_light_wp += np.sqrt((waypoints[waypoint_index][0] - traffic_light_wp_world_frame[0])**2 + (waypoints[waypoint_index][1] -traffic_light_wp_world_frame[1])**2)
-                distance_traffic_light_wp = distance_traffic_light_wp/len(self._traffic_light_vehicle_frame)
-                if distance_traffic_light_wp < distance_wp_traffic_light:
-                    distance_wp_traffic_light = distance_traffic_light_wp
+                    temp_distance_wp_traffic_light += np.sqrt((waypoints[waypoint_index][0] - traffic_light_wp_world_frame[0])**2 + (waypoints[waypoint_index][1] -traffic_light_wp_world_frame[1])**2)
+                temp_distance_wp_traffic_light = temp_distance_wp_traffic_light/len(self._traffic_light_vehicle_frame)
+                
+                # if the avarage distance is shorter then the previous nearest waypoint, update the waypoint
+                # and the shortest distance
+                if temp_distance_wp_traffic_light < distance_wp_traffic_light:
+                    distance_wp_traffic_light = temp_distance_wp_traffic_light
                     closest_wp_to_traffic_light =  waypoint_index
                 waypoint_index += 1
 
+            # update the goal index and the goal state based on the obtained waypoint
             self._goal_index = closest_wp_to_traffic_light
             self._goal_state = list(waypoints[closest_wp_to_traffic_light])
 

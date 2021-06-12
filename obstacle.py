@@ -3,17 +3,22 @@ import numpy as np
 import math
 from math import cos, sin, pi
 
-# constant for indicating the type of agent
+# Enumeration of agents type
 VEHICLE = 0
+PEDESTRIAN = 1
 
-# number of previous state  to store
+# Number of previous state  to store
 HISTORY_SIZE = 20
 
-# number of frames in the future for which to make prediction 
+# frames update frequency 
+FRAMES_UPDATE_FREQUENCY = 0.033
+
+# number of frames that represent the update frequency of the prediction
+PREDICTION_UPDATE_FREQUENCY = 15
+
+# number of future frames for which to make prediction 
 PEDESTRIANS_FRAMES_TO_CHECK = 75
 VEHICLES_FRAMES_TO_CHECK = 75
-
-
 
 class Obstacle:
 
@@ -43,6 +48,7 @@ class Obstacle:
         self._prev_state = [None] * HISTORY_SIZE
         self._head = 0
         self._tail = 0
+        self._history_frames_num = 0
         self._future_locations = []
         self._predict_future_location()
     
@@ -86,6 +92,8 @@ class Obstacle:
         # update the head index
         if(self._prev_state[HISTORY_SIZE - 1] != None):
             self._head = (self._tail)%HISTORY_SIZE
+
+        self._history_frames_num = self._history_frames_num + 1 if self._history_frames_num < 20 else 20
 
         # store the current non pleayer agent (vehicle, pedestrian)
         self._obstacle = obstacle
@@ -141,12 +149,30 @@ class Obstacle:
         yaw_tail = self._prev_state[self._tail-1].transform.rotation.yaw * pi / 180
         yaw_diff_tail = round((obstacle_yaw_angle - yaw_tail),2)
 
+        # If enough history frames are available, check if the vehicle is on a curve.
+        # If so apply the difference between the current angle and the oldest one.
+        # Otherwise apply the difference between the current angle and the most recent one.
+        past_frame_to_check = 4
+        if self._history_frames_num > past_frame_to_check:
+
+            start_wp = (self._prev_state[self._tail-past_frame_to_check].transform.location.x, self._prev_state[self._tail-past_frame_to_check].transform.location.y)
+            end_wp = (self._prev_state[self._tail-1].transform.location.x, self._prev_state[self._tail-1].transform.location.y)
+            
+            if self._check_for_turn(start_wp, end_wp):
+                return yaw_diff_head
+            else:
+                return yaw_diff_tail
+        # If enough history frames are not available yet return the difference
+        # between the current angle and the most recent one.
+        else:
+            return yaw_diff_tail
+
+        """
         if abs(yaw_diff_head) > abs(yaw_diff_tail) + math.radians(10):
             return yaw_diff_head
         else:
             return yaw_diff_tail
-        
-
+        """
     def _predict_future_location(self):
         """
         Compute the projected bounding box of the obstacle in a given number of future frames. 
@@ -167,20 +193,14 @@ class Obstacle:
         # select the number of future frames to check, determined by the type of agent 
         future_frames_to_check = VEHICLES_FRAMES_TO_CHECK if self._agent_type == VEHICLE else PEDESTRIANS_FRAMES_TO_CHECK
         
-        # time used to make prediction between frames 
-        frames_update_frequency = 0.033
-        
-        # number of frames that represent the update frequency of the prediction
-        prediction_update_frequency = 15
-
         # obstacle yaw angle with respect to world frame
         obstacle_yaw_angle = self._obstacle.transform.rotation.yaw * pi / 180
         
         # Compute space shift to get future location in the world frame starting from current obstacle speed
         v_x = obstacle_speed * cos(obstacle_yaw_angle)
         v_y = obstacle_speed * sin(obstacle_yaw_angle)
-        shift_x = v_x * frames_update_frequency
-        shift_y = v_y * frames_update_frequency
+        shift_x = v_x * FRAMES_UPDATE_FREQUENCY
+        shift_y = v_y * FRAMES_UPDATE_FREQUENCY
 
         # the matrix of shift along x axes and y axes in the world frame
         cpos_shift = np.array([
@@ -188,12 +208,12 @@ class Obstacle:
             [shift_y, shift_y, shift_y, shift_y, shift_y, shift_y, shift_y, shift_y]])
 
         # multiply the shift for the number of frames after which the prediction will be updated
-        cpos_shift = cpos_shift * prediction_update_frequency 
+        cpos_shift = cpos_shift * PREDICTION_UPDATE_FREQUENCY 
         
         self._future_locations = []
         cpos = self._box_pts_to_cpos(self._curr_obs_box_pts)
         
-        for k in range(1, future_frames_to_check+1, prediction_update_frequency):
+        for k in range(1, future_frames_to_check+1, PREDICTION_UPDATE_FREQUENCY):
             future_box_pts = []
 
             # compute the rectilinear displacement of the obstacle to obtain the prediction 
@@ -244,3 +264,20 @@ class Obstacle:
         cpos = np.array(cpos)
         
         return cpos
+
+    def _check_for_turn(self, start_wp, end_wp):
+        """Check if the ego vehicle is cornering.
+
+            returns:
+                True if the vehicle is cornering, False otherwise.
+        """
+
+        dx = start_wp[0] - end_wp[0]
+        dy = start_wp[1] - end_wp[1]
+        
+        offset = 0.5
+
+        if abs(dx) < offset or abs(dy) < offset:
+            return False
+        else:
+            return True
