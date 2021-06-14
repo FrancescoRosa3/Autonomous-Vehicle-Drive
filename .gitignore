@@ -3,9 +3,7 @@ __pycache__
 bb
 Temp
 Reports
-controller_output
-controller_output/brake_output.png
-controller_output/brake_output.png
+controller_output/
 Videos
 fsm_imgs
 .gitignore
