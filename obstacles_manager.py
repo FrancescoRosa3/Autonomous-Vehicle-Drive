@@ -319,7 +319,7 @@ class ObstaclesManager:
         # The vehicle is considered a lead vehicle if the distance is within the lead vehicle 
         # lookahead range and the cosine of the angle between the ego vehicle heading versor and
         # the distance versor is grater then the cosine of 45 degrees.
-        return (car_distance < distance_from_lead) and (dot_product > 1/sqrt(2))
+        return (car_distance < distance_from_lead) and (dot_product > cos(math.radians(45)))
     
 
     def _add_obstacle(self, obstacle, id, agent_type):

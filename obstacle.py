@@ -51,7 +51,6 @@ class Obstacle:
         self._history_frames_num = 0
         self._future_locations = []
         self._predict_future_location()
-    
 
     def get_current_location(self):
         """
@@ -152,13 +151,14 @@ class Obstacle:
         # If enough history frames are available, check if the vehicle is on a curve.
         # If so apply the difference between the current angle and the oldest one.
         # Otherwise apply the difference between the current angle and the most recent one.
-        past_frame_to_check = 4
+        past_frame_to_check = 3
         if self._history_frames_num > past_frame_to_check:
 
             start_wp = (self._prev_state[self._tail-past_frame_to_check].transform.location.x, self._prev_state[self._tail-past_frame_to_check].transform.location.y)
             end_wp = (self._prev_state[self._tail-1].transform.location.x, self._prev_state[self._tail-1].transform.location.y)
             
             if self._check_for_turn(start_wp, end_wp):
+                print("OSTACOLO IN CURVA")
                 return yaw_diff_head
             else:
                 return yaw_diff_tail
@@ -275,7 +275,7 @@ class Obstacle:
         dx = start_wp[0] - end_wp[0]
         dy = start_wp[1] - end_wp[1]
         
-        offset = 0.5
+        offset = 0.30
 
         if abs(dx) < offset or abs(dy) < offset:
             return False

@@ -54,14 +54,14 @@ from carla.planner.city_track import CityTrack
 ### 133-21
 ### 7-15, stop a semaforo da giallo a rosso
 
-#'''
+'''
 PLAYER_START_INDEX = 13           #  spawn index for player
 DESTINATION_INDEX = 29          # Setting a Destination HERE
 NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
 NUM_VEHICLES           = 1000    # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0     # seed for vehicle spawn randomizer
-#'''
+'''
 
 '''
 PLAYER_START_INDEX = 100           #  spawn index for player
@@ -225,22 +225,33 @@ SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
 '''
 ######################### TEST INCROCIO SENZA SEMAFORO 1 ###############################
 PLAYER_START_INDEX = 2        #  spawn index for player
-DESTINATION_INDEX = 20         # Setting a Destination HERE
+DESTINATION_INDEX = 29         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
 NUM_VEHICLES           = 1000   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 123    # seed for vehicle spawn randomizer
 '''
 
-'''
+#'''
 ######################### TEST INCROCIO SENZA SEMAFORO 2 ###############################
 PLAYER_START_INDEX = 140        #  spawn index for player
-DESTINATION_INDEX =19         # Setting a Destination HERE
+DESTINATION_INDEX = 22         # Setting a Destination HERE
 NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
 NUM_VEHICLES           = 1000   # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 123    # seed for vehicle spawn randomizer
+#'''
+
 '''
+######################### TEST INCROCIO SENZA SEMAFORO 3 ###############################
+PLAYER_START_INDEX = 2        #  spawn index for player
+DESTINATION_INDEX =23         # Setting a Destination HERE
+NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
+NUM_VEHICLES           = 300   # total number of vehicles to spawn
+SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
+SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
+'''
+
 
 '''
 ################## TEST CURVA CON FURGONCINO CHE PASSA CON ROSSO #############
@@ -479,10 +490,10 @@ LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 # half of the ego vehicle's extension on the long side
 CAR_RADII_X_EXTENT = 2.34
 
-SHOW_LIVE_PLOTTER = True
+SHOW_LIVE_PLOTTER = False
 
 ### TO BE DELETED 
-PRODUCE_VIDEO = False
+PRODUCE_VIDEO = True
 HIGH_QUALITY = True
 
 SAVE_PATH_REFERENCE = False
@@ -1427,7 +1438,7 @@ def exec_waypoint_nav_demo(args):
                 tl_state, tl_distance, traffic_light_vehicle_frame = traffic_lights_manager.get_tl_state(image_BGRA, depth_image, semantic_image)
                 
                 ### TO BE DELETED
-                #tl_state = "go"
+                tl_state = "go"
                 
                 ### TO BE DELETED (prints)
                 print(F"STATE TRAFFIC LIGHT: {tl_state}")
