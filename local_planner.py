@@ -6,11 +6,15 @@ import collision_checker
 import velocity_planner
 from math import sin, cos, pi, sqrt
 
+# Number of paths to be excluded on on straight roads.
+PATHS_TO_EXCLUDE = 2
+
 class LocalPlanner:
     def __init__(self, num_paths, path_offset, circle_offsets, circle_radii, 
                  path_select_weight, time_gap, a_max, slow_speed, 
-                 stop_line_buffer):
-        self._num_paths = num_paths
+                 security_distance):
+        self._num_paths_base = num_paths
+        self._num_paths = self._num_paths_base
         self._path_offset = path_offset
         self._path_optimizer = path_optimizer.PathOptimizer()
         self._collision_checker = \
@@ -19,8 +23,24 @@ class LocalPlanner:
                                                path_select_weight)
         self._velocity_planner = \
             velocity_planner.VelocityPlanner(time_gap, a_max, slow_speed, 
-                                             stop_line_buffer)
+                                             security_distance)
+        
         self._prev_best_path = None
+        
+        ### NEW VARIABLES
+        # These variable are used to keep information about the last valid path and goal state.
+        # They are used when no valid path can be found. 
+        self._prev_goal_state = None
+        self._prev_goal_index = None
+
+
+    def get_num_path(self):
+        """Get the numbur of current paths
+
+            returns:
+                self._num_paths: current number of paths
+        """
+        return self._num_paths
 
     ######################################################
     ######################################################
@@ -73,12 +93,21 @@ class LocalPlanner:
                   v is the goal speed at the goal point.
                   all units are in m, m/s and radians
         """
+        
+        ### [ADDITION]
+        # Compute number of paths to create given the type of road the ego vehicle is traveling.
+        # If the ego vehicle is on a straight road just three paths needs to be computed.
+        # Otherwise, if the ego vehicle is on a curve, five paths must be computed.
+        # This is due to the fact that, on straight roads, more than three paths will possibly
+        # led the vehicle out of the lane or even on the sidewalk, while on curve three paths
+        # could prevent the vehicle from performing a smooth turn. 
+        self._num_paths = self._num_paths_base if self._check_for_turn(ego_state, goal_state) else self._num_paths_base - PATHS_TO_EXCLUDE
+
         # Compute the final heading based on the next index.
         # If the goal index is the last in the set of waypoints, use
         # the previous index instead.
         # To do this, compute the delta_x and delta_y values between
         # consecutive waypoints, then use the np.arctan2() function.
-       
         if goal_index < len(waypoints)-1:
             delta_x = waypoints[goal_index+1][0] - waypoints[goal_index][0]
             delta_y = waypoints[goal_index+1][1] - waypoints[goal_index][1]
@@ -122,9 +151,10 @@ class LocalPlanner:
             goal_t += 2*pi
 
         # Compute and apply the offset for each path such that
-        # all of the paths have the same heading of the goal state, 
+        # all of the paths have the same heading of the goal state,
         # but are laterally offset with respect to the goal heading.
         goal_state_set = []
+
         for i in range(self._num_paths):
             # Compute offsets that span the number of paths set for the local
             # planner. Each offset goal will be used to generate a potential
@@ -186,15 +216,38 @@ class LocalPlanner:
             path = self._path_optimizer.optimize_spiral(goal_state[0], 
                                                         goal_state[1], 
                                                         goal_state[2])
-            if np.linalg.norm([path[0][-1] - goal_state[0], 
+            path_validity_score = np.linalg.norm([path[0][-1] - goal_state[0], 
                                path[1][-1] - goal_state[1], 
-                               path[2][-1] - goal_state[2]]) > 0.1:
+                               path[2][-1] - goal_state[2]])
+            if path_validity_score > 0.1:
                 path_validity.append(False)
             else:
                 paths.append(path)
                 path_validity.append(True)
 
         return paths, path_validity
+
+    ### [ADDITION]
+    def _check_for_turn(self, ego_state, goal_wp):
+        """Check if the ego vehicle is cornering.
+
+            args:
+                ego_state: ego state vector for the vehicle in the World Frame.
+                goal_wp: Waypoint position in the World Frame.
+
+            returns:
+                True if the vehicle is cornering, False otherwise.
+        """
+
+        dx = ego_state[0] - goal_wp[0]
+        dy = ego_state[1] - goal_wp[1]
+        
+        offset = 1
+
+        if abs(dx) < offset or abs(dy) < offset:
+            return False
+        else:
+            return True
 
 def transform_paths(paths, ego_state):
     """ Converts the to the global coordinate frame.

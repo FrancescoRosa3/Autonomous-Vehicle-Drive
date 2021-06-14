@@ -18,7 +18,6 @@ def bbox_iou(box1, box2):
 
 def decode_netout(netout, anchors, nb_class, obj_threshold=0.3, nms_threshold=0.3):
     grid_h, grid_w, nb_box = netout.shape[:3]
-    print(grid_h, grid_w, nb_box)
     #grid_h, grid_w, nb_box = config['models']['traffic_light_module']['grid_h'], GRID_W, BOX
     boxes = []
 

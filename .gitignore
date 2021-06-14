@@ -1,32 +1,11 @@
-traffic_light_detection_module/out/out1.png
-traffic_light_detection_module/out/out2.png
-traffic_light_detection_module/out/out3.png
-traffic_light_detection_module/out/out4.png
-traffic_light_detection_module/out/out5.png
-traffic_light_detection_module/out/out6.png
-traffic_light_detection_module/out/out7.png
-traffic_light_detection_module/out/out8.png
-traffic_light_detection_module/out/out9.png
-traffic_light_detection_module/out/out10.png
-traffic_light_detection_module/out/out11.png
-traffic_light_detection_module/out/out12.png
-traffic_light_detection_module/out/out13.png
-traffic_light_detection_module/out/out14.png
-traffic_light_detection_module/out/out15.png
-traffic_light_detection_module/out/out16.png
-traffic_light_detection_module/test_images/test (1).png
-traffic_light_detection_module/test_images/test (2).png
-traffic_light_detection_module/test_images/test (3).png
-traffic_light_detection_module/test_images/test (4).png
-traffic_light_detection_module/test_images/test (5).png
-traffic_light_detection_module/test_images/test (6).png
-traffic_light_detection_module/test_images/test (7).png
-traffic_light_detection_module/test_images/test (8).png
-traffic_light_detection_module/test_images/test (9).png
-traffic_light_detection_module/test_images/test (10).png
-traffic_light_detection_module/test_images/test (11).png
-traffic_light_detection_module/test_images/test (12).png
-traffic_light_detection_module/test_images/test (13).png
-traffic_light_detection_module/test_images/test (14).png
-traffic_light_detection_module/test_images/test (15).png
-traffic_light_detection_module/test_images/test (16).png
+__pycache__
+.vscode
+bb
+Temp
+Reports
+controller_output/
+Videos
+fsm_imgs
+.gitignore
+HDVideos
+traffic_light_detection_module/test_images

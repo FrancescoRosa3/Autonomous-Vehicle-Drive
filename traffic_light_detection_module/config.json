@@ -9,7 +9,7 @@
         "grid_w":                13,
         "num_classes":           2,
         "classes":               ["go", "stop"],
-        "obj_thresh":            0.20,
+        "obj_thresh":            0.25,
         "nms_thresh":            0.01,
         "saved_model_name":      "traffic-light-detection.h5",
         "obj_scale":             85,
