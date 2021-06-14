@@ -26,9 +26,6 @@ STOP_TRAFFIC_LIGHT = 5
 SLOW_DOWN_TRAFFIC_LIGHT = 15
 TRAFFIC_LIGHT_SECURE_DISTANCE = 2
 
-# 
-TURN_LOOKAHEAD = 1 #m
-
 class BehaviouralPlanner:
     def __init__(self, lookahead):
         self._lookahead                     = lookahead
@@ -39,7 +36,7 @@ class BehaviouralPlanner:
         self._goal_index                    = 0
         self._lookahead_collision_index     = 0
 
-        ## New parameters
+        # New parameters
         ### traffic light state
         self._traffic_light_state         = UNKNOWN
         ### traffic light distance
@@ -48,14 +45,44 @@ class BehaviouralPlanner:
         ### closest index
         self._closest_index = 0
 
+
+    def set_lookahead(self, lookahead):
+        """
+        Set waypoints lookahead.
+        
+        args:
+            lookahead: waypoints lookahead.
+        """
+        self._lookahead = lookahead
+
     def get_state(self):
         return self._state
 
     def set_traffic_light_state(self, state):
+        """
+        Set traffic light state.
+        
+        args:
+            state: traffic light state.
+        """
         self._traffic_light_state = state
 
+    ### [ADDITION]
     def set_obstacle_on_lane(self, collision_check_array):
+        """
+        Notify to the Behavioraul Planner if there are any obstacle on lane.
+        
+        args:
+            collision_check_array: Array containing a Boolean which indicate
+                if a path collide with an obstacle or not.
+        """
+        
+        # If the collision check array length is greater than 0, procede.
         if len(collision_check_array)>0:
+            # Check if the Local Planner generated ad least one free path.
+            # If so, set the _obstacle_on_lane variable to False.
+            # Otherwise conclude that no paths are free and set the
+            # _obstacle_on_lane variable to true.
             for path_result in collision_check_array:
                 if path_result:
                     self._obstacle_on_lane = False
@@ -63,17 +90,33 @@ class BehaviouralPlanner:
                 self._obstacle_on_lane = True
         else:
             self._obstacle_on_lane = False
-    
+
     def set_traffic_light_distance(self, distance):
+        """
+        Set traffic light distance.
+        
+        args:
+            distance: distance between the ego-vehicle and the traffic light
+                in the Vehicle Frame along the x axis.
+        """
         self._traffic_light_distance = distance
 
     def set_traffic_light_vehicle_frame(self, traffic_light_vehicle_frame):
+        """
+        Set traffic light points position with respect to Vehicle Frame.
+        
+        args:
+            traffic_light_vehicle_frame: points position with respect to Vehicle Frame.
+        """
         self._traffic_light_vehicle_frame = traffic_light_vehicle_frame
 
-    def set_lookahead(self, lookahead):
-        self._lookahead = lookahead
-
     def set_follow_lead_vehicle(self, following_lead_vehicle):
+        """
+        Set following_lead_vehicle variable to indicate if a lead vehicle exists.
+        
+        args:
+            following_lead_vehicle: Boolean which represent the existance of a lead vehicle.
+        """
         self._follow_lead_vehicle = following_lead_vehicle
 
     # Handles state transitions and computes the goal state.
@@ -116,12 +159,18 @@ class BehaviouralPlanner:
             STOP_COUNTS     : Number of cycles (simulation iterations) 
                               before moving from stop sign.
         """
+        
+        # Compute the conversion from speed in m/s to km/h.
         speed_km_h = (ego_state[3]*3600)/1000
+
+        # Compute the heuristic for the breaking distance.
         secure_distance_brake = (speed_km_h/10)*3
+        
+        
         # In this state, continue tracking the lane by finding the
         # goal index in the waypoint list that is within the lookahead
         # distance. Then, check to see if the waypoint path intersects
-        # with any onstacle or red traffic light.
+        # with any obstacle or red traffic light.
         # In the first case, enforce the car to stop immediately.
         # In the second case, check the distance to the traffic light
         # and slow down if it is between the first and the secondo threshold,
@@ -143,11 +192,10 @@ class BehaviouralPlanner:
                         self._goal_state[2] = main.HALF_CRUISE_SPEED
                         self._state = APPROACHING_RED_TRAFFIC_LIGHT
 
-        ## New state
         # In this state, continue tracking the lane by finding the
         # goal index in the waypoint list that is within the lookahead
         # distance. Procede at half cruise speed.
-        # If an obstacle is detected, enforce the car to stop immediately.
+        # If an obstacle is detected, enforce the car to stop.
         # If the traffic light state is red but above the first threshold
         # keep the same speed. If the distance drops below the threshold
         # ensure that the goal state enforce the car to be stopped before
@@ -171,9 +219,9 @@ class BehaviouralPlanner:
                                 
             
         # In this state, the car is stopped at traffic light.
-        # Transit to the the "follow lane" state if the traffic light becomes green
-        # and there are no obstacle on lane.
-        # If an obstacle happens to be on the lane, transit to "stop ato obstacle" state
+        # Transit to the the "FOLLOW_LANE" state if the traffic light becomes green
+        # and there are no obstacles on lane.
+        # If an obstacle happens to be on the lane, transit to "STOP_AT_OBSTACLE" state
         # enforcing the car to stay stopped.
         elif self._state == STOP_AT_TRAFFIC_LIGHT:
             print("FSM STATE: STOP_AT_TRAFFIC_LIGHT")
@@ -188,17 +236,17 @@ class BehaviouralPlanner:
                 self._state = FOLLOW_LANE
 
 
-        # In this state, the car is stopped at traffic light.
-        # Transit to the the "follow lane" state if the traffic light becomes green
-        # and there are no obstacle on lane.
-        # If an obstacle happens to be on the lane, transit to "stop ato obstacle" state
-        # enforcing the car to stay stopped.
+        # In this state, the car is stopped before an obstacle.
+        # Transit to the the "FOLLOW_LANE" state if there are no obstacles on lane
+        # and the traffic light is not red or if there are no obstacles and the
+        # traffic light is red but the distance is above the greater threshold.
+        # If there are no obstacles on lane but the traffic light state is red and the
+        # distance is between the two threshold, set the speed to HALF CRUISE SPEED and
+        # transit to "APPROACHING_RED_TRAFFIC_LIGHT". Otherwise, if the traffic light
+        # state is red and the distance is below the shorter threshold, enforce the vehicle
+        # to stop and transit to "STOP_AT_TRAFFIC_LIGHT".
         elif self._state == STOP_AT_OBSTACLE:
             print("FSM STATE: STOP_AT_OBSTACLE")
-            '''
-            if closed_loop_speed > STOP_THRESHOLD:
-                self._update_goal_index(waypoints, ego_state)
-            '''
             self._goal_state[2] = 0
             if not self._obstacle_on_lane:
                 if self._traffic_light_state == STOP and self._traffic_light_distance != None:
@@ -272,6 +320,10 @@ class BehaviouralPlanner:
         # Otherwise, find our next waypoint.
         while wp_index < len(waypoints) - 1:
             arc_length += np.sqrt((waypoints[wp_index][0] - waypoints[wp_index+1][0])**2 + (waypoints[wp_index][1] - waypoints[wp_index+1][1])**2)
+            
+            # [MODIFIED]
+            # Update the waypoint index to be returned before breaking the while cycle,
+            # in order to truly return the first waypoint after the lookahead.
             wp_index += 1
             if arc_length > self._lookahead: break
 
@@ -287,7 +339,7 @@ class BehaviouralPlanner:
         """
         
         # First, find the closest index to the ego vehicle.
-        closest_len, closest_index = get_closest_index(waypoints, ego_state, self._goal_index)
+        closest_len, closest_index = get_closest_index(waypoints, ego_state)
         # Next, find the goal index that lies within the lookahead distance
         # along the waypoints.
         goal_index = self.get_goal_index(waypoints, ego_state, closest_len, closest_index)
@@ -347,7 +399,7 @@ class BehaviouralPlanner:
         
 # Compute the waypoint index that is closest to the ego vehicle, and return
 # it as well as the distance from the ego vehicle to that waypoint.
-def get_closest_index(waypoints, ego_state, goal_index):
+def get_closest_index(waypoints, ego_state):
     """Gets closest index a given list of waypoints to the vehicle position.
 
     args:
@@ -376,24 +428,36 @@ def get_closest_index(waypoints, ego_state, goal_index):
             closest_index: index of the waypoint which is closest to the vehicle.
                 i.e. waypoints[closest_index] gives the waypoint closest to the vehicle.
     """
+
+    # Initilize the closest index info
     closest_len = float('Inf')
     closest_index = 0
 
+    # Compute the distance between the ego_vehicle position and each waypoint.
+    # Convert the waypoint position to Vehicle Frame and check if its x component
+    # is poitive to verify if it is in front of the ego-vehicle.
+    # If so, check if it is the nearest one.
     for i in range(len(waypoints)):
         temp = (waypoints[i][0] - ego_state[0])**2 + (waypoints[i][1] - ego_state[1])**2
 
+        # Convert the waypoint position to Vehicle Frame
         p_wp_vehicle = convert_wp_in_vehicle_frame(ego_state, waypoints[i])
-        if(p_wp_vehicle[0] > 0):               
+        if(p_wp_vehicle[0] > 0):    
             if temp < closest_len:
                 closest_len = temp
                 closest_index = i
-
     closest_len = np.sqrt(closest_len)
 
     return closest_len, closest_index
 
 
 def convert_wp_in_vehicle_frame(ego_state, waypoint):
+    """Conversion of a waypoint position from World Frame to Vehicle Frame.
+
+        args:
+            ego_state: ego state vector for the vehicle in the World Frame.
+            waypoint: waypoint position in the World Frame.
+    """
     p_wp_world = np.array([waypoint[0], waypoint[1]]).T
     o_world_vehicle = np.array([ego_state[0], ego_state[1]]).T
 
@@ -401,12 +465,18 @@ def convert_wp_in_vehicle_frame(ego_state, waypoint):
                                 [np.cos(ego_state[2]), -np.sin(ego_state[2])],
                                 [np.sin(ego_state[2]), np.cos(ego_state[2])]])
     
+    # p{1} = - R{0_to_1}^T * o{0_to_1} + R{0_to_1}^T * p{1}
+    # p{vehicle_frame} = - R{world_to_vehicle}^T * o{world_to_vehicle} + R{world_to_vehicle}^T * p{vehicle}
     p_wp_vehicle = -np.matmul(R_world_vehicle.T, o_world_vehicle) + np.matmul(R_world_vehicle.T, p_wp_world)
-    #print(f"Ego state {ego_state[:2]},\n Point in world {waypoint[:2]}\n, Transformed wp{p_wp_vehicle}")
-    #print(f"Point in world {waypoint[:2]}\n, Transformed wp{p_wp_vehicle}")
-    return p_wp_vehicle[:2]
+    return p_wp_vehicle
 
 def convert_wp_in_world_frame(ego_state, waypoint):
+    """Conversion of a waypoint position from Vehicle Frame to World Frame.
+
+        args:
+            ego_state: ego state vector for the vehicle in the World Frame.
+            waypoint: waypoint position in the Vehicle Frame.
+    """
     p_wp_vehicle = np.array([waypoint[0], waypoint[1]]).T
     o_world_vehicle = np.array([ego_state[0], ego_state[1]]).T
 
@@ -414,20 +484,7 @@ def convert_wp_in_world_frame(ego_state, waypoint):
                                 [np.cos(ego_state[2]), -np.sin(ego_state[2])],
                                 [np.sin(ego_state[2]), np.cos(ego_state[2])]])
     
+    # p{0} = o{0_to_1} + R{0_to_1}*p{1}
+    # p{world} = o{world_to_vehicle} + R{world_to_vehicle}*p{vehicle}
     p_wp_world = o_world_vehicle + np.matmul(R_world_vehicle, p_wp_vehicle)
-    #print(f"Ego state {ego_state[:2]},\n Point in vehicle frame {p_wp_vehicle}\n, Point in world{p_wp_world}")
-    #print(f"Point in vehicle frame {waypoint}\n, Point in world {p_wp_world}")
     return p_wp_world
-
-def convert_wp_in_vehicle_frame(ego_state, waypoint):
-    p_wp_world = np.array([waypoint[0], waypoint[1]]).T
-    o_world_vehicle = np.array([ego_state[0], ego_state[1]]).T
-
-    R_world_vehicle =  np.array([
-                                [np.cos(ego_state[2]), -np.sin(ego_state[2])],
-                                [np.sin(ego_state[2]), np.cos(ego_state[2])]])
-    
-    p_wp_vehicle = -np.matmul(R_world_vehicle.T, o_world_vehicle) + np.matmul(R_world_vehicle.T, p_wp_world)
-    #print(f"Ego state {ego_state[:2]},\n Point in world {waypoint[:2]}\n, Transformed wp{p_wp_vehicle}")
-    #print(f"Point in world {waypoint[:2]}\n, Transformed wp{p_wp_vehicle}")
-    return p_wp_vehicle

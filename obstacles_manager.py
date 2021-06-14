@@ -1,19 +1,15 @@
 import numpy as np
 import math
 from math import pi, sqrt, cos, sin, inf, degrees
-from obstacle import Obstacle
 
+import obstacle
+from obstacle import Obstacle
 import main 
 
-# Usefull for avoiding lead vehicle hooking and unhooking
+# Useful for avoiding lead vehicle hooking and unhooking
 LEAD_VEHICLE_LOOKAHEAD_OFFSET_FOR_RELEASE = 5
 
-# Constant indicating the type of agent
-VEHICLE = 0
-PEDESTRIAN = 1
-
 class ObstaclesManager:
-
 
     def __init__(self, lead_vehicle_lookahead_base, vehicle_obstacle_lookahead_base, pedestrian_obstacle_lookahead, behavioral_planner):
         """
@@ -198,7 +194,7 @@ class ObstaclesManager:
                     
                     # If it is not a vehicle on the same lane of the ego vehicle add it to the obstacle dictionary.
                     else:
-                        self._add_obstacle(agent.vehicle, agent.id, VEHICLE)
+                        self._add_obstacle(agent.vehicle, agent.id, obstacle.VEHICLE)
                 
                 # If the vehicle is outside the obstacle range, try to eliminate it from the dictionary of all obstacles.
                 # This is needed to take into account previous obstacles which went out of range.
@@ -232,7 +228,7 @@ class ObstaclesManager:
                 if dist < self._pedestrian_obstacle_lookahead:
                     
                     # Add or update the agent inside the obstacle dictionary using its id as key
-                    self._add_obstacle(agent.pedestrian, agent.id, PEDESTRIAN)
+                    self._add_obstacle(agent.pedestrian, agent.id, obstacle.PEDESTRIAN)
                 
                 # If the pedestrian is outside the obstacle range, try to eliminate it from the dictionary of all obstacles
                 else:

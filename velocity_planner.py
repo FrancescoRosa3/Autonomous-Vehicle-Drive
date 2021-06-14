@@ -3,7 +3,6 @@ from behavioural_planner import STOP_TRAFFIC_LIGHT
 import numpy as np
 from math import sin, cos, pi, sqrt
 
-###
 
 class VelocityPlanner:
     def __init__(self, time_gap, a_max, slow_speed, safety_distance):
@@ -13,7 +12,7 @@ class VelocityPlanner:
         self._safety_distance = safety_distance
         self._prev_trajectory   = [[0.0, 0.0, 0.0]]
 
-    ### [ADDITION] [TO CHECK]
+    ### [ADDITION]
     def set_stop_line_distance(self, stop_line_distance):
         """Sets the distance from the stop line. i.e. from the point where you would like to stop.
 
@@ -21,11 +20,10 @@ class VelocityPlanner:
                 stop_line_distance: distance from the stop line.
         """
 
-        # If the distance is not None, correct it by substracting the safety distance.
+        # If the distance is not None, asign it to the _stop_line_distance variable.
         if stop_line_distance != None:
-            stop_line_distance = stop_line_distance # - self._safety_distance
-            self._stop_line_distance = 0 if stop_line_distance < 0 else stop_line_distance
-        # Otherwise, set it to the safety distance. [TO CHECK]
+            self._stop_line_distance = stop_line_distance
+        # Otherwise, set it to the safety distance.
         else:
             self._stop_line_distance = self._safety_distance
 
@@ -67,12 +65,12 @@ class VelocityPlanner:
 
     ### [ADDITION] [MODIFIED]
     # Takes a path, and computes a velocity profile to our desired speed.
-    # - decelerate_to_stop denotes whether or not we need to decelerate to a
+    # - stop_to_obstacle and stop_to_red_traffic_light denote whether or not we need to decelerate to a
     #   stop line
     # - follow_lead_vehicle denotes whether or not we need to follow a lead
     #   vehicle, with state given by lead_car_state.
     # The order of precedence for handling these cases is obstacle presence handling,       <------- [MODIFIED]
-    # lead vehicle handling, red traffic light present, then nominal lane maintenance.      <------- [MODIFIED]
+    # lead vehicle handling, red traffic light presence, then nominal lane maintenance.      <------- [MODIFIED]
     # In a real velocity planner you would need to handle the coupling between these
     # states, but for simplicity this project can be implemented by isolating each case.
     # For all profiles, the required acceleration is given by self._a_max.
@@ -138,22 +136,10 @@ class VelocityPlanner:
         # For our profile, use the open loop speed as our initial speed.
         start_speed = ego_state[3]
 
-        ### TO BE DELETED [comment]
-        # s o l
-
-        # 0 0 0 nominal                 +
-        # 0 0 1 follow lead vehicle     -
-        # 0 1 0 decelerate              -
-        # 0 1 1 decelerate              -
-        # 1 0 0 decelerate              
-        # 1 0 1 follow lead vehicle     -
-        # 1 1 0 decelerate              -
-        # 1 1 1 decelerate              -
-
-        ### [ADDITION] [MODIFIED]
+        ### [MODIFIED]
         # Given the current behavioraul planning state, choose the velocity profile to be computed.
         # The order of precedence for handling these cases is obstacle presence handling,
-        # lead vehicle handling, red traffic light present, then nominal lane maintenance.
+        # lead vehicle handling, red traffic light presence, then nominal lane maintenance.
         # In case of decelerate to stop, generate a trapezoidal profile.
         if stop_to_obstacle:
             self.set_stop_line_distance(stop_line_distance)
@@ -245,7 +231,7 @@ class VelocityPlanner:
                                          path[1][obs_index+1] - path[1][obs_index]])
             obs_index += 1
 
-        ### [ADDITION] [MODIFIED]
+        ### [MODIFIED]
         # Compute the index at which we should stop with respect to the obstacle or traffic light index.
         stop_index = obs_index
         temp_dist = 0.0
@@ -306,8 +292,6 @@ class VelocityPlanner:
                 temp_dist += np.linalg.norm([path[0][decel_index+1] - path[0][decel_index], 
                                              path[1][decel_index+1] - path[1][decel_index]])
                 decel_index += 1
-
-            #print(f"brake_index: {brake_index} - decel_index: {decel_index}")
 
             # The speeds from the start to decel_index should be a linear ramp
             # from the current speed down to the slow_speed, decelerating at
@@ -439,7 +423,6 @@ class VelocityPlanner:
 
     # Computes a profile for nominal speed tracking.
     def nominal_profile(self, path, start_speed, desired_speed):
-        #print("normal:", desired_speed)
         """Computes the velocity profile for the local planner path in a normal
         speed tracking case.
         
@@ -475,8 +458,6 @@ class VelocityPlanner:
         for i in range(len(path[0])-1):
             path_length += np.linalg.norm([path[0][i+1] - path[0][i], 
                                            path[1][i+1] - path[1][i]])
-
-        print(f"path_length: {path_length}") 
 
         profile = []
         # Compute distance travelled from start speed to desired speed using

@@ -158,21 +158,16 @@ class Obstacle:
             end_wp = (self._prev_state[self._tail-1].transform.location.x, self._prev_state[self._tail-1].transform.location.y)
             
             if self._check_for_turn(start_wp, end_wp):
-                print("OSTACOLO IN CURVA")
                 return yaw_diff_head
             else:
                 return yaw_diff_tail
+        
         # If enough history frames are not available yet return the difference
         # between the current angle and the most recent one.
         else:
             return yaw_diff_tail
 
-        """
-        if abs(yaw_diff_head) > abs(yaw_diff_tail) + math.radians(10):
-            return yaw_diff_head
-        else:
-            return yaw_diff_tail
-        """
+        
     def _predict_future_location(self):
         """
         Compute the projected bounding box of the obstacle in a given number of future frames. 
@@ -268,6 +263,9 @@ class Obstacle:
     def _check_for_turn(self, start_wp, end_wp):
         """Check if the ego vehicle is cornering.
 
+            args:
+                start_wp: Start waypoint position in the World Frame.
+                end_wp: End waypoint position in the World Frame.
             returns:
                 True if the vehicle is cornering, False otherwise.
         """

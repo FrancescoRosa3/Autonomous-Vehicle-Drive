@@ -1,5 +1,5 @@
 import os
-from traffic_light_detection_module.traffic_light_detector import trafficLightDetector
+from traffic_light_detector import TrafficLightDetector
 import numpy as np
 import main
 from math import cos, sin, pi,tan
@@ -26,11 +26,11 @@ STOP_COUNTER = 4
 OTHERS_COUNTER = 3
 
 
-class trafficLightsManager:
+class TrafficLightsManager:
 
     def __init__(self, camera_parameters, config_path = os.path.join(BASE_DIR, 'traffic_light_detection_module\\config.json')):
         self.config_path = config_path
-        self.tl_det = trafficLightDetector()
+        self.tl_det = TrafficLightDetector()
         
         self.new_state_counter = 0
         self.true_state = UNKNOWN

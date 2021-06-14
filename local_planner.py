@@ -25,10 +25,11 @@ class LocalPlanner:
             velocity_planner.VelocityPlanner(time_gap, a_max, slow_speed, 
                                              security_distance)
         
-        ### NEW VARIABLES [ADDITION]
+        self._prev_best_path = None
+        
+        ### NEW VARIABLES
         # These variable are used to keep information about the last valid path and goal state.
         # They are used when no valid path can be found. 
-        self._prev_best_path = None
         self._prev_goal_state = None
         self._prev_goal_index = None
 
@@ -93,7 +94,7 @@ class LocalPlanner:
                   all units are in m, m/s and radians
         """
         
-        ### [ADDITION] [TO CHECK]
+        ### [ADDITION]
         # Compute number of paths to create given the type of road the ego vehicle is traveling.
         # If the ego vehicle is on a straight road just three paths needs to be computed.
         # Otherwise, if the ego vehicle is on a curve, five paths must be computed.
@@ -107,7 +108,6 @@ class LocalPlanner:
         # the previous index instead.
         # To do this, compute the delta_x and delta_y values between
         # consecutive waypoints, then use the np.arctan2() function.
-       
         if goal_index < len(waypoints)-1:
             delta_x = waypoints[goal_index+1][0] - waypoints[goal_index][0]
             delta_y = waypoints[goal_index+1][1] - waypoints[goal_index][1]
@@ -230,6 +230,10 @@ class LocalPlanner:
     ### [ADDITION]
     def _check_for_turn(self, ego_state, goal_wp):
         """Check if the ego vehicle is cornering.
+
+            args:
+                ego_state: ego state vector for the vehicle in the World Frame.
+                goal_wp: Waypoint position in the World Frame.
 
             returns:
                 True if the vehicle is cornering, False otherwise.

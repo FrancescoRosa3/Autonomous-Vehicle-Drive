@@ -12,7 +12,7 @@ class CollisionChecker:
         self._circle_radii   = circle_radii
         self._weight         = weight
 
-    ### [ADDITION] [MODIFIED]
+    ### [MODIFIED]
     # Takes in a set of paths and obstacles, and returns an array
     # of bools that says whether or not each path is collision free,
     # and an array indicating the distance between the vehicle and obstacles, if any.
@@ -42,8 +42,8 @@ class CollisionChecker:
                 ith index in the collision_check_array list corresponds to the
                 ith path in the paths list.
             collision_dist_array: A list of float values which represents
-                the distance between the ego vehicle and an obstacle, if it exists.
-                The ith index in the collision_check_array list corresponds to the
+                the distance between the ego vehicle and any obstacle, if they exist.
+                The ith index in the collision_dist_array list corresponds to the
                 ith path in the paths list.
         """
  
@@ -64,8 +64,10 @@ class CollisionChecker:
                 path_index += 1
 
             if path_index != len(path[0])-1:
-                # Iterate over the points in the path.
+                
                 dist_from_obstacle = dist
+                
+                # Iterate over the points in the path except the previously exluded ones.
                 for j in range(path_index, len(path[0])):
                     # Compute the circle locations along this point in the path.
                     # These circle represent an approximate collision
@@ -106,7 +108,7 @@ class CollisionChecker:
                         collision_free = collision_free and \
                                         not np.any(collision_dists < 0)
 
-                        ### [ADDITION] [MODIFIED]
+                        ### [MODIFIED]
                         # If an obstacle collides with the current path, update the distance from the obstacle.
                         if not collision_free:
                             dist_from_obstacle += np.sqrt((path[0][j]-path[0][path_index])**2+(path[1][j]-path[1][path_index])**2)
@@ -133,7 +135,7 @@ class CollisionChecker:
         
         return collision_check_array, collision_dist_array
 
-    ### [ADDITION] [MODIFIED]
+    ### [MODIFIED]
     # Selects the best path in the path set, according to how closely
     # it follows the lane centerline.
     # Disqualifies paths that collide with obstacles from the selection
@@ -173,11 +175,14 @@ class CollisionChecker:
         best_index = None
         best_score = float('Inf')
         for i in range(len(paths)):
-            # Handle the case of colliding paths.
+            # If the Behavioraul Planner state is not "STOP_AT_OBSTACLE", which means that
+            # there is at least one free path, disqualifies all the colliding paths.
             if behavioural_planner_state != STOP_AT_OBSTACLE and not collision_check_array[i]:
                 score = float('Inf')
             
-            # Handle the case of collision-free paths.
+            # Otherwise, if the Behavioraul Planner state is "STOP_AT_OBSTACLE", validate
+            # the considered path by computing the distance from the centerline,
+            # indipendently from the fact that is colliding or not. 
             else:
                 # Compute the "distance from centerline" score.
                 # The centerline goal is given by goal_state.
@@ -190,7 +195,7 @@ class CollisionChecker:
 
         return best_index
 
-    ### [ADDITION] [MODIFIED]
+    ### [MODIFIED]
     def _correct_distance(self, distance):
         """Corrects the distance from the obstacle by taking into account the
         ego vehicle extension on the long side.

@@ -21,11 +21,8 @@ import cv2
 import json 
 from math import atan2, sin, cos, pi, tan, sqrt
 
-from traffic_lights_manager import trafficLightsManager
+from traffic_lights_manager import TrafficLightsManager
 from obstacles_manager import ObstaclesManager
-import shutil
-from PIL import Image
-from video_utils import copy_state_image, create_video_output_dir, save_video_graph, save_video_image 
 
 # Script level imports
 sys.path.append(os.path.abspath(sys.path[0] + '/..'))
@@ -40,366 +37,17 @@ from carla.image_converter import labels_to_array, depth_to_array, to_bgra_array
 from carla.planner.city_track import CityTrack
 
 
-
-
 ###############################################################################
 # CONFIGURABLE PARAMENTERS DURING EXAM
 ###############################################################################
 
-### PERCORSI: 
-### 6-20
-### 13-20
-### 2-23
-### 93-20 semaforo rosso con macchina di fronte che non gira
-### 133-21
-### 7-15, stop a semaforo da giallo a rosso
-
-'''
 PLAYER_START_INDEX = 13           #  spawn index for player
 DESTINATION_INDEX = 29          # Setting a Destination HERE
 NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
 NUM_VEHICLES           = 1000    # total number of vehicles to spawn
 SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
 SEED_VEHICLES          = 0     # seed for vehicle spawn randomizer
-'''
 
-'''
-PLAYER_START_INDEX = 100           #  spawn index for player
-DESTINATION_INDEX = 96          # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 50    # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 10     # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### RETTILINEO LIBERO ###############################
-PLAYER_START_INDEX = 13        #  spawn index for player
-DESTINATION_INDEX = 20         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 0   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### TURN PROBLEMS ###############################
-PLAYER_START_INDEX = 13        #  spawn index for player
-DESTINATION_INDEX = 124         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 1500   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 30    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### SUV ###############################
-PLAYER_START_INDEX = 51        #  spawn index for player
-DESTINATION_INDEX = 90         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
-NUM_VEHICLES           = 30   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### problem with projections ghosts ###############################
-PLAYER_START_INDEX = 17        #  spawn index for player
-DESTINATION_INDEX = 90         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
-NUM_VEHICLES           = 30   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### RED TRAFFIC LIGHT - NO OBSTACLES ###############################
-PLAYER_START_INDEX = 8        #  spawn index for player
-DESTINATION_INDEX = 20         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 50      # total number of pedestrians to spawn
-NUM_VEHICLES           = 50   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### TESTS ON PEDESTRIANS ###############################
-PLAYER_START_INDEX = 13        #  spawn index for player
-DESTINATION_INDEX = 27         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 30   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### TESTS ON PEDESTRIANS 2 ###############################
-PLAYER_START_INDEX = 89        #  spawn index for player
-DESTINATION_INDEX = 135         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
-NUM_VEHICLES           = 0   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### TESTS ON PEDESTRIANS 3 ###############################
-PLAYER_START_INDEX = 91        #  spawn index for player
-DESTINATION_INDEX = 148         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
-NUM_VEHICLES           = 0   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### TEST SU PEDONI SU RETTILINEO SUPERIORE 1 ###############################
-PLAYER_START_INDEX = 139        #  spawn index for player
-DESTINATION_INDEX = 148         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
-NUM_VEHICLES           = 0   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### TEST SU PEDONI SU RETTILINEO SUPERIORE 2 INTERESSANTE ##############################
-PLAYER_START_INDEX = 144        #  spawn index for player
-DESTINATION_INDEX = 65         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 400      # total number of pedestrians to spawn
-NUM_VEHICLES           = 0   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 123      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-########################## TESTS ON PEDESTRIANS 4 ###############################
-PLAYER_START_INDEX = 2        #  spawn index for player
-DESTINATION_INDEX = 139        # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
-NUM_VEHICLES           = 0   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 159      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### TESTS ON PEDESTRIANS 4 LUNGO ###############################
-PLAYER_START_INDEX = 2        #  spawn index for player
-DESTINATION_INDEX = 20         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
-NUM_VEHICLES           = 50   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### TESTS ON PEDESTRIANS 4 LUNGO 2 ###############################
-PLAYER_START_INDEX = 2        #  spawn index for player
-DESTINATION_INDEX = 20         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 500      # total number of pedestrians to spawn
-NUM_VEHICLES           = 50   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### TESTS ON PEDESTRIANS 4 LUNGO 3 ###############################
-PLAYER_START_INDEX = 2        #  spawn index for player
-DESTINATION_INDEX = 29         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 500      # total number of pedestrians to spawn
-NUM_VEHICLES           = 50   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### TESTS ON PEDESTRIANS 5 ###############################
-PLAYER_START_INDEX = 6       #  spawn index for player
-DESTINATION_INDEX = 20         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
-NUM_VEHICLES           = 1   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### TEST INCROCIO SENZA SEMAFORO 1 ###############################
-PLAYER_START_INDEX = 2        #  spawn index for player
-DESTINATION_INDEX = 29         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
-NUM_VEHICLES           = 1000   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 123    # seed for vehicle spawn randomizer
-'''
-
-#'''
-######################### TEST INCROCIO SENZA SEMAFORO 2 ###############################
-PLAYER_START_INDEX = 140        #  spawn index for player
-DESTINATION_INDEX = 22         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
-NUM_VEHICLES           = 1000   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 123    # seed for vehicle spawn randomizer
-#'''
-
-'''
-######################### TEST INCROCIO SENZA SEMAFORO 3 ###############################
-PLAYER_START_INDEX = 2        #  spawn index for player
-DESTINATION_INDEX =23         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 300   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-
-'''
-################## TEST CURVA CON FURGONCINO CHE PASSA CON ROSSO #############
-PLAYER_START_INDEX = 16        #  spawn index for player
-DESTINATION_INDEX = 29         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
-NUM_VEHICLES           = 50   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######### SLOW DOWN BEHIND LEAD VEHICLE THAT STOPPED FOR A PEDESTRIAN ################
-PLAYER_START_INDEX = 126        #  spawn index for player
-DESTINATION_INDEX = 20         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1000      # total number of pedestrians to spawn
-NUM_VEHICLES           = 100   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### lead vehicle seen as obstacle on turn ###############################
-PLAYER_START_INDEX = 6        #  spawn index for player
-DESTINATION_INDEX = 134         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 70      # total number of pedestrians to spawn
-NUM_VEHICLES           = 70   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### lead vehicle seen as obstacle on turn ###############################
-PLAYER_START_INDEX = 136       #  spawn index for player
-DESTINATION_INDEX = 92         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 30     # total number of pedestrians to spawn
-NUM_VEHICLES           = 30   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### traiettoria persa in curva ###############################
-PLAYER_START_INDEX = 15      #  spawn index for player
-DESTINATION_INDEX = 148         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 200     # total number of pedestrians to spawn
-NUM_VEHICLES           = 100   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-################################## --- #################################################
-PLAYER_START_INDEX = 11       # spawn index for player
-DESTINATION_INDEX = 20         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
-NUM_VEHICLES           = 1000   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-PLAYER_START_INDEX = 17       #  spawn index for player
-DESTINATION_INDEX = 51         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 100   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-################################## Veicoli all'incrocio semaforo disabilitato. #################################################
-PLAYER_START_INDEX = 2       #  spawn index for player
-DESTINATION_INDEX = 23         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 300   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-######################### Veicoli all'incrocio semaforo abilitato. ##################
-PLAYER_START_INDEX = 2       #  spawn index for player
-DESTINATION_INDEX = 23         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 300   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-############ TEST 5 - Veicolo che evita il tamponamento con un veicolo subito dopo una curva. ########
-PLAYER_START_INDEX = 2       #  spawn index for player
-DESTINATION_INDEX = 15         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 1000   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-############ waypoint preso male a semaforo rosso 1 ########
-PLAYER_START_INDEX = 15       #  spawn index for player
-DESTINATION_INDEX = 148         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 50      # total number of pedestrians to spawn
-NUM_VEHICLES           = 100   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-
-'''
-############ waypoint preso male a semaforo rosso 2 ########
-PLAYER_START_INDEX = 135       #  spawn index for player
-DESTINATION_INDEX = 148         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 0   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-#'''
-
-'''
-PLAYER_START_INDEX = 24       #  spawn index for player
-DESTINATION_INDEX = 15         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 200      # total number of pedestrians to spawn
-NUM_VEHICLES           = 100   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0     # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-################################## --- #################################################
-PLAYER_START_INDEX = 11       # spawn index for player
-DESTINATION_INDEX = 20         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 0      # total number of pedestrians to spawn
-NUM_VEHICLES           = 1000   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 0      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
-
-'''
-PLAYER_START_INDEX = 17       #  spawn index for player
-DESTINATION_INDEX = 51         # Setting a Destination HERE
-NUM_PEDESTRIANS        = 1      # total number of pedestrians to spawn
-NUM_VEHICLES           = 100   # total number of vehicles to spawn
-SEED_PEDESTRIANS       = 500      # seed for pedestrian spawn randomizer
-SEED_VEHICLES          = 0    # seed for vehicle spawn randomizer
-'''
 
 ###############################################################################
 
@@ -410,8 +58,6 @@ TOTAL_FRAME_BUFFER     = 300        # number of frames to buffer after total run
 CLIENT_WAIT_TIME       = 3          # wait time for client before starting episode
                                     # used to make sure the server loads
                                     # consistently
-
-PARAMS_STRING = F"_{PLAYER_START_INDEX}-{DESTINATION_INDEX}-{NUM_PEDESTRIANS}-{NUM_VEHICLES}-{SEED_PEDESTRIANS}-{SEED_VEHICLES}_"
 
 WEATHERID = {
     "DEFAULT": 0,
@@ -448,9 +94,7 @@ BP_LOOKAHEAD_BASE      = 8.0                # m
 BP_LOOKAHEAD_TIME      = 1.0                # s
 PATH_OFFSET            = 1                  # m
 CIRCLE_OFFSETS         = [-1.0, 1.0, 3.0] # m
-# CIRCLE_OFFSETS         = [1.5, 3.0]         # m
 CIRCLE_RADII           = [1.5, 1.5, 1.5]   # m
-# CIRCLE_RADII           = [1.5, 1.5]         # m
 TIME_GAP               = 1.0                # s
 PATH_SELECT_WEIGHT     = 10
 A_MAX                  = 2.5                # m/s^2
@@ -489,14 +133,6 @@ LEAD_VEHICLE_LOOKAHEAD_BASE = 5 # m
 
 # half of the ego vehicle's extension on the long side
 CAR_RADII_X_EXTENT = 2.34
-
-SHOW_LIVE_PLOTTER = False
-
-### TO BE DELETED 
-PRODUCE_VIDEO = True
-HIGH_QUALITY = True
-
-SAVE_PATH_REFERENCE = False
 
 # Camera parameters
 camera_parameters = {}
@@ -611,7 +247,6 @@ def make_carla_settings(args):
     camera_fov = camera_parameters['fov']
 
 
-
     # Declare here your sensors
 
     # Camera
@@ -625,30 +260,6 @@ def make_carla_settings(args):
     camera.set(FOV=camera_fov)
     # Adding camera to configuration 
     settings.add_sensor(camera)
-
-
-    ### TO BE DELETED
-    if PRODUCE_VIDEO:
-        # Video Camera
-        if HIGH_QUALITY:
-            video_width = 2560
-            video_height = 1440
-        else:
-            video_width = 1280
-            video_height = 720
-        video_camera = Camera('video_camera')
-        # set pixel Resolution: WIDTH * HEIGHT
-        video_camera.set_image_size(video_width, video_height)
-        # set position X (front), Y (lateral), Z (height) relative to the car in meters
-        # (0,0,0) is at center of baseline of car 
-        video_camera.set_position(-6, 0, 3)
-        # set angles
-        video_camera.set_rotation(pitch=-15, yaw=0, roll=0)
-        # set fov
-        video_camera.set(FOV=camera_fov)
-        # Adding camera to configuration 
-        settings.add_sensor(video_camera)
-
 
     # Depth Camera
     camera_depth = Camera('CameraDepth', PostProcessing='Depth')
@@ -825,6 +436,7 @@ def write_collisioncount_file(collided_list):
     with open(file_name, 'w') as collision_file: 
         collision_file.write(str(sum(collided_list)))
 
+### [MODIFIED]
 def make_correction(waypoint, previuos_waypoint, desired_speed):
     """Corrects the path generated by moving each of the waypoints that compose
     it to the right, given a certain offset.
@@ -837,7 +449,7 @@ def make_correction(waypoint, previuos_waypoint, desired_speed):
     returns:
         waypoint_on_lane: the corrected waypoint.
     """
-    ### [ADDITION]
+    
     # offset to be applied on the waypoint
     offset = 1.75
 
@@ -995,7 +607,6 @@ def exec_waypoint_nav_demo(args):
         prev_y = False
         # Put waypoints in the lane
         previuos_waypoint = mission_planner._map.convert_to_world(waypoints_route[0])
-        aftern_turn = False
         for i in range(1,len(waypoints_route)):
             point = waypoints_route[i]
 
@@ -1101,55 +712,6 @@ def exec_waypoint_nav_demo(args):
 
         waypoints = np.array(waypoints)
         
-        ### [ADDITION]
-        if SAVE_PATH_REFERENCE:
-            waypoints_np = np.array(waypoints)    
-            # Linear interpolation computations
-            # Compute a list of distances between waypoints
-            wp_distance = []   # distance array
-            for i in range(1, waypoints_np.shape[0]):
-                wp_distance.append(
-                        np.sqrt((waypoints_np[i, 0] - waypoints_np[i-1, 0])**2 +
-                                (waypoints_np[i, 1] - waypoints_np[i-1, 1])**2))
-            wp_distance.append(0)  # last distance is 0 because it is the distance
-                                # from the last waypoint to the last waypoint
-
-            # Linearly interpolate between waypoints and store in a list
-            wp_interp      = []    # interpolated values 
-                                # (rows = waypoints, columns = [x, y, v])
-            wp_interp_hash = []    # hash table which indexes waypoints_np
-                                # to the index of the waypoint in wp_interp
-            interp_counter = 0     # counter for current interpolated point index
-            for i in range(waypoints_np.shape[0] - 1):
-                # Add original waypoint to interpolated waypoints list (and append
-                # it to the hash table)
-                wp_interp.append(list(waypoints_np[i]))
-                wp_interp_hash.append(interp_counter)   
-                interp_counter+=1
-                
-                # Interpolate to the next waypoint. First compute the number of
-                # points to interpolate based on the desired resolution and
-                # incrementally add interpolated points until the next waypoint
-                # is about to be reached.
-                num_pts_to_interp = int(np.floor(wp_distance[i] /\
-                                            float(INTERP_DISTANCE_RES)) - 1)
-                wp_vector = waypoints_np[i+1] - waypoints_np[i]
-                wp_uvector = wp_vector / np.linalg.norm(wp_vector)
-                for j in range(num_pts_to_interp):
-                    next_wp_vector = INTERP_DISTANCE_RES * float(j+1) * wp_uvector
-                    wp_interp.append(list(waypoints_np[i] + next_wp_vector))
-                    interp_counter+=1
-            # add last waypoint at the end
-            wp_interp.append(list(waypoints_np[-1]))
-            wp_interp_hash.append(interp_counter)   
-            interp_counter+=1
-            
-            
-            file_name = os.path.join(CONTROLLER_OUTPUT_FOLDER, 'reference_trajectory.txt')
-            with open(file_name, "w") as reference_file:
-                for wp in wp_interp:
-                    reference_file.write('%3.3f, %3.3f, %6.3f \n' %\
-                                            (wp[0], wp[1], wp[2]))
         
         #############################################
         # Controller 2D Class Declaration
@@ -1159,94 +721,94 @@ def exec_waypoint_nav_demo(args):
         controller = controller2d.Controller2D(waypoints)
 
 
-        ### TO BE DELETED (parte di produce video)
-        if SHOW_LIVE_PLOTTER or PRODUCE_VIDEO:
-            #############################################
-            # Vehicle Trajectory Live Plotting Setup
-            #############################################
-            # Uses the live plotter to generate live feedback during the simulation
-            # The two feedback includes the trajectory feedback and
-            # the controller feedback (which includes the speed tracking).
-            lp_traj = lv.LivePlotter(tk_title="Trajectory Trace")
+        #############################################
+        # Vehicle Trajectory Live Plotting Setup
+        #############################################
+        # Uses the live plotter to generate live feedback during the simulation
+        # The two feedback includes the trajectory feedback and
+        # the controller feedback (which includes the speed tracking).
+        lp_traj = lv.LivePlotter(tk_title="Trajectory Trace")
 
-            ###
-            # Add 2D position / trajectory plot
-            ###
-            trajectory_fig = lp_traj.plot_new_dynamic_2d_figure(
-                    title='Vehicle Trajectory',
-                    figsize=(FIGSIZE_X_INCHES, FIGSIZE_Y_INCHES),
-                    edgecolor="black",
-                    rect=[PLOT_LEFT, PLOT_BOT, PLOT_WIDTH, PLOT_HEIGHT])
+        ###
+        # Add 2D position / trajectory plot
+        ###
+        trajectory_fig = lp_traj.plot_new_dynamic_2d_figure(
+                title='Vehicle Trajectory',
+                figsize=(FIGSIZE_X_INCHES, FIGSIZE_Y_INCHES),
+                edgecolor="black",
+                rect=[PLOT_LEFT, PLOT_BOT, PLOT_WIDTH, PLOT_HEIGHT])
 
-            trajectory_fig.set_invert_x_axis() # Because UE4 uses left-handed 
-                                            # coordinate system the X
-                                            # axis in the graph is flipped
-            trajectory_fig.set_axis_equal()    # X-Y spacing should be equal in size
+        trajectory_fig.set_invert_x_axis() # Because UE4 uses left-handed 
+                                        # coordinate system the X
+                                        # axis in the graph is flipped
+        trajectory_fig.set_axis_equal()    # X-Y spacing should be equal in size
 
-            # Add waypoint markers
-            trajectory_fig.add_graph("waypoints", window_size=len(waypoints),
-                                    x0=waypoints[:,0], y0=waypoints[:,1],
-                                    linestyle="-", marker="", color='g')
-            # Add trajectory markers
-            trajectory_fig.add_graph("trajectory", window_size=TOTAL_EPISODE_FRAMES,
-                                    x0=[start_x]*TOTAL_EPISODE_FRAMES, 
-                                    y0=[start_y]*TOTAL_EPISODE_FRAMES,
-                                    color=[1, 0.5, 0])
-            # Add starting position marker
-            trajectory_fig.add_graph("start_pos", window_size=1, 
-                                    x0=[start_x], y0=[start_y],
-                                    marker=11, color=[1, 0.5, 0], 
-                                    markertext="Start", marker_text_offset=1)
+        # Add waypoint markers
+        trajectory_fig.add_graph("waypoints", window_size=len(waypoints),
+                                x0=waypoints[:,0], y0=waypoints[:,1],
+                                linestyle="-", marker="", color='g')
+        # Add trajectory markers
+        trajectory_fig.add_graph("trajectory", window_size=TOTAL_EPISODE_FRAMES,
+                                x0=[start_x]*TOTAL_EPISODE_FRAMES, 
+                                y0=[start_y]*TOTAL_EPISODE_FRAMES,
+                                color=[1, 0.5, 0])
+        # Add starting position marker
+        trajectory_fig.add_graph("start_pos", window_size=1, 
+                                x0=[start_x], y0=[start_y],
+                                marker=11, color=[1, 0.5, 0], 
+                                markertext="Start", marker_text_offset=1)
 
-            # Add obstacles markers
-            trajectory_fig.add_graph("obstacles_points",
-                                    window_size=8 * (NUM_PEDESTRIANS + NUM_VEHICLES) ,
-                                    x0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)), 
-                                    y0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)),
-                                        linestyle="", marker="+", color='b')
+        # Add obstacles markers
+        trajectory_fig.add_graph("obstacles_points",
+                                window_size=8 * (NUM_PEDESTRIANS + NUM_VEHICLES) ,
+                                x0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)), 
+                                y0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)),
+                                    linestyle="", marker="+", color='b')
 
-            # Add obstacles projections markers
-            trajectory_fig.add_graph("obstacles_projections_points",
-                                    window_size=8 * (NUM_PEDESTRIANS + NUM_VEHICLES) ,
-                                    x0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)), 
-                                    y0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)),
-                                        linestyle="", marker="+", color='m')
+        ### [ADDITION]
+        # Add obstacles projections markers
+        trajectory_fig.add_graph("obstacles_projections_points",
+                                window_size=8 * (NUM_PEDESTRIANS + NUM_VEHICLES) ,
+                                x0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)), 
+                                y0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)),
+                                    linestyle="", marker="+", color='m')
 
-            # Add vehicles on same lane markers
-            trajectory_fig.add_graph("on_same_lane_vehicles",
-                                    window_size=8 * (NUM_PEDESTRIANS + NUM_VEHICLES) ,
-                                    x0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)), 
-                                    y0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)),
-                                        linestyle="", marker="+", color='g')
+        ### [ADDITION]
+        # Add vehicles on same lane markers
+        trajectory_fig.add_graph("on_same_lane_vehicles",
+                                window_size=8 * (NUM_PEDESTRIANS + NUM_VEHICLES) ,
+                                x0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)), 
+                                y0=[0]* (8 * (NUM_PEDESTRIANS + NUM_VEHICLES)),
+                                    linestyle="", marker="+", color='g')
 
-            # Add end position marker
-            trajectory_fig.add_graph("end_pos", window_size=1, 
-                                    x0=[waypoints[-1, 0]], 
-                                    y0=[waypoints[-1, 1]],
-                                    marker="D", color='r', 
-                                    markertext="End", marker_text_offset=1)
-            # Add car marker
-            trajectory_fig.add_graph("car", window_size=1, 
-                                    marker="s", color='b', markertext="Car",
-                                    marker_text_offset=1)
-            
-            # Add lead car information
-            trajectory_fig.add_graph("leadcar", window_size=1, 
-                                    marker="s", color='g', markertext="Lead Car",
-                                    marker_text_offset=1)
+        # Add end position marker
+        trajectory_fig.add_graph("end_pos", window_size=1, 
+                                x0=[waypoints[-1, 0]], 
+                                y0=[waypoints[-1, 1]],
+                                marker="D", color='r', 
+                                markertext="End", marker_text_offset=1)
+        # Add car marker
+        trajectory_fig.add_graph("car", window_size=1, 
+                                marker="s", color='b', markertext="Car",
+                                marker_text_offset=1)
+        
+        # Add lead car information
+        trajectory_fig.add_graph("leadcar", window_size=1, 
+                                marker="s", color='g', markertext="Lead Car",
+                                marker_text_offset=1)
 
-            # Add lookahead path
-            trajectory_fig.add_graph("selected_path", 
-                                    window_size=INTERP_MAX_POINTS_PLOT,
-                                    x0=[start_x]*INTERP_MAX_POINTS_PLOT, 
-                                    y0=[start_y]*INTERP_MAX_POINTS_PLOT,
-                                    color=[1, 0.5, 0.0],
-                                    linewidth=3)
+        # Add lookahead path
+        trajectory_fig.add_graph("selected_path", 
+                                window_size=INTERP_MAX_POINTS_PLOT,
+                                x0=[start_x]*INTERP_MAX_POINTS_PLOT, 
+                                y0=[start_y]*INTERP_MAX_POINTS_PLOT,
+                                color=[1, 0.5, 0.0],
+                                linewidth=3)
 
-            # Add local path proposals
-            for i in range(NUM_PATHS):
-                trajectory_fig.add_graph("local_path " + str(i), window_size=200,
-                                        x0=None, y0=None, color=[0.0, 0.0, 1.0])
+        # Add local path proposals
+        for i in range(NUM_PATHS):
+            trajectory_fig.add_graph("local_path " + str(i), window_size=200,
+                                    x0=None, y0=None, color=[0.0, 0.0, 1.0])
 
         lp_1d = lv.LivePlotter(tk_title="Controls Feedback")
 
@@ -1259,31 +821,30 @@ def exec_waypoint_nav_demo(args):
                                     label="reference_Signal", 
                                     window_size=TOTAL_EPISODE_FRAMES)
 
-        if SHOW_LIVE_PLOTTER:
-            ###
-            # Add 1D speed profile updater
-            ###
+        ###
+        # Add 1D speed profile updater
+        ###
 
-            # Add throttle signals graph
-            throttle_fig = lp_1d.plot_new_dynamic_figure(title="Throttle")
-            throttle_fig.add_graph("throttle", 
-                                label="throttle", 
-                                window_size=TOTAL_EPISODE_FRAMES)
-            # Add brake signals graph
-            brake_fig = lp_1d.plot_new_dynamic_figure(title="Brake")
-            brake_fig.add_graph("brake", 
-                                label="brake", 
-                                window_size=TOTAL_EPISODE_FRAMES)
-            # Add steering signals graph
-            steer_fig = lp_1d.plot_new_dynamic_figure(title="Steer")
-            steer_fig.add_graph("steer", 
-                                label="steer", 
-                                window_size=TOTAL_EPISODE_FRAMES)
+        # Add throttle signals graph
+        throttle_fig = lp_1d.plot_new_dynamic_figure(title="Throttle")
+        throttle_fig.add_graph("throttle", 
+                            label="throttle", 
+                            window_size=TOTAL_EPISODE_FRAMES)
+        # Add brake signals graph
+        brake_fig = lp_1d.plot_new_dynamic_figure(title="Brake")
+        brake_fig.add_graph("brake", 
+                            label="brake", 
+                            window_size=TOTAL_EPISODE_FRAMES)
+        # Add steering signals graph
+        steer_fig = lp_1d.plot_new_dynamic_figure(title="Steer")
+        steer_fig.add_graph("steer", 
+                            label="steer", 
+                            window_size=TOTAL_EPISODE_FRAMES)
 
-            # live plotter is disabled, hide windows
-            if not enable_live_plot:
-                lp_traj._root.withdraw()
-                lp_1d._root.withdraw()        
+        # live plotter is disabled, hide windows
+        if not enable_live_plot:
+            lp_traj._root.withdraw()
+            lp_1d._root.withdraw()        
         
 
         #############################################
@@ -1305,8 +866,10 @@ def exec_waypoint_nav_demo(args):
         bp = behavioural_planner.BehaviouralPlanner(BP_LOOKAHEAD_BASE)
 
         ### [ADDITION]
-        # Initialize traffic light manager and obstacle manager
-        traffic_lights_manager = trafficLightsManager(camera_parameters)
+        #######################################################
+        # Initialize Traffic light manager and obstacle manager
+        #######################################################
+        traffic_lights_manager = TrafficLightsManager(camera_parameters)
         obstacles_manager = ObstaclesManager(LEAD_VEHICLE_LOOKAHEAD_BASE, VEHICLE_OBSTACLE_LOOKAHEAD_BASE, PEDESTRIAN_OBSTACLE_LOOKAHEAD, bp)
 
         #############################################
@@ -1326,11 +889,6 @@ def exec_waypoint_nav_demo(args):
         prev_collision_vehicles    = 0
         prev_collision_pedestrians = 0
         prev_collision_other       = 0
-
-        ### [ADDITION]
-        # Initialize frame counter
-        ### TO BE DELETED (maybe)
-        frame_counter = 0
 
         for frame in range(TOTAL_EPISODE_FRAMES):
             # Gather current data from the CARLA server
@@ -1367,16 +925,6 @@ def exec_waypoint_nav_demo(args):
                                                  prev_collision_other)
             collided_flag_history.append(collided_flag)
 
-            ### TO BE DELETED
-            if PRODUCE_VIDEO:
-                if sensor_data.get("video_camera", None) is not None:
-                    video_frame = to_rgb_array(sensor_data["video_camera"])
-                    save_video_image(video_frame, "camera", frame_counter)
-                    copy_state_image(bp.get_state(), frame_counter)
-            
-            ### TO BE DELETED (maybe)
-            stop_to_obstacle = False
-
             # Execute the behaviour and local planning in the current instance
             # Note that updating the local path during every controller update
             # produces issues with the tracking performance (imagine everytime
@@ -1387,7 +935,7 @@ def exec_waypoint_nav_demo(args):
             # simulation frequency.
             if frame % LP_FREQUENCY_DIVISOR == 0:
 
-                ### TO BE DELETED (prints)
+                ### debug prints
                 print("")
                 print(f"CURRENT SPEED: {current_speed}")
 
@@ -1406,7 +954,7 @@ def exec_waypoint_nav_demo(args):
                     bp.set_follow_lead_vehicle(True)
                     lead_car_pos = (lead_vehicle.transform.location.x, lead_vehicle.transform.location.y)
                     lead_car_speed = lead_vehicle.forward_speed
-                    print(f"lead_car_speed: {lead_car_speed}")
+                
                 # Otherwise, notify to the behavioraul planner that no lead vehicles are present.
                 else:
                     bp.set_follow_lead_vehicle(False)
@@ -1430,21 +978,17 @@ def exec_waypoint_nav_demo(args):
                 if sensor_data.get("CameraSegmentation",None) is not None:
                     semantic_image = labels_to_cityscapes_palette(sensor_data["CameraSegmentation"])
                     semantic_image = np.array(semantic_image,dtype=np.uint8)
-                    # cv2.imshow("Semantic Image", semantic_image)
                     semantic_image = labels_to_array(sensor_data["CameraSegmentation"])
                     
                 # Get the traffic light state, the distance from ego vehicle, and 
                 # the set of traffic light pixels position set in the vehicle frame from the traffic light manager.
                 tl_state, tl_distance, traffic_light_vehicle_frame = traffic_lights_manager.get_tl_state(image_BGRA, depth_image, semantic_image)
                 
-                ### TO BE DELETED
-                tl_state = "go"
-                
-                ### TO BE DELETED (prints)
+                ### debug prints
                 print(F"STATE TRAFFIC LIGHT: {tl_state}")
                 print(F"DISTANCE FROM TRAFFIC LIGHT: {tl_distance}")
                 
-                # Notify to the behavioraul planner the information acquired from the traffic light manager.
+                ### Notify to the behavioraul planner the information acquired from the traffic light manager.
                 bp.set_traffic_light_state(tl_state)
                 bp.set_traffic_light_distance(tl_distance)
                 bp.set_traffic_light_vehicle_frame(traffic_light_vehicle_frame)
@@ -1487,8 +1031,6 @@ def exec_waypoint_nav_demo(args):
 
                 # If no paths have been produced, restore the last best path.
                 if len(paths) == 0:
-                    ### TO BE DELETED (print)
-                    print("NO PATHS, restoring the previous one")
                     paths.append(lp._prev_best_path)
                     path_validity = []
                     path_validity.append(True)
@@ -1515,8 +1057,6 @@ def exec_waypoint_nav_demo(args):
                 
                 # If no path was feasible, continue to follow the previous best path.
                 if best_index == None:
-                    ### TO BE DELETED (prints)
-                    print("NO BEST INDEX")
                     best_path = lp._prev_best_path
                 else:
                     best_path = paths[best_index]
@@ -1539,9 +1079,6 @@ def exec_waypoint_nav_demo(args):
                         consider_lead = False
                     else:
                         consider_lead = True
-                      
-                    ### TO BE DELETED (prints)
-                    print(f"collision_dist_array: {collision_dist_array}")
                     
                     # Based on the current behavioraul planner state, compute the distance you want to stop to along the path.
                     # If the current state is "STOP_AT_OBSTACLE" the distance will be equal to the nearest obstacle.
@@ -1554,7 +1091,7 @@ def exec_waypoint_nav_demo(args):
                     elif stop_to_red_traffic_light:
                         stop_line_distance = bp._traffic_light_distance
 
-                    ### [ADDITION] [MODIFIED]
+                    ### [MODIFIED]
                     # Get the velocity profile for the path, and compute the local waypoints.     
                     local_waypoints = lp._velocity_planner.compute_velocity_profile(best_path, desired_speed, 
                                                                                     ego_state, current_speed, 
@@ -1601,13 +1138,7 @@ def exec_waypoint_nav_demo(args):
                                             
                         # Update the other controller values and controls
                         controller.update_waypoints(wp_interp)
-                    else:
-                        ### TO BE DELETED (prints)
-                        print("NO VELOCITY PROFILE COMPUTED")
-                else:
-                    ### TO BE DELETED (prints)
-                    print("NO BEST PATH")
-
+                    
             ###
             # Controller Update
             ###
@@ -1618,72 +1149,69 @@ def exec_waypoint_nav_demo(args):
                 controller.update_controls()
                 cmd_throttle, cmd_steer, cmd_brake = controller.get_commands()
             else:
-                ### TO BE DELETED (prints)
-                print("EMERGENCY BREAK")
                 cmd_throttle = 0.0
                 cmd_steer = 0.0
                 cmd_brake = 1.0
 
-            ### TO BE DELETED (video)
-            if SHOW_LIVE_PLOTTER or PRODUCE_VIDEO:
-                # Skip the first frame or if there exists no local paths 
-                if skip_first_frame and frame == 0:
-                    pass
-                elif local_waypoints == None:
-                    pass
-                else:
+            # Skip the first frame or if there exists no local paths 
+            if skip_first_frame and frame == 0:
+                pass
+            elif local_waypoints == None:
+                pass
+            else:
 
-                    # Update live plotter with new feedback
-                    trajectory_fig.roll("trajectory", current_x, current_y)
-                    trajectory_fig.roll("car", current_x, current_y)
-                    if lead_car_pos != None:    ### If there exists a lead car, plot it
-                        trajectory_fig.roll("leadcar", lead_car_pos[0],
-                                            lead_car_pos[1])
-                    
-                    obstacles = np.array(obstacles)
-                    obstacles_projections = np.array(obstacles_projections)
-                    on_same_lane_vehicles = np.array(on_same_lane_vehicles)
+                # Update live plotter with new feedback
+                trajectory_fig.roll("trajectory", current_x, current_y)
+                trajectory_fig.roll("car", current_x, current_y)
+                if lead_car_pos != None:    ### If there exists a lead car, plot it
+                    trajectory_fig.roll("leadcar", lead_car_pos[0],
+                                        lead_car_pos[1])
+                
+                obstacles = np.array(obstacles)
+                obstacles_projections = np.array(obstacles_projections)
+                on_same_lane_vehicles = np.array(on_same_lane_vehicles)
 
-                    # Load obstacles points
-                    if len(obstacles) > 0:
-                        x = obstacles[:, :, 0]
-                        y = obstacles[:, :, 1]
-                        x = np.reshape(x, x.shape[0] * x.shape[1])
-                        y = np.reshape(y, y.shape[0] * y.shape[1])
+                # Load obstacles points
+                if len(obstacles) > 0:
+                    x = obstacles[:, :, 0]
+                    y = obstacles[:, :, 1]
+                    x = np.reshape(x, x.shape[0] * x.shape[1])
+                    y = np.reshape(y, y.shape[0] * y.shape[1])
 
-                        trajectory_fig.roll("obstacles_points", x, y)
+                    trajectory_fig.roll("obstacles_points", x, y)
 
-                    # Load obstacles projection points
-                    if len(obstacles_projections) > 0:
-                        x = obstacles_projections[:, :, 0]
-                        y = obstacles_projections[:, :, 1]
-                        x = np.reshape(x, x.shape[0] * x.shape[1])
-                        y = np.reshape(y, y.shape[0] * y.shape[1])
+                ### [ADDITION]
+                # Load obstacles projection points
+                if len(obstacles_projections) > 0:
+                    x = obstacles_projections[:, :, 0]
+                    y = obstacles_projections[:, :, 1]
+                    x = np.reshape(x, x.shape[0] * x.shape[1])
+                    y = np.reshape(y, y.shape[0] * y.shape[1])
 
-                        trajectory_fig.roll("obstacles_projections_points", x, y)
-                    
-                    # Load "on same lane" vehicles points
-                    if len(on_same_lane_vehicles) > 0:
-                        x = on_same_lane_vehicles[:, :, 0]
-                        y = on_same_lane_vehicles[:, :, 1]
-                        x = np.reshape(x, x.shape[0] * x.shape[1])
-                        y = np.reshape(y, y.shape[0] * y.shape[1])
+                    trajectory_fig.roll("obstacles_projections_points", x, y)
+                
+                ### [ADDITION]
+                # Load "on same lane" vehicles points
+                if len(on_same_lane_vehicles) > 0:
+                    x = on_same_lane_vehicles[:, :, 0]
+                    y = on_same_lane_vehicles[:, :, 1]
+                    x = np.reshape(x, x.shape[0] * x.shape[1])
+                    y = np.reshape(y, y.shape[0] * y.shape[1])
 
-                        trajectory_fig.roll("on_same_lane_vehicles", x, y)
-                    
+                    trajectory_fig.roll("on_same_lane_vehicles", x, y)
+                
 
-                    forward_speed_fig.roll("forward_speed", 
-                                        current_timestamp, 
-                                        current_speed)
-                    forward_speed_fig.roll("reference_signal", 
-                                        current_timestamp, 
-                                        controller._desired_speed)
+                forward_speed_fig.roll("forward_speed", 
+                                    current_timestamp, 
+                                    current_speed)
+                forward_speed_fig.roll("reference_signal", 
+                                    current_timestamp, 
+                                    controller._desired_speed)
 
-                    if SHOW_LIVE_PLOTTER:
-                        
-                        throttle_fig.roll("throttle", current_timestamp, cmd_throttle)
-                        brake_fig.roll("brake", current_timestamp, cmd_brake)
-                        steer_fig.roll("steer", current_timestamp, cmd_steer)
+                
+                throttle_fig.roll("throttle", current_timestamp, cmd_throttle)
+                brake_fig.roll("brake", current_timestamp, cmd_brake)
+                steer_fig.roll("steer", current_timestamp, cmd_steer)
 
                 # Local path plotter update
                 if frame % LP_FREQUENCY_DIVISOR == 0:
@@ -1717,22 +1245,13 @@ def exec_waypoint_nav_demo(args):
                             new_colour=[1, 0.5, 0.0])
 
 
-                if SHOW_LIVE_PLOTTER:
-                    # Refresh the live plot based on the refresh rate 
-                    # set by the options
-                    if enable_live_plot and \
-                    live_plot_timer.has_exceeded_lap_period():
-                        lp_traj.refresh()
-                        lp_1d.refresh()
-                        live_plot_timer.lap()
-
-                ### save trajectory png
-                if PRODUCE_VIDEO:
-                    save_video_graph(trajectory_fig.fig, "trajectory", frame_counter)
-                    save_video_graph(forward_speed_fig.fig, "forward_speed", frame_counter)
-            
-            if frame % LP_FREQUENCY_DIVISOR == 0:
-                frame_counter += 1
+                # Refresh the live plot based on the refresh rate 
+                # set by the options
+                if enable_live_plot and \
+                live_plot_timer.has_exceeded_lap_period():
+                    lp_traj.refresh()
+                    lp_1d.refresh()
+                    live_plot_timer.lap()
 
             # Output controller command to CARLA server
             send_control_command(client,
@@ -1760,12 +1279,11 @@ def exec_waypoint_nav_demo(args):
         # Stop the car
         send_control_command(client, throttle=0.0, steer=0.0, brake=1.0)
         # Store the various outputs
-        if SHOW_LIVE_PLOTTER:
-            store_trajectory_plot(trajectory_fig.fig, 'trajectory.png')
-            store_trajectory_plot(forward_speed_fig.fig, 'forward_speed.png')
-            store_trajectory_plot(throttle_fig.fig, 'throttle_output.png')
-            store_trajectory_plot(brake_fig.fig, 'brake_output.png')
-            store_trajectory_plot(steer_fig.fig, 'steer_output.png')
+        store_trajectory_plot(trajectory_fig.fig, 'trajectory.png')
+        store_trajectory_plot(forward_speed_fig.fig, 'forward_speed.png')
+        store_trajectory_plot(throttle_fig.fig, 'throttle_output.png')
+        store_trajectory_plot(brake_fig.fig, 'brake_output.png')
+        store_trajectory_plot(steer_fig.fig, 'steer_output.png')
         write_trajectory_file(x_history, y_history, speed_history, time_history,
                               collided_flag_history)
         write_collisioncount_file(collided_flag_history)
